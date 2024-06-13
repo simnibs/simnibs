@@ -1339,6 +1339,47 @@ class POSITION(object):
         if self.pos_ydir and isinstance(self.pos_ydir[0], str):
             self.pos_ydir = ''.join(self.pos_ydir)
 
+    def to_dict(self) -> dict:
+        """ Makes a dictionary storing all settings as key value pairs
+
+        Returns
+        --------------------
+        dict
+            Dictionary containing settings as key value pairs
+        """
+        # Generate dict from instance variables (excluding variables starting with _ or __)
+        settings = {
+            key:value for key, value in self.__dict__.items() 
+            if not key.startswith('__')
+            and not key.startswith('_')
+            and not callable(value) 
+            and not callable(getattr(value, "__get__", None))
+            and value is not None
+        }
+
+        return settings
+    
+    def from_dict(self, settings: dict) -> "POSITION":
+        """ Reads parameters from a dict
+
+        Parameters
+        ----------
+        settings: dict
+            Dictionary containing parameter as key value pairs
+
+        Returns
+        -------
+        POSITION
+            Self with applied settings
+        """
+        for key, value in self.__dict__.items():
+            if key.startswith('__') or key.startswith('_') or callable(value) or callable(getattr(value, "__get__", None)):
+                continue
+            setattr(self, key, settings.get(key, value))
+
+        self._prepared = False
+        return self
+
     def substitute_positions_from_cap(self, cap=None):
         if cap is None:
             cap = self.eeg_cap

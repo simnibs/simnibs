@@ -16,6 +16,7 @@ from simnibs.optimization.tms_flex_optimization import (
     optimize_e_mag,
     TmsFlexOptimization,
 )
+from simnibs.utils.matlab_read import dict_from_matlab
 from simnibs.utils.region_of_interest import RegionOfInterest
 
 
@@ -29,7 +30,11 @@ class TestPositionOptimization:
         )
         try:
             optimize_distance(
-                small_functional_3_element_coil, skin_surface, coil_affine, global_optimization=False, local_optimization=True
+                small_functional_3_element_coil,
+                skin_surface,
+                coil_affine,
+                global_optimization=False,
+                local_optimization=True,
             )
         except Exception as e:
             raise pytest.fail("DID RAISE {0}".format(e))
@@ -171,7 +176,7 @@ class TestPositionOptimization:
             small_functional_3_element_coil,
             sphere3_msh,
             coil_affine,
-            coil_translation_ranges = np.array([[-5, 5], [-5, 5], [-20, 20]]),
+            coil_translation_ranges=np.array([[-5, 5], [-5, 5], [-20, 20]]),
         )
 
         assert before > after
@@ -331,6 +336,7 @@ class TestEMagOptimization:
         assert before > after
         np.testing.assert_allclose(coil_affine, affine_after)
 
+
 class TestAutoInit:
     def test_auto_init(self, sphere3_msh):
         roi = RegionOfInterest()
@@ -347,12 +353,13 @@ class TestAutoInit:
         np.testing.assert_allclose(matsimnibs[:3, 3], [100, 0, 0], atol=1e-3)
 
         from scipy.spatial.transform import Rotation as R
+
         r = R.from_matrix(matsimnibs[:3, :3])
         rotated = r.apply([[0, 0, 1]])
         np.testing.assert_allclose(rotated[0], [-1, 0, 0], atol=1e-3)
 
 
-class TestMatlab:
+class TestToFromDict:
     def test_writ_read_mat_no_deps(self, tmp_path: Path):
         tms_flex_opt = TmsFlexOptimization()
 
@@ -363,8 +370,8 @@ class TestMatlab:
         tms_flex_opt.run_simulation = True
 
         tms_flex_opt.method = "emag"
-        tms_flex_opt.global_translation_ranges = [[10, 20, 30]]
-        tms_flex_opt.global_rotation_ranges = [[40, 50, 60]]
+        tms_flex_opt.global_translation_ranges = [[-10, 10], [-20, 20], [-30, 30]]
+        tms_flex_opt.global_rotation_ranges = [[-40, 40], [-50, 50], [-60, 60]]
 
         tms_flex_opt.dither_skip = 7
         tms_flex_opt.fem_evaluation_cutoff = 2000
@@ -381,10 +388,13 @@ class TestMatlab:
         tms_flex_opt.l_bfgs_b_args = {"options": {"maxls": 20}}
 
         mat_path = os.path.join(tmp_path, "test.mat")
-        scipy.io.savemat(mat_path, tms_flex_opt.to_mat())
 
-        tms_flex_opt_loaded = TmsFlexOptimization(scipy.io.loadmat(mat_path))
+        scipy.io.savemat(mat_path, tms_flex_opt.to_dict())
+        tms_flex_opt_loaded = TmsFlexOptimization(dict_from_matlab(scipy.io.loadmat(mat_path)))
+        assert tms_flex_opt.__dict__ == tms_flex_opt_loaded.__dict__
 
+        scipy.io.savemat(mat_path, {'instance': tms_flex_opt.to_dict()})
+        tms_flex_opt_loaded = TmsFlexOptimization(dict_from_matlab(scipy.io.loadmat(mat_path)['instance']))
         assert tms_flex_opt.__dict__ == tms_flex_opt_loaded.__dict__
 
     def test_writ_read_mat(self, tmp_path: Path):
@@ -399,7 +409,6 @@ class TestMatlab:
         pos = tms_flex_opt.add_position()
         pos.centre = [1.0, 2.0, 3.0]
         pos.pos_ydir = [1.2, 3.4, 5.6]
-        pos.matsimnibs = []
 
         roi = tms_flex_opt.add_region_of_interest()
         roi.method = "surface"
@@ -407,18 +416,18 @@ class TestMatlab:
         roi.surface_type = "central"
         roi.subpath = "path/to/m2m"
 
-        roi.mask_space = ["subject_lh"]
-        roi.mask_path = ["path_to_file"]
-        roi.mask_value = [2]
-        roi.mask_operator = ["intersection"]
+        roi.mask_space = "subject_lh"
+        roi.mask_path = "path_to_file"
+        roi.mask_value = 2
+        roi.mask_operator = "intersection"
 
-        roi.roi_sphere_center = [[1.0,2,3], [4,5,6]]
+        roi.roi_sphere_center = [[1.0, 2, 3], [4, 5, 6]]
         roi.roi_sphere_radius = [3, 45.0]
-        roi.roi_sphere_center_space = ['subject', 'mni']
+        roi.roi_sphere_center_space = ["subject", "mni"]
         roi.roi_sphere_operator = ["union", "intersection"]
 
         tms_flex_opt.method = "emag"
-        tms_flex_opt.global_rotation_ranges = [[40, 50, 60]]
+        tms_flex_opt.global_rotation_ranges = [[-40, 40], [-50, 50], [-60, 60]]
 
         tms_flex_opt.dither_skip = 7
         tms_flex_opt.fem_evaluation_cutoff = 2000
@@ -435,20 +444,17 @@ class TestMatlab:
         tms_flex_opt.l_bfgs_b_args = {"options": {"maxls": 20}}
 
         mat_path = os.path.join(tmp_path, "test.mat")
-        scipy.io.savemat(mat_path, tms_flex_opt.to_mat())
+        scipy.io.savemat(mat_path, tms_flex_opt.to_dict())
 
-        tms_flex_opt_loaded = TmsFlexOptimization(scipy.io.loadmat(mat_path))
+        tms_flex_opt_loaded = TmsFlexOptimization(dict_from_matlab(scipy.io.loadmat(mat_path)))
 
         dict_before = tms_flex_opt.__dict__.copy()
         dict_after = tms_flex_opt_loaded.__dict__.copy()
-        del dict_before['pos']
-        del dict_before['roi']
-        del dict_after['pos']
-        del dict_after['roi']
+        del dict_before["pos"]
+        del dict_before["roi"]
+        del dict_after["pos"]
+        del dict_after["roi"]
 
         assert dict_before == dict_after
-        print(tms_flex_opt.roi.__dict__)
-        print(tms_flex_opt_loaded.roi.__dict__)
         assert tms_flex_opt.roi.__dict__ == tms_flex_opt_loaded.roi.__dict__
         assert tms_flex_opt.pos.__dict__ == tms_flex_opt_loaded.pos.__dict__
-

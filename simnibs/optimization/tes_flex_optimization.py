@@ -30,7 +30,6 @@ from ..simulation.array_layout import (
 from ..simulation.onlinefem import FemTargetPointCloud, OnlineFEM, postprocess_e
 from ..mesh_tools import mesh_io, surface
 from ..utils.file_finder import SubjectFiles, Templates
-from ..utils.matlab_read import matlab_sub_struct_to_matlab_struct, remove_None
 from ..utils.transformations import (
     subject2mni_coords,
     create_new_connectivity_list_point_mask,
@@ -117,7 +116,7 @@ class TesFlexOptimization:
         Indices of skin surface nodes in global msh
     """
 
-    def __init__(self, matlab_struct=None):
+    def __init__(self, settings_dict=None):
         """Initialized TESoptimize class instance"""
         # folders and I/O
         self.date = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -137,12 +136,12 @@ class TesFlexOptimization:
         self.mesh = None
         self.mesh_relabel = None
         self.mesh_nodes_areas = None
-        self.ff_templates = Templates()
+        self._ff_templates = Templates()
         self.ff_subject = None
         self.skin_surface = None
         self.node_idx_msh = None
-        self.ellipsoid = Ellipsoid()
-        self.fn_electrode_mask = self.ff_templates.mni_volume_upper_head_mask
+        self._ellipsoid = Ellipsoid()
+        self.fn_electrode_mask = self._ff_templates.mni_volume_upper_head_mask
 
         # roi
         self.roi = []
@@ -187,16 +186,13 @@ class TesFlexOptimization:
         # set default options for optimizer
         self.optimizer_options = None  # passed by user
         self.optimizer_options_std = {
-            "bounds": self.bounds,
-            "init_vals": self.x0,
-            "vol_tol": None,
             "len_tol": 1.0 / 3600000000.0,
             "f_min_rtol": 1e-12,
             "maxiter": 1000,
             "polish": True,
             "disp": True,
             "recombination": 0.7,  # differential evolution
-            "mutation": (0.01, 0.5),  # differential evolution
+            "mutation": [0.01, 0.5],  # differential evolution
             "popsize": 13,  # differential evolution
             "tol": 0.1,  # differential evolution
             "locally_biased": False,
@@ -213,8 +209,8 @@ class TesFlexOptimization:
         # number of CPU cores (set by run(cpus=NN) )
         self.n_cpu = None
         
-        if matlab_struct:
-            self.read_mat_struct(matlab_struct)
+        if settings_dict:
+            self.from_dict(settings_dict)
 
     def _prepare(self):
         """
@@ -300,7 +296,7 @@ class TesFlexOptimization:
         )[0]
 
         # fit optimal ellipsoid to valid skin points
-        self.ellipsoid.fit(points=self.skin_surface.nodes)
+        self._ellipsoid.fit(points=self.skin_surface.nodes)
 
         # plot skin surface and ellipsoid
         if self.plot:
@@ -318,7 +314,7 @@ class TesFlexOptimization:
             beta = np.linspace(-np.pi / 2, np.pi / 2, 180)
             lam = np.linspace(0, 2 * np.pi, 360)
             coords_sphere_jac = np.array(np.meshgrid(beta, lam)).T.reshape(-1, 2)
-            eli_coords_jac = self.ellipsoid.jacobi2cartesian(
+            eli_coords_jac = self._ellipsoid.jacobi2cartesian(
                 coords=coords_sphere_jac, return_normal=False
             )
             np.savetxt(
@@ -368,7 +364,7 @@ class TesFlexOptimization:
         self.n_iter_dirichlet_correction = [[] for _ in range(self.n_channel_stim)]
 
         # list containing the number of freely movable arrays for each channel [i_channel_stim]
-        self.n_ele_free = [len(ele.electrode_arrays) for ele in self.electrode]
+        self.n_ele_free = [len(ele._electrode_arrays) for ele in self.electrode]
 
         # list containing beta, lambda, alpha for each freely movable array and for each stimulation channel
         self.electrode_pos = [
@@ -377,7 +373,7 @@ class TesFlexOptimization:
 
         for i_channel_stim in range(self.n_channel_stim):
             for i_array, _electrode_array in enumerate(
-                self.electrode[i_channel_stim].electrode_arrays
+                self.electrode[i_channel_stim]._electrode_arrays
             ):
                 if _electrode_array.optimize_alpha:
                     self.electrode_pos[i_channel_stim][i_array] = np.zeros(3)
@@ -403,7 +399,7 @@ class TesFlexOptimization:
         if self.plot:
             for i_channel_stim in range(self.n_channel_stim):
                 for i_array, _electrode_array in enumerate(
-                    self.electrode[i_channel_stim].electrode_arrays
+                    self.electrode[i_channel_stim]._electrode_arrays
                 ):
                     _electrode_array.plot(
                         show=False,
@@ -502,7 +498,7 @@ class TesFlexOptimization:
                 for i_channel_stim in range(self.n_channel_stim):
                     for _electrode_array in self.electrode[
                         i_channel_stim
-                    ].electrode_arrays:
+                    ]._electrode_arrays:
                         if _electrode_array.optimize_alpha:
                             max_idx += 3
                         else:
@@ -600,7 +596,7 @@ class TesFlexOptimization:
             self.logger.log(25, "---------------------------------------------")
 
             for i_array, _electrode_array in enumerate(
-                self.electrode[i_channel_stim].electrode_arrays
+                self.electrode[i_channel_stim]._electrode_arrays
             ):
                 self.logger.log(
                     25,
@@ -657,381 +653,74 @@ class TesFlexOptimization:
             roi = RegionOfInterest()
         self.roi.append(roi)
         return roi
-
-    def sim_struct2mat(self):
-        """Convert sim_struct to mat"""
-        pass
-
-        # cond
-        # mat = SimuList.cond_mat_struct(self.ofem)
-        mat = dict()
-
-        # folders and I/O
-        mat["date"] = remove_None(self.date)
-        mat["output_folder"] = remove_None(self.output_folder)
-        mat["plot_folder"] = remove_None(self.plot_folder)
-        mat["plot"] = remove_None(self.plot)
-        mat["fn_final_sim"] = remove_None(self.fn_final_sim)
-        mat["fn_results_hdf5"] = remove_None(self.fn_results_hdf5)
-        mat["prepared"] = remove_None(self.prepared)
-
-        # headmodel
-        mat["fn_eeg_cap"] = remove_None(self.fn_eeg_cap)
-        mat["fn_mesh"] = remove_None(self.fn_mesh)
-        mat["fn_electrode_mask"] = remove_None(self.fn_electrode_mask)
-
-        # roi
-        mat["n_roi"] = remove_None(self.n_roi)
-
-        roi_dict = dict()
-
-        for i_roi, _roi in enumerate(self.roi):
-            roi_dict[f"roi_{i_roi}"] = _roi.to_mat()
-
-        mat["roi_dict"] = roi_dict
-
-        # electrode
-        mat["electrode_pos"] = remove_None(self.electrode_pos)
-        mat["electrode_pos_opt"] = remove_None(self.electrode_pos_opt)
-        mat["min_electrode_distance"] = remove_None(self.min_electrode_distance)
-        mat["n_channel_stim"] = remove_None(self.n_channel_stim)
-        mat["n_iter_dirichlet_correction"] = remove_None(
-            self.n_iter_dirichlet_correction
-        )
-        mat["n_ele_free"] = remove_None(self.n_ele_free)
-        mat["init_pos"] = remove_None(self.init_pos)
-        mat["init_pos_subject_coords"] = remove_None(self.init_pos_subject_coords)
-
-        electrode_dict = dict()
-
-        for i_ele, _electrode in enumerate(self.electrode):
-            electrode_dict[f"ele_{i_ele}"] = dict()
-            electrode_dict[f"ele_{i_ele}"]["type"] = remove_None(
-                _electrode.__class__.__name__
-            )
-            electrode_dict[f"ele_{i_ele}"]["dirichlet_correction"] = remove_None(
-                _electrode.dirichlet_correction
-            )
-            electrode_dict[f"ele_{i_ele}"]["dirichlet_correction_detailed"] = (
-                remove_None(_electrode.dirichlet_correction_detailed)
-            )
-            electrode_dict[f"ele_{i_ele}"]["current_estimator_method"] = remove_None(
-                _electrode.current_estimator_method
-            )
-            electrode_dict[f"ele_{i_ele}"]["current"] = remove_None(_electrode.current)
-
-            if _electrode.__class__.__name__ == "CircularArray":
-                electrode_dict[f"ele_{i_ele}"]["radius_inner"] = remove_None(
-                    _electrode.radius_inner
-                )
-                electrode_dict[f"ele_{i_ele}"]["radius_inner_bounds"] = remove_None(
-                    _electrode.radius_inner_bounds
-                )
-                electrode_dict[f"ele_{i_ele}"]["radius_outer"] = remove_None(
-                    _electrode.radius_outer
-                )
-                electrode_dict[f"ele_{i_ele}"]["radius_outer_bounds"] = remove_None(
-                    _electrode.radius_outer_bounds
-                )
-                electrode_dict[f"ele_{i_ele}"]["distance"] = remove_None(
-                    _electrode.distance
-                )
-                electrode_dict[f"ele_{i_ele}"]["distance_bounds"] = remove_None(
-                    _electrode.distance_bounds
-                )
-                electrode_dict[f"ele_{i_ele}"]["n_outer"] = remove_None(
-                    _electrode.n_outer
-                )
-                electrode_dict[f"ele_{i_ele}"]["n_outer_bounds"] = remove_None(
-                    _electrode.n_outer_bounds
-                )
-
-            elif _electrode.__class__.__name__ == "ElectrodeArrayPair":
-                electrode_dict[f"ele_{i_ele}"]["center"] = remove_None(
-                    _electrode.center
-                )
-                electrode_dict[f"ele_{i_ele}"]["radius"] = remove_None(
-                    _electrode.radius
-                )
-                electrode_dict[f"ele_{i_ele}"]["radius_bounds"] = remove_None(
-                    _electrode.radius_bounds
-                )
-                electrode_dict[f"ele_{i_ele}"]["length_x"] = remove_None(
-                    _electrode.length_x
-                )
-                electrode_dict[f"ele_{i_ele}"]["length_x_bounds"] = remove_None(
-                    _electrode.length_x_bounds
-                )
-                electrode_dict[f"ele_{i_ele}"]["length_y"] = remove_None(
-                    _electrode.length_y
-                )
-                electrode_dict[f"ele_{i_ele}"]["length_y_bounds"] = remove_None(
-                    _electrode.length_y_bounds
-                )
-
-        mat["electrode_dict"] = electrode_dict
-
-        # goal function
-        mat["goal"] = remove_None(self.goal)
-
-        if np.array([True for _t in self.goal_dir if _t is None]).any():
-            mat["goal_dir"] = [""] * len(self.roi)
-        else:
-            mat["goal_dir"] = remove_None(self.goal_dir)
-
-        mat["e_postproc"] = remove_None(self.e_postproc)
-        mat["threshold"] = remove_None(self.threshold)
-        mat["optimizer"] = remove_None(self.optimizer)
-        mat["weights"] = remove_None(self.weights)
-        mat["track_focality"] = remove_None(self.track_focality)
-        mat["constrain_electrode_locations"] = remove_None(
-            self.constrain_electrode_locations
-        )
-        mat["overlap_factor"] = remove_None(self.overlap_factor)
-        mat["polish"] = remove_None(self.polish)
-        mat["n_test"] = remove_None(self.n_test)
-        mat["n_sim"] = remove_None(self.n_sim)
-        mat["optimize_init_vals"] = remove_None(self.optimize_init_vals)
-        mat["bounds"] = remove_None(self.bounds)
-        mat["x0"] = remove_None(self.x0)
-        mat["goal_fun_value"] = remove_None(self.goal_fun_value)
-        mat["AUC"] = remove_None(self.AUC)
-        mat["integral_focality"] = remove_None(self.integral_focality)
-        mat["optimizer_options"] = remove_None(self.optimizer_options)
-        mat["optimizer_options_std"] = remove_None(self.optimizer_options_std)
-
-        # FEM
-        mat["run_final_electrode_simulation"] = remove_None(
-            self.run_final_electrode_simulation
-        )
-        mat["dirichlet_node"] = remove_None(self.dirichlet_node)
-        mat["dataType"] = remove_None(self.dataType)
-        mat["anisotropy_type"] = remove_None(self.anisotropy_type)
-        mat["solver_options"] = remove_None(self.solver_options)
-
-        return mat
-
-    def read_mat_element(self, mat, tag):
-        """
-        Read element from matlab structure and return content
-
-        Paramters
-        ---------
-        mat : dict
-            Dictionary read from scipy.io.loadmat(fn_mat, simplify_cells=True)
-        key : str
-            Field tag to read
+    
+    def to_dict(self) -> dict:
+        """ Makes a dictionary storing all settings as key value pairs
 
         Returns
-        -------
-        out : list, dict, np.ndarray
-            Content of field
+        --------------------
+        dict
+            Dictionary containing settings as key value pairs
         """
+        # Generate dict from instance variables (excluding variables starting with _ or __)
+        settings = {
+            key:value for key, value in self.__dict__.items() 
+            if not key.startswith('__')
+            and not key.startswith('_')
+            and not callable(value) 
+            and not callable(getattr(value, "__get__", None))
+            and value is not None
+        }
 
-        if (
-            type(mat[tag]) is not int
-            and type(mat[tag]) is not float
-            and len(mat[tag]) == 0
-            and type(mat[tag]) == np.ndarray
-        ):
-            return None
-        else:
-            return mat[tag]
+        # Add class name as type (type is protected in python so it cannot be a instance variable)
+        settings['type'] = 'TesFlexOptimization'
 
-    @classmethod
-    def read_mat_struct(self, mat):
-        """
-        Reads parameters from matlab structure
+        roi_dicts = []
+        for roi_class in self.roi:
+            roi_dicts.append(roi_class.to_dict())
+        settings["roi"] = roi_dicts
+
+
+        if len(self.electrode) > 0 and isinstance(self.electrode[0], ElectrodeInitializer):
+            for i, electrode_class in enumerate(self.electrode):
+                self.electrode[i] = electrode_class.initialize() 
+        electrode_dicts = []
+        for electrode_class in self.electrode:
+            electrode_dicts.append(electrode_class.to_dict())
+        settings["electrode"] = electrode_dicts    
+
+        return settings
+
+    def from_dict(self, settings: dict) -> "TesFlexOptimization":
+        """ Reads parameters from a dict
 
         Parameters
         ----------
-        mat: str or scipy.io.loadmat
-            Filename of .mat file or loaded matlab structure
+        settings: dict
+            Dictionary containing parameter as key value pairs
         """
-        self = self()
 
-        if type(mat) is str:
-            mat = scipy.io.loadmat(mat, simplify_cells=True)
-
-        # cond
-        # SimuList.read_cond_mat_struct(self, mat)
-
-        # folders and I/O
-        self.date = self.read_mat_element(mat, "date")
-        self.output_folder = self.read_mat_element(mat, "output_folder")
-        self.plot_folder = self.read_mat_element(mat, "plot_folder")
-        self.plot = self.read_mat_element(mat, "plot")
-        self.fn_final_sim = self.read_mat_element(mat, "fn_final_sim")
-        self.fn_results_hdf5 = self.read_mat_element(mat, "fn_results_hdf5")
-        self.prepared = self.read_mat_element(mat, "prepared")
-
-        # headmodel
-        self.fn_eeg_cap = self.read_mat_element(mat, "fn_eeg_cap")
-        self.fn_mesh = self.read_mat_element(mat, "fn_mesh")
-        self.fn_electrode_mask = self.read_mat_element(mat, "fn_electrode_mask")
-        self.mesh = mesh_io.read_msh(self.fn_mesh)
-
-        # roi
-        self.n_roi = self.read_mat_element(mat, "n_roi")
-        roi_dict = self.read_mat_element(mat, "roi_dict")
+        for key, value in self.__dict__.items():
+            if key.startswith('__') or key.startswith('_') or callable(value) or callable(getattr(value, "__get__", None)):
+                continue
+            setattr(self, key, settings.get(key, value))
 
         self.roi = []
-        for i_roi in range(self.n_roi):
-            roi_ = RegionOfInterest(matlab_sub_struct_to_matlab_struct(roi_dict[f"roi_{i_roi}"]))
-            roi_.mesh = self.mesh
+        if 'roi' in settings:
+            if isinstance(settings["roi"], dict):
+                self.roi.append(RegionOfInterest(settings["roi"]))
+            else:
+                for roi_dict in settings["roi"]:
+                    self.roi.append(RegionOfInterest(roi_dict))
 
-            # reinitialize ROI
-            self.roi.append(roi_)
-
-        # electrode
-        self.electrode_pos = self.read_mat_element(mat, "electrode_pos")
-        self.electrode_pos_opt = self.read_mat_element(mat, "electrode_pos_opt")
-        self.min_electrode_distance = self.read_mat_element(
-            mat, "min_electrode_distance"
-        )
-        self.n_channel_stim = self.read_mat_element(mat, "n_channel_stim")
-        self.n_iter_dirichlet_correction = self.read_mat_element(
-            mat, "n_iter_dirichlet_correction"
-        )
-        self.n_ele_free = self.read_mat_element(mat, "n_ele_free")
-        self.init_pos = self.read_mat_element(mat, "init_pos")
-        self.init_pos_subject_coords = self.read_mat_element(
-            mat, "init_pos_subject_coords"
-        )
-
-        electrode_dict = mat["electrode_dict"]
         self.electrode = []
+        if 'electrode' in settings:
+            if isinstance(settings["electrode"], dict):
+                self.electrode.append(ElectrodeInitializer().from_dict(settings["electrode"]).initialize())
+            else:
+                for elec_dict in settings["electrode"]:
+                    self.electrode.append(ElectrodeInitializer().from_dict(elec_dict).initialize())
 
-        for i_ele in range(self.n_channel_stim):
-            electrode_ = ElectrodeInitializer()
-            electrode_.type = self.read_mat_element(
-                electrode_dict[f"ele_{i_ele}"], "type"
-            )
-            electrode_.dirichlet_correction = self.read_mat_element(
-                electrode_dict[f"ele_{i_ele}"], "dirichlet_correction"
-            )
-            electrode_.dirichlet_correction_detailed = self.read_mat_element(
-                electrode_dict[f"ele_{i_ele}"], "dirichlet_correction_detailed"
-            )
-            electrode_.current_estimator_method = self.read_mat_element(
-                electrode_dict[f"ele_{i_ele}"], "current_estimator_method"
-            )
-            electrode_.current = self.read_mat_element(
-                electrode_dict[f"ele_{i_ele}"], "current"
-            )
-
-            if electrode_.type == "CircularArray":
-                electrode_.radius_inner = self.read_mat_element(
-                    electrode_dict[f"ele_{i_ele}"], "radius_inner"
-                )
-                electrode_.radius_inner_bounds = self.read_mat_element(
-                    electrode_dict[f"ele_{i_ele}"], "radius_inner_bounds"
-                )
-                electrode_.radius_outer = self.read_mat_element(
-                    electrode_dict[f"ele_{i_ele}"], "radius_outer"
-                )
-                electrode_.radius_outer_bounds = self.read_mat_element(
-                    electrode_dict[f"ele_{i_ele}"], "radius_outer_bounds"
-                )
-                electrode_.distance = self.read_mat_element(
-                    electrode_dict[f"ele_{i_ele}"], "distance"
-                )
-                electrode_.distance_bounds = self.read_mat_element(
-                    electrode_dict[f"ele_{i_ele}"], "distance_bounds"
-                )
-                electrode_.n_outer = self.read_mat_element(
-                    electrode_dict[f"ele_{i_ele}"], "n_outer"
-                )
-                electrode_.n_outer_bounds = self.read_mat_element(
-                    electrode_dict[f"ele_{i_ele}"], "n_outer_bounds"
-                )
-
-                if np.all(
-                    electrode_.radius_inner_bounds == electrode_.radius_inner_bounds[0]
-                ):
-                    electrode_.radius_inner_bounds = None
-
-                if np.all(
-                    electrode_.radius_outer_bounds == electrode_.radius_outer_bounds[0]
-                ):
-                    electrode_.radius_outer_bounds = None
-
-                if np.all(electrode_.distance_bounds == electrode_.distance_bounds[0]):
-                    electrode_.distance_bounds = None
-
-                if np.all(electrode_.n_outer_bounds == electrode_.n_outer_bounds[0]):
-                    electrode_.n_outer_bounds = None
-
-            elif electrode_.type == "ElectrodeArrayPair":
-                electrode_.center = self.read_mat_element(
-                    electrode_dict[f"ele_{i_ele}"], "center"
-                )
-                electrode_.radius = self.read_mat_element(
-                    electrode_dict[f"ele_{i_ele}"], "radius"
-                )
-                electrode_.radius_bounds = self.read_mat_element(
-                    electrode_dict[f"ele_{i_ele}"], "radius_bounds"
-                )
-                electrode_.length_x = self.read_mat_element(
-                    electrode_dict[f"ele_{i_ele}"], "length_x"
-                )
-                electrode_.length_x_bounds = self.read_mat_element(
-                    electrode_dict[f"ele_{i_ele}"], "length_x_bounds"
-                )
-                electrode_.length_y = self.read_mat_element(
-                    electrode_dict[f"ele_{i_ele}"], "length_y"
-                )
-                electrode_.length_y_bounds = self.read_mat_element(
-                    electrode_dict[f"ele_{i_ele}"], "length_y_bounds"
-                )
-
-                if np.all(electrode_.radius_bounds == electrode_.radius_bounds[0]):
-                    electrode_.radius_bounds = None
-
-                if np.all(electrode_.length_x_bounds == electrode_.length_x_bounds[0]):
-                    electrode_.length_x_bounds = None
-
-                if np.all(electrode_.length_y_bounds == electrode_.length_y_bounds[0]):
-                    electrode_.length_y_bounds = None
-
-            # reinitialize ROI
-            self.electrode.append(electrode_.initialize())
-
-        # goal function
-        self.goal = self.read_mat_element(mat, "goal")
-        self.goal_dir = self.read_mat_element(mat, "goal_dir")
-        self.e_postproc = self.read_mat_element(mat, "e_postproc")
-        self.threshold = self.read_mat_element(mat, "threshold")
-        self.optimizer = self.read_mat_element(mat, "optimizer")
-        self.weights = self.read_mat_element(mat, "weights")
-        self.track_focality = self.read_mat_element(mat, "track_focality")
-        self.constrain_electrode_locations = self.read_mat_element(
-            mat, "constrain_electrode_locations"
-        )
-        self.overlap_factor = self.read_mat_element(mat, "overlap_factor")
-        self.polish = self.read_mat_element(mat, "polish")
-        self.n_test = self.read_mat_element(mat, "n_test")
-        self.n_sim = self.read_mat_element(mat, "n_sim")
-        self.optimize_init_vals = self.read_mat_element(mat, "optimize_init_vals")
-        bounds_ = self.read_mat_element(mat, "bounds")
-        self.bounds = Bounds(lb=bounds_["lb"].flatten(), ub=bounds_["ub"].flatten())
-        self.x0 = self.read_mat_element(mat, "x0")
-        self.goal_fun_value = self.read_mat_element(mat, "goal_fun_value")
-        self.AUC = self.read_mat_element(mat, "AUC")
-        self.integral_focality = self.read_mat_element(mat, "integral_focality")
-        self.optimizer_options = self.read_mat_element(mat, "optimizer_options")
-        self.optimizer_options_std = self.read_mat_element(mat, "optimizer_options_std")
-
-        # FEM
-        self.run_final_electrode_simulation = self.read_mat_element(
-            mat, "run_final_electrode_simulation"
-        )
-        self.dirichlet_node = self.read_mat_element(mat, "dirichlet_node")
-        self.dataType = self.read_mat_element(mat, "dataType")
-        self.anisotropy_type = self.read_mat_element(mat, "anisotropy_type")
-        self.solver_options = self.read_mat_element(mat, "solver_options")
-        self.prepared = False
-        
         return self
 
     def run(self, cpus=None, allow_multiple_runs=False, save_mat=True, return_n_max=1):
@@ -1100,7 +789,7 @@ class TesFlexOptimization:
                 x0=self.optimizer_options_std["init_vals"],
                 strategy="best1bin",
                 recombination=self.optimizer_options_std["recombination"],
-                mutation=self.optimizer_options_std["mutation"],
+                mutation=tuple(self.optimizer_options_std["mutation"]),
                 tol=self.optimizer_options_std["tol"],
                 maxiter=self.optimizer_options_std["maxiter"],
                 popsize=self.optimizer_options_std["popsize"],
@@ -1525,13 +1214,13 @@ class TesFlexOptimization:
 
             # project nasion from skin surface to ellipsoid
             Nz_eli = subject2ellipsoid(
-                coords=Nz, normals=Nz_normal, ellipsoid=self.ellipsoid
+                coords=Nz, normals=Nz_normal, ellipsoid=self._ellipsoid
             )
-            Nz_cart = self.ellipsoid.ellipsoid2cartesian(coords=Nz_eli, norm=False)
-            Nz_jacobi = self.ellipsoid.cartesian2jacobi(coords=Nz_cart, norm=False)
+            Nz_cart = self._ellipsoid.ellipsoid2cartesian(coords=Nz_eli, norm=False)
+            Nz_jacobi = self._ellipsoid.cartesian2jacobi(coords=Nz_cart, norm=False)
 
             # go a small step into positive z-direction
-            Nz_cart_test = self.ellipsoid.jacobi2cartesian(
+            Nz_cart_test = self._ellipsoid.jacobi2cartesian(
                 coords=Nz_jacobi + np.array([0, 1e-2]), norm=False
             )
 
@@ -1598,16 +1287,16 @@ class TesFlexOptimization:
                 np.meshgrid(beta_region_3, lam_region_3)
             ).T.reshape(-1, 2)
 
-            coords_region_0 = self.ellipsoid.jacobi2cartesian(
+            coords_region_0 = self._ellipsoid.jacobi2cartesian(
                 coords=coords_region_0_jac, return_normal=False
             )
-            coords_region_1 = self.ellipsoid.jacobi2cartesian(
+            coords_region_1 = self._ellipsoid.jacobi2cartesian(
                 coords=coords_region_1_jac, return_normal=False
             )
-            coords_region_2 = self.ellipsoid.jacobi2cartesian(
+            coords_region_2 = self._ellipsoid.jacobi2cartesian(
                 coords=coords_region_2_jac, return_normal=False
             )
-            coords_region_3 = self.ellipsoid.jacobi2cartesian(
+            coords_region_3 = self._ellipsoid.jacobi2cartesian(
                 coords=coords_region_3_jac, return_normal=False
             )
 
@@ -1634,7 +1323,7 @@ class TesFlexOptimization:
         i_para = 2
         idx_alpha_remove = []
         for i_channel_stim in range(self.n_channel_stim):
-            for _electrode_array in self.electrode[i_channel_stim].electrode_arrays:
+            for _electrode_array in self.electrode[i_channel_stim]._electrode_arrays:
                 if not _electrode_array.optimize_alpha:
                     idx_alpha_remove.append(i_para)
                 i_para += 3
@@ -1689,7 +1378,7 @@ class TesFlexOptimization:
             for i_ele_free in range(self.n_ele_free[i_channel_stim]):
                 if (
                     self.electrode[i_channel_stim]
-                    .electrode_arrays[i_ele_free]
+                    ._electrode_arrays[i_ele_free]
                     .optimize_alpha
                 ):
                     i_para_increment = 3
@@ -1760,7 +1449,7 @@ class TesFlexOptimization:
                         for i_ele_free in range(self.n_ele_free[i_channel_stim]):
                             if (
                                 self.electrode[i_channel_stim]
-                                .electrode_arrays[i_ele_free]
+                                ._electrode_arrays[i_ele_free]
                                 .optimize_alpha
                             ):
                                 i_para_increment = 3
@@ -1863,14 +1552,14 @@ class TesFlexOptimization:
 
                     # electrode positon in ellipsoid space (jacobi coordinates)
                     self.electrode_pos[i_channel_stim][i_ele_free][:2] = (
-                        self.ellipsoid.cartesian2jacobi(
-                            coords=self.ellipsoid.ellipsoid2cartesian(
+                        self._ellipsoid.cartesian2jacobi(
+                            coords=self._ellipsoid.ellipsoid2cartesian(
                                 coords=subject2ellipsoid(
                                     coords=self.skin_surface.nodes[point_idx, :],
                                     normals=self.skin_surface.nodes_normals[
                                         point_idx, :
                                     ],
-                                    ellipsoid=self.ellipsoid,
+                                    ellipsoid=self._ellipsoid,
                                 )
                             )
                         )
@@ -1914,7 +1603,7 @@ class TesFlexOptimization:
 
         electrode_coords_subject = [0 for _ in range(self.n_channel_stim)]
         electrode_pos_valid = [
-            [None for _ in range(len(self.electrode[i_channel_stim].electrode_arrays))]
+            [None for _ in range(len(self.electrode[i_channel_stim]._electrode_arrays))]
             for i_channel_stim in range(self.n_channel_stim)
         ]
         node_idx_dict = [dict() for _ in range(self.n_channel_stim)]
@@ -1938,18 +1627,18 @@ class TesFlexOptimization:
             alpha = []
 
             for i_array, _electrode_array in enumerate(
-                self.electrode[i_channel_stim].electrode_arrays
+                self.electrode[i_channel_stim]._electrode_arrays
             ):
-                start[i_array, :] = self.ellipsoid.jacobi2cartesian(
+                start[i_array, :] = self._ellipsoid.jacobi2cartesian(
                     coords=electrode_pos[i_channel_stim][i_array][:2]
                 )
 
-                c0, n_tmp[i_array, :] = self.ellipsoid.jacobi2cartesian(
+                c0, n_tmp[i_array, :] = self._ellipsoid.jacobi2cartesian(
                     coords=electrode_pos[i_channel_stim][i_array][:2],
                     return_normal=True,
                 )
                 a[i_array, :] = (
-                    self.ellipsoid.jacobi2cartesian(
+                    self._ellipsoid.jacobi2cartesian(
                         coords=np.array(
                             [
                                 electrode_pos[i_channel_stim][i_array][0] - 1e-2,
@@ -1960,7 +1649,7 @@ class TesFlexOptimization:
                     - c0
                 )
                 b[i_array, :] = (
-                    self.ellipsoid.jacobi2cartesian(
+                    self._ellipsoid.jacobi2cartesian(
                         coords=np.array(
                             [
                                 electrode_pos[i_channel_stim][i_array][0],
@@ -2021,7 +1710,7 @@ class TesFlexOptimization:
                 [
                     np.tile(start[i_array, :], (_electrode_array.n_ele, 1))
                     for i_array, _electrode_array in enumerate(
-                        self.electrode[i_channel_stim].electrode_arrays
+                        self.electrode[i_channel_stim]._electrode_arrays
                     )
                 ]
             )
@@ -2030,23 +1719,23 @@ class TesFlexOptimization:
                 [
                     i_array * np.ones(_electrode_array.n_ele)
                     for i_array, _electrode_array in enumerate(
-                        self.electrode[i_channel_stim].electrode_arrays
+                        self.electrode[i_channel_stim]._electrode_arrays
                     )
                 ]
             )
 
             # determine electrode center on ellipsoid
             if not (distance == 0.0).all():
-                electrode_coords_eli_cart = self.ellipsoid.get_geodesic_destination(
+                electrode_coords_eli_cart = self._ellipsoid.get_geodesic_destination(
                     start=start, distance=distance, alpha=alpha, n_steps=400, n_cpu=self.n_cpu
                 )
             else:
                 electrode_coords_eli_cart = start
 
-            n.append(self.ellipsoid.get_normal(coords=electrode_coords_eli_cart))
+            n.append(self._ellipsoid.get_normal(coords=electrode_coords_eli_cart))
 
             # transform to ellipsoidal coordinates
-            electrode_coords_eli_eli = self.ellipsoid.cartesian2ellipsoid(
+            electrode_coords_eli_eli = self._ellipsoid.cartesian2ellipsoid(
                 coords=electrode_coords_eli_cart
             )
 
@@ -2054,11 +1743,11 @@ class TesFlexOptimization:
             tmp_arrays = []
             i_ele = 0
             for i_array, _electrode_array in enumerate(
-                self.electrode[i_channel_stim].electrode_arrays
+                self.electrode[i_channel_stim]._electrode_arrays
             ):
                 ele_idx, tmp = ellipsoid2subject(
                     coords=electrode_coords_eli_eli[electrode_array_idx == i_array, :],
-                    ellipsoid=self.ellipsoid,
+                    ellipsoid=self._ellipsoid,
                     surface=self.skin_surface,
                 )
                 tmp_arrays.append(tmp)
@@ -2252,7 +1941,7 @@ class TesFlexOptimization:
         # save electrode_pos in ElectrodeArray instances
         for i_channel_stim in range(self.n_channel_stim):
             for i_array, _electrode_array in enumerate(
-                self.electrode[i_channel_stim].electrode_arrays
+                self.electrode[i_channel_stim]._electrode_arrays
             ):
                 _electrode_array.electrode_pos = electrode_pos[i_channel_stim][i_array]
 
@@ -2270,7 +1959,7 @@ class TesFlexOptimization:
                     currents_estimate = currents_estimate.flatten()
                     for _electrode_array in self.electrode[
                         i_channel_stim
-                    ].electrode_arrays:
+                    ]._electrode_arrays:
                         for _ele in _electrode_array.electrodes:
                             mask_estimator = (
                                 self.electrode[i_channel_stim].current_estimator.ele_id
@@ -2284,7 +1973,7 @@ class TesFlexOptimization:
                             _ele.ele_current = currents_estimate[mask_estimator]
             else:
                 # reset to original currents
-                for _electrode_array in self.electrode[i_channel_stim].electrode_arrays:
+                for _electrode_array in self.electrode[i_channel_stim]._electrode_arrays:
                     for _ele in _electrode_array.electrodes:
                         _ele.ele_current = _ele.ele_current_init
 
@@ -2521,7 +2210,7 @@ def save_optimization_results(
         for i_stim in range(len(popt)):
             f.write(f"Stimulation {i_stim}:\n")
             for i_array, _electrode_array in enumerate(
-                electrode[i_stim].electrode_arrays
+                electrode[i_stim]._electrode_arrays
             ):
                 f.write(f"Array {i_array}:\n")
                 for i_electrode, _electrode in enumerate(_electrode_array.electrodes):
@@ -2664,7 +2353,7 @@ def save_optimization_results(
                 )
 
             for i_array, _electrode_array in enumerate(
-                electrode[i_stim].electrode_arrays
+                electrode[i_stim]._electrode_arrays
             ):
                 f.create_dataset(
                     data=popt[i_stim][i_array][0],

@@ -32,9 +32,19 @@ def try_to_read_matlab_field(matlab_structure, field_name, field_type, alternati
         pass
     return alternative
 
-def matlab_struct_to_dict(matlab_structure):
-    """Turns a matlab structure (keys described in dtype) into a normal python dict
+def dict_from_matlab(matlab_structure):
+    """Turns a matlab structure into a normal python dict
 
+    Limitations
+    -----------
+    1. All lists are reduced as much as possible
+        Example: [1] -> 1, [[1], [1]] -> [1, 1]
+    2. Empty elements will be removed:
+        Example: [] -> del, [[None]] -> del, [[], []] -> del
+    3. Leading and trailing spaces will be removed from strings
+        Example: "  hello" -> "hello", "buzz    " -> "buz"
+    4. Only lists with a single type are allowed
+        Example: [1, "a"] -> Error
     Parameters
     ----------
     matlab_structure : dict
@@ -43,79 +53,74 @@ def matlab_struct_to_dict(matlab_structure):
     Returns
     -------
     dict
-        the dictionary containing the information from the matlab sub structure
+        the dictionary containing the information from the matlab structure
     """
     result = {}
-    if matlab_structure.dtype.names is None:
-        return {}
-    for name in matlab_structure.dtype.names:
-        if isinstance(matlab_structure[0][name][0].dtype, np.dtypes.VoidDType):
-            result[name] = matlab_struct_to_dict(matlab_structure[0][name][0])
-        else:
-            if matlab_structure[0][name][0].size == 0:
-                result[name] = None
-            elif isinstance(matlab_structure[0][name][0][0], np.ndarray):
-                result[name] = matlab_structure[0][name][0][0][0]
-            else:
-                result[name] = matlab_structure[0][name][0][0]
-
-    return result
-
-def matlab_sub_struct_to_matlab_struct(matlab_structure):
-    """Turns a matlab sub structure (dtype contains key names) into a matlab structure (dict)
-
-    Parameters
-    ----------
-    matlab_structure : dict
-        matlab sub structure as read by scipy.io
-
-    Returns
-    -------
-    dict
-        matlab structure as if it would have been directly read by scipy.io
-    """
-    result = {}
-    if matlab_structure.dtype.names is None:
-        return {}
-    for name in matlab_structure.dtype.names:
-        result[name] = matlab_structure[0][name][0]
-    return result
-
-def matlab_field_to_list(matlab_structure, field_name, dim) -> list | None:
-    """Returns a matlab field as a list with dim as the number of dimensions
-
-    Parameters
-    ----------
-    matlab_structure : dict
-        matlab structure as read by scipy.io, without squeeze
-    field_name: str
-        name of field in mat structure
-    dim : int
-        Number of dimensions that the list has
-
-    Returns
-    -------
-    list | None
-        The list with the number of dimensions specified
-    """
-    if field_name not in matlab_structure.dtype.names or matlab_structure[field_name].size == 0:
-        return None
-    if np.issubdtype(matlab_structure[field_name].dtype, np.str_):
-        nested = np.array(matlab_structure[field_name].tolist())
-        return np.array([string.strip() for string in nested.flatten()]).reshape(nested.shape).tolist()
-    elif np.issubdtype(matlab_structure[field_name].dtype, 'O'):
-        field_as_list = matlab_structure[field_name].flatten().tolist()
-        for idx, subfield in enumerate(field_as_list):
-            if np.issubdtype(subfield.dtype, np.str_):
-                field_as_list[idx] = subfield.flatten()[0]
-            else:
-                field_as_list[idx] = subfield.flatten().tolist()
-        return field_as_list
+    # get keys from numpy array or dict
+    if isinstance(matlab_structure, dict):
+        keys = matlab_structure.keys()
     else:
-        if dim > 1:
-            return matlab_structure[field_name].tolist()
+        keys = matlab_structure.dtype.names
+
+    for name in keys:
+        value = matlab_structure[name]
+        if isinstance(value, np.ndarray):
+            #unpack structure if necessary
+            if value.size == 1 and isinstance(value[0], np.ndarray) and np.issubdtype(value[0][0].dtype, np.void):
+                value = value[0][0]
+            
+            #handle list of dicts
+            if value.size > 1 and isinstance(value[0], np.ndarray) and np.issubdtype(value[0][0].dtype, np.void):
+                result[name] = []
+                for elm in value[0]:
+                    result[name].append(dict_from_matlab(elm))
+                continue
+
+            #create dict from structure or reduce list
+            if np.issubdtype(value.dtype, np.void):
+                result[name] = dict_from_matlab(value)
+            else:
+                reduced_array = _reduce_array(value)
+                if reduced_array is not None:
+                    result[name] = reduced_array
         else:
-            return matlab_structure[field_name].tolist()[0]
+            result[name] = value
+
+        #remove empty dicts
+        if name in result and isinstance(result[name], dict):
+            if len(result[name]) == 0:
+                del result[name]
+    return result
+
+def _reduce_array(array):
+    # double reduce for arrays inside of lists
+    result = np.squeeze(np.array(np.squeeze(array).tolist())).tolist()
+
+    # turn tuple into lists before reducing again
+    if isinstance(result, tuple):
+        result = _reduce_array(list(result))
+
+    # if array hat object type, reduce all sub arrays
+    if isinstance(result, list):
+        for i, elm in enumerate(result):
+            if isinstance(elm, np.ndarray):
+                result[i] = _reduce_array(elm)
+
+        if len(result) == 0:
+            return None
+        
+    if np.issubdtype(np.array(result).dtype, np.str_):
+        result = strip_strings(result)
+
+    return result
+
+def strip_strings(input):
+    if isinstance(input, str):
+        return input.strip()
+    elif isinstance(input, list):
+        return [strip_strings(item) for item in input]
+    else:
+        return input
 
 def remove_None(src):
     '''Substitutes None by an empty char array '''
@@ -176,13 +181,13 @@ def read_mat(fn):
         structure = TDCSDistributedOptimize.read_mat_struct(mat)
     elif structure_type.lower() == 'tmsflexoptimization':
         from ..optimization.opt_struct import TmsFlexOptimization
-        structure = TmsFlexOptimization()
-        structure.read_mat_struct(mat)
+        structure = TmsFlexOptimization(dict_from_matlab(mat))
+    elif structure_type.lower() == 'tesflexoptimization':
+        from ..optimization.opt_struct import TesFlexOptimization
+        structure = TesFlexOptimization(dict_from_matlab(mat))
     elif structure_type.lower() == 'regionofinterest':
         from .region_of_interest import RegionOfInterest
-        structure = RegionOfInterest()
-        structure.read_mat_struct(mat)
-
+        structure = RegionOfInterest(dict_from_matlab(mat))
     else:
         raise IOError('Not a valid structure type!')
 

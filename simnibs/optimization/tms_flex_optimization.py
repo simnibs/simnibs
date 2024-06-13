@@ -5,7 +5,7 @@ import subprocess
 import tempfile
 import time
 import glob
-from typing import Callable, Optional, get_type_hints
+from typing import Callable
 import numpy.typing as npt
 
 import scipy.optimize as opt
@@ -26,8 +26,6 @@ from simnibs.simulation.tms_coil.tms_coil_deformation import (
 )
 from simnibs.simulation.tms_coil.tms_coil_element import DipoleElements, TmsCoilElements
 from simnibs.utils.matlab_read import (
-    matlab_field_to_list,
-    matlab_struct_to_dict,
     remove_None,
     try_to_read_matlab_field,
 )
@@ -50,40 +48,40 @@ class TmsFlexOptimization:
 
     Parameters
     ------------------------
-    matlab_struct: (optional) scipy.io.loadmat()
-        matlab structure
+    settings_dict: (optional) dict
+        Dictionary containing parameter as key value pairs
     """
 
-    date: str
+    date: str | None
     """Date when the optimization struct was initiated"""
-    time_str: str
+    time_str: str | None
     """Time when the optimization struct was initiated"""
 
-    fnamecoil: str
+    fnamecoil: str | None
     """Path to the coil file (example: "path/to/coil")"""
-    pos: POSITION
+    pos: POSITION | None
     """The initial coil position from where the optimization is started"""
 
-    fnamehead: str
+    fnamehead: str | None
     """Path to the head mesh (example: "path/to/msh")"""
-    subpath: str
+    subpath: str | None
     """Path to the m2m folder of the subject (example: "path/to/m2m")"""
-    path_optimization: str
+    path_optimization: str | None
     """Path to the output folder where the result of the optimization is saved (example: "path/to/output")"""
-    eeg_cap: str
+    eeg_cap: str | None
     """Path to a eeg cap file (example: "path/to/csv")"""
-    run_simulation: bool
+    run_simulation: bool | None
     """Weather to run a full simulation at the optimized position after the optimization"""
 
-    method: str
+    method: str | None
     """The method of optimization {"distance", "emag"}"""
-    roi: RegionOfInterest
+    roi: RegionOfInterest | None
     """The region of interest in which the e field is simulated, method = "emag" """
     distance: float
     """The distance at which the coil is supposed to be placed relative to the head"""
-    global_translation_ranges: list
+    global_translation_ranges: list | None
     """Ranges that describe how far the coil is allowed to move in x,y,z direction [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] (example: [[-1, 1], [-2, 2], [-10, 10]] | [-1, 1] [0, 0], [0, 0]])"""
-    global_rotation_ranges: list
+    global_rotation_ranges: list | None
     """Ranges that describe how far the coil is allowed to rotate around the x,y,z axis [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] (example: [[-1, 1], [-2, 2], [-10, 10]] | [-1, 1] [0, 0], [0, 0]])"""
 
     dither_skip: int
@@ -103,28 +101,28 @@ class TmsFlexOptimization:
     l_bfgs_b_args: dict
     """Settings for the scipy L-BFGS-B local optimization"""
 
-    def __init__(self, matlab_struct=None):
+    def __init__(self, settings_dict=None):
         # Date when the session was initiated
-        self.date: str = time.strftime("%Y-%m-%d %H:%M:%S")
-        self.time_str: str = time.strftime("%Y%m%d-%H%M%S")
+        self.date = time.strftime("%Y-%m-%d %H:%M:%S")
+        self.time_str = time.strftime("%Y%m%d-%H%M%S")
 
-        self.fnamecoil: str = None
-        self.pos: POSITION = None
+        self.fnamecoil = None
+        self.pos = None
 
-        self.fnamehead: str = None
-        self.subpath: str = None
-        self.path_optimization: str = None
-        self.eeg_cap: str = None
-        self.run_simulation: bool = True
+        self.fnamehead = None
+        self.subpath = None
+        self.path_optimization = None
+        self.eeg_cap = None
+        self.run_simulation = True
 
-        self.method: str = None
-        self.roi: RegionOfInterest = None
-        self.distance: float = 4.0
-        self.global_translation_ranges: list = None
-        self.global_rotation_ranges: list = None
+        self.method = None
+        self.roi = None
+        self.distance = 4.0
+        self.global_translation_ranges = None
+        self.global_rotation_ranges = None
 
-        self.dither_skip: int = 6
-        self.fem_evaluation_cutoff: float = 1000
+        self.dither_skip = 6
+        self.fem_evaluation_cutoff = 1000
 
         self.run_global_optimization = True
         self.run_local_optimization = True
@@ -135,8 +133,8 @@ class TmsFlexOptimization:
         self._prepared = False
         self._log_handlers = []
 
-        if matlab_struct:
-            self.read_mat_struct(matlab_struct)
+        if settings_dict:
+            self.from_dict(settings_dict)
 
     def add_position(self, position=None):
         """Adds the position to the current optimization
@@ -427,105 +425,63 @@ class TmsFlexOptimization:
         if self.run_simulation:
             S.run()
 
-    def to_mat(self):
-        """Makes a dictionary for saving a matlab structure with scipy.io.savemat()
+    def to_dict(self) -> dict:
+        """ Makes a dictionary storing all settings as key value pairs
 
         Returns
         --------------------
         dict
-            Dictionary for usage with scipy.io.savemat
+            Dictionary containing settings as key value pairs
         """
         # Generate dict from instance variables (excluding variables starting with _ or __)
-        mat = {
-            key: remove_None(value)
+        settings = {
+            key: value
             for key, value in self.__dict__.items()
             if not key.startswith("__")
             and not key.startswith("_")
             and not callable(value)
             and not callable(getattr(value, "__get__", None))
+            and value is not None
         }
 
         # Add class name as type (type is protected in python so it cannot be a instance variable)
-        mat["type"] = "TmsFlexOptimization"
+        settings["type"] = "TmsFlexOptimization"
 
         # Add all instance variables that are classes
-        # Manually or by calling their to_mat function
         if self.roi is not None:
-            mat["roi"] = self.roi.to_mat()
+            settings["roi"] = self.roi.to_dict()
 
         if self.pos is not None:
-            pos_dt = np.dtype(
-                [
-                    ("type", "O"),
-                    ("name", "O"),
-                    ("date", "O"),
-                    ("matsimnibs", "O"),
-                    ("didt", "O"),
-                    ("fnamefem", "O"),
-                    ("centre", "O"),
-                    ("pos_ydir", "O"),
-                    ("distance", "O"),
-                ]
-            )
+            settings["pos"] = self.pos.to_dict()
 
-            pos_array = np.array(
-                [
-                    (
-                        "POSITION",
-                        remove_None(self.pos.name),
-                        remove_None(self.pos.date),
-                        remove_None(self.pos.matsimnibs),
-                        remove_None(self.pos.didt),
-                        remove_None(self.pos.fnamefem),
-                        remove_None(self.pos.centre),
-                        remove_None(self.pos.pos_ydir),
-                        remove_None(self.pos.distance),
-                    )
-                ],
-                dtype=pos_dt,
-            )
-            mat["pos"] = pos_array
+        return settings
 
-        return mat
-
-    def read_mat_struct(self, mat):
-        """Reads parameters from matlab structure
+    def from_dict(self, settings: dict) -> "TmsFlexOptimization":
+        """ Reads parameters from a dict
 
         Parameters
         ----------
-        mat: scipy.io.loadmat
-            Loaded matlab structure
+        settings: dict
+            Dictionary containing parameter as key value pairs
+
+        Returns
+        -------
+        TmsFlexOptimization
+            Self with applied settings
         """
-        # Load all instance variables from the mat file
-        # Datatypes come from the type hints of the instance variables
-        types = get_type_hints(TmsFlexOptimization)
         for key, value in self.__dict__.items():
-            if key in mat.dtype.names:
-                setattr(
-                    self, key, try_to_read_matlab_field(mat, key, types[key], value)
-                )
-
-        if "direct_args" in mat.dtype.names:
-            self.direct_args = matlab_struct_to_dict(mat["direct_args"])
-
-        if "l_bfgs_b_args" in mat.dtype.names:
-            self.l_bfgs_b_args = matlab_struct_to_dict(mat["l_bfgs_b_args"])
-
-        # Load all 2d arrays manually (try_to_read_matlab_field will load only array_name[0])
-        self.global_translation_ranges = matlab_field_to_list(
-            mat, "global_translation_ranges", 2
-        )
-        self.global_rotation_ranges = matlab_field_to_list(
-            mat, "global_rotation_ranges", 2
-        )
+            if key.startswith('__') or key.startswith('_') or callable(value) or callable(getattr(value, "__get__", None)):
+                continue
+            setattr(self, key, settings.get(key, value))
 
         # Load all instance variables that are classes
-        if "pos" in mat.dtype.names and mat["pos"].size > 0:
-            self.pos = POSITION(mat["pos"][0][0])
+        if "pos" in settings:
+            self.pos = POSITION().from_dict(settings['pos'])
 
-        if "roi" in mat.dtype.names and mat["roi"].size > 0:
-            self.roi = RegionOfInterest(mat["roi"][0][0])
+        if "roi" in settings:
+            self.roi = RegionOfInterest(settings['roi'])
 
+        self._prepared = False
         return self
 
     def to_str_formatted(self):
@@ -772,8 +728,8 @@ def optimize_distance(
     head_mesh: Msh,
     affine: npt.NDArray[np.float_],
     distance: float = 0,
-    coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
-    coil_rotation_ranges: Optional[npt.NDArray[np.float_]] = None,
+    coil_translation_ranges: npt.NDArray[np.float_] | None = None,
+    coil_rotation_ranges: npt.NDArray[np.float_] | None = None,
     dither_skip: int = 0,
     global_optimization: bool = True,
     local_optimization: bool = True,
@@ -794,11 +750,11 @@ def optimize_distance(
         The affine transformation that is applied to the coil
     distance : float
         The distance at which the coil is supposed to be placed relative to the head
-    coil_translation_ranges : Optional[npt.NDArray[np.float_]], optional
+    coil_translation_ranges : npt.NDArray[np.float_], optional
         If the global coil position is supposed to be optimized as well, these ranges in the format
         [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] are used
         and the updated affine coil transformation is returned, by default None
-    coil_translation_ranges : Optional[npt.NDArray[np.float_]], optional
+    coil_translation_ranges : npt.NDArray[np.float_], optional
         If the global coil rotation is supposed to be optimized as well, these ranges in the format
         [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] are used
         and the updated affine coil transformation is returned, by default None
@@ -1072,16 +1028,16 @@ def get_voxel_volume(
 
 def add_global_deformations(
     coil,
-    coil_rotation_ranges: Optional[npt.NDArray[np.float_]] = None,
-    coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
+    coil_rotation_ranges: npt.NDArray[np.float_] | None = None,
+    coil_translation_ranges: npt.NDArray[np.float_] | None = None,
 ) -> list[TmsCoilDeformation]:
     """Adds deformations to the coil. The deformations are added to all coil elements so that they are global.
 
     Parameters
     ----------
-    coil_rotation_ranges : Optional[npt.NDArray[np.float_]], optional
+    coil_rotation_ranges : npt.NDArray[np.float_], optional
         Adds global rotations to the coil, the format is [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]], by default None
-    coil_translation_ranges : Optional[npt.NDArray[np.float_]], optional
+    coil_translation_ranges : npt.NDArray[np.float_], optional
         Adds global deformations to the coil, the format is [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]], by default None
 
     Returns
@@ -1176,8 +1132,8 @@ def optimize_e_mag(
     roi: FemTargetPointCloud,
     affine: npt.NDArray[np.float_],
     distance: float = 0,
-    coil_translation_ranges: Optional[npt.NDArray[np.float_]] = None,
-    coil_rotation_ranges: Optional[npt.NDArray[np.float_]] = None,
+    coil_translation_ranges: npt.NDArray[np.float_] | None = None,
+    coil_rotation_ranges: npt.NDArray[np.float_] | None = None,
     dither_skip: int = 0,
     fem_evaluation_cutoff: float = 1000,
     global_optimization: bool = True,
@@ -1201,11 +1157,11 @@ def optimize_e_mag(
         The affine transformation that is applied to the coil
     distance : float
         The distance at which the coil is supposed to be placed relative to the head
-    coil_translation_ranges : Optional[npt.NDArray[np.float_]], optional
+    coil_translation_ranges : npt.NDArray[np.float_], optional
         If the global coil position is supposed to be optimized as well, these ranges in the format
         [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] are used
         and the updated affine coil transformation is returned, by default None
-    coil_rotation_ranges : Optional[npt.NDArray[np.float_]], optional
+    coil_rotation_ranges : npt.NDArray[np.float_], optional
         If the global coil rotation is supposed to be optimized as well, these ranges in the format
         [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] are used
         and the updated affine coil transformation is returned, by default None

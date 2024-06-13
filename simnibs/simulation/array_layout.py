@@ -93,6 +93,26 @@ class ElectrodeInitializer():
             value = value[np.newaxis, :]
 
         self._center = value
+    
+    def from_dict(self, settings: dict) -> "ElectrodeInitializer":
+        """ Reads parameters from a dict
+
+        Parameters
+        ----------
+        settings: dict
+            Dictionary containing parameter as key value pairs
+
+        Returns
+        -------
+        ElectrodeInitializer
+            Self with applied settings
+        """
+        for key, value in self.__dict__.items():
+            if key.startswith('__') or key.startswith('_') or callable(value) or callable(getattr(value, "__get__", None)):
+                continue
+            setattr(self, key, settings.get(key, value))
+
+        return self
 
     def initialize(self):
         """
@@ -157,12 +177,38 @@ class ElectrodeMaster():
         self.node_voltage_sign = None
         self.node_area = None
 
-        self.electrode_arrays = None
+        self._electrode_arrays = None
 
         self.dirichlet_correction = dirichlet_correction
         self.dirichlet_correction_detailed = dirichlet_correction_detailed
         self.current_outlier_correction = current_outlier_correction
         self.current_estimator = current_estimator
+
+    def to_dict(self) -> dict:
+        """ Makes a dictionary storing all settings as key value pairs
+
+        Returns
+        --------------------
+        dict
+            Dictionary containing settings as key value pairs
+        """
+        # Generate dict from instance variables (excluding variables starting with _ or __)
+        settings = {
+            key:value for key, value in self.__dict__.items() 
+            if not key.startswith('__')
+            and not key.startswith('_')
+            and not callable(value) 
+            and not callable(getattr(value, "__get__", None))
+            and value is not None
+        }
+
+        if isinstance(self, CircularArray):
+            settings['type'] = 'CircularArray'
+
+        if isinstance(self, ElectrodeArrayPair):
+            settings['type'] = 'ElectrodeArrayPair'
+
+        return settings
 
     def estimate_currents(self, electrode_pos):
         """
@@ -194,7 +240,7 @@ class ElectrodeMaster():
         _node_voltage_sign = []
         _node_area = []
 
-        for i_array, _electrode_array in enumerate(self.electrode_arrays):
+        for i_array, _electrode_array in enumerate(self._electrode_arrays):
             for i_ele, _ele in enumerate(_electrode_array.electrodes):
                 if _ele.node_coords is None:
                     self.node_channel_id = None
@@ -288,7 +334,7 @@ class ElectrodeMaster():
         start_array = []
         distance_array = []
 
-        for i_array, _electrode_array in enumerate(self.electrode_arrays):
+        for i_array, _electrode_array in enumerate(self._electrode_arrays):
             # transform electrode position in posmat from subject space to ellipsoid space
             coords_base_eli_eli = subject2ellipsoid(coords=_electrode_array.posmat[:3, 3],
                                                     normals=_electrode_array.posmat[:3, 2],
@@ -324,11 +370,11 @@ class ElectrodeMaster():
 
         electrode_array_idx = np.hstack([i_array * np.ones(_electrode_array.n_ele)
                                          for i_array, _electrode_array in
-                                         enumerate(self.electrode_arrays)])
+                                         enumerate(self._electrode_arrays)])
 
         # combine data from different electrode_arrays to run geodesic distance calculation only once
         start = np.vstack([np.tile(start_array[i_array], (_electrode_array.n_ele, 1))
-                           for i_array, _electrode_array in enumerate(self.electrode_arrays)])
+                           for i_array, _electrode_array in enumerate(self._electrode_arrays)])
 
         alpha = np.hstack(alpha_array)
         distance = np.hstack(distance_array)
@@ -355,7 +401,7 @@ class ElectrodeMaster():
         # project coordinates to subject
         tmp_arrays = []
         i_ele = 0
-        for i_array, _electrode_array in enumerate(self.electrode_arrays):
+        for i_array, _electrode_array in enumerate(self._electrode_arrays):
             ele_idx, tmp = ellipsoid2subject(coords=electrode_coords_eli_eli[electrode_array_idx == i_array, :],
                                              ellipsoid=ellipsoid,
                                              surface=skin_surface)
@@ -430,7 +476,7 @@ class ElectrodeMaster():
         Updates information from the node arrays and writes information to the electrode instances
         of the electrode arrays (inverse of compile_node_arrays)
         """
-        for _electrode_array in self.electrode_arrays:
+        for _electrode_array in self._electrode_arrays:
             for _ele in _electrode_array.electrodes:
                 mask = (_ele.ele_id == self.node_ele_id) * (_ele.channel_id == self.node_channel_id)
 
@@ -1173,7 +1219,7 @@ class ElectrodeArrayPair(ElectrodeMaster):
 
         # create two ElectrodeArray instance where all electrodes of the first array have channel_id=0 (common
         # connection) and all electrodes of the second array have channel_id=1
-        self.electrode_arrays = [ElectrodeArray(center=self.center,
+        self._electrode_arrays = [ElectrodeArray(center=self.center,
                                                 radius=self.radius,
                                                 length_x=self.length_x,
                                                 length_y=self.length_y,
@@ -1278,7 +1324,7 @@ class ElectrodeArrayPair(ElectrodeMaster):
                 length_y = np.array([length_y])
             self.length_y = length_y
 
-        self.electrode_arrays = [ElectrodeArray(center=self.center,
+        self._electrode_arrays = [ElectrodeArray(center=self.center,
                                                 radius=self.radius,
                                                 length_x=self.length_x,
                                                 length_y=self.length_y,
@@ -1476,7 +1522,7 @@ class CircularArray(ElectrodeMaster):
                                             current_estimator=current_estimator)
 
         # initialize freely movable electrode arrays
-        self.electrode_arrays = [ElectrodeArray(channel_id=self.channel_id,
+        self._electrode_arrays = [ElectrodeArray(channel_id=self.channel_id,
                                                 ele_id=self.ele_id,
                                                 center=self.center,
                                                 radius=self.radius,
@@ -1568,7 +1614,7 @@ class CircularArray(ElectrodeMaster):
             self.center[-1, 0] = np.cos(i*(2*np.pi)/self.n_outer+np.pi/2) * self.distance
             self.center[-1, 1] = np.sin(i*(2*np.pi)/self.n_outer+np.pi/2) * self.distance
 
-        self.electrode_arrays = [ElectrodeArray(channel_id=np.array([0] + [1] * self.n_outer),
+        self._electrode_arrays = [ElectrodeArray(channel_id=np.array([0] + [1] * self.n_outer),
                                                 ele_id=self.ele_id,
                                                 center=self.center,
                                                 radius=self.radius,
@@ -1843,7 +1889,7 @@ def create_tdcs_session_from_array(ElectrodeArray, fnamehead, pathfem, thickness
     tdcslist.currents = ElectrodeArray.current_channel
 
     # Initialize the electrodes
-    for i_array, _electrode_array in enumerate(ElectrodeArray.electrode_arrays):
+    for i_array, _electrode_array in enumerate(ElectrodeArray._electrode_arrays):
         for i_ele, _electrode in enumerate(_electrode_array.electrodes):
             # add new electrode
             electrode = tdcslist.add_electrode()
