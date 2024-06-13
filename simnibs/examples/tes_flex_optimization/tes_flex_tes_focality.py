@@ -3,29 +3,21 @@ Example to run TESoptimize with a standard TES montage to optimize the field foc
 
 Written by: Konstantin Weise (2023)
 """
+from simnibs import opt_struct
 
-import simnibs
-from simnibs import ElementTags
 
-# Initialize structure
-opt = simnibs.opt_struct.TesFlexOptimization()
+''' Initialize structure '''
+opt = opt_struct.TesFlexOptimization()
+opt.subpath = 'm2m_ernie'                               # path of m2m folder containing the headmodel
+opt.output_folder = "tes_optimize_tes_focality"
 
-# path of m2m folder containing the headmodel
-opt.subpath = 'm2m_ernie'
+''' Set up goal function '''
+opt.goal = "focality"                                   # optimize intensity-focality tradeoff of "magn" ("magn" defined by e_postproc)
+opt.threshold = [0.1, 0.2]                              # define threshold(s) ??OF WHAT??
+opt.e_postproc = "magn"                                 # postprocessing of e-fields ("magn": magnitude, 
+                                                        # "normal": normal component, "tangential": tangential component)
 
-# output folder
-opt.output_folder = f"tes_optimize_tes_focality"
-
-# type of goal function
-opt.goal = "focality"
-
-# define threshold(s)
-opt.threshold = [0.1, 0.2]
-
-# postprocessing of e-fields ("magn": magnitude, "normal": normal component, "tangential": tangential component)
-opt.e_postproc = "magn"
-
-# define electrode
+''' Define electrodes and array layout '''
 electrode = opt.add_electrode()
 electrode.type = "ElectrodeArrayPair"                   # Pair of TES electrodes
 electrode.center = [[0, 0]]                             # electrode center in reference electrode space (x-y plane)
@@ -34,22 +26,29 @@ electrode.length_y = [50]                               # y-dimension of electro
 electrode.dirichlet_correction_detailed = False         # node wise dirichlet correction
 electrode.current = [0.002, -0.002]                     # electrode currents
 
-# define ROI
+''' Define ROI '''
+roi = opt.add_roi()
+roi.method = "surface"
+roi.surface_type = "central"                            # define ROI on central GM surfaces
+roi.roi_sphere_center_space = "subject"
+roi.roi_sphere_center = [-41.0, -13.0,  66.0]           # center of spherical ROI in subject space (in mm)
+roi.roi_sphere_radius = 20                              # radius of spherical ROI (in mm)
+# uncomment for visual control of ROI:
+#roi.subpath = opt.subpath
+#roi.write_visualization('','roi.msh')
+
+''' Define non-ROI '''
+# all of GM surface except a spherical region with 25 mm around roi center
 roi = opt.add_roi()
 roi.method = "surface"
 roi.surface_type = "central"
-
-# center of spherical ROI in subject space (in mm)
 roi.roi_sphere_center_space = "subject"
 roi.roi_sphere_center = [-41.0, -13.0,  66.0]
+roi.roi_sphere_radius = 25
+roi.roi_sphere_operator = ["difference"]                # take difference between GM surface and the sphere region
+# uncomment for visual control of non-ROI:
+#roi.subpath = opt.subpath
+#roi.write_visualization('','non-roi.msh')
 
-# radius of spherical ROI (in mm)
-roi.roi_sphere_radius = 20
-
-# define non-ROI
-roi = opt.add_roi()
-roi.method = "volume"
-roi.tissues = [ElementTags.WM, ElementTags.GM]
-
-# Run optimization
-simnibs.run_simnibs(opt)
+''' Run optimization '''
+opt.run(cpus=1)

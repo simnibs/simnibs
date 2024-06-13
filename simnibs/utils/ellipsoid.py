@@ -494,20 +494,26 @@ class Ellipsoid():
         """
         n_points = start.shape[0]
 
-        # prepare input data
-        input_data = [np.hstack(([start[i, :].flatten(), alpha[i], distance[i]])) for i in range(n_points)]
-
         if n_cpu is None:
             n_cpu = multiprocessing.cpu_count()
-        n_cpu = min(n_cpu, len(input_data))
-
-        workhorse = partial(self._workhorse_geodesic_destination_wrapper, n_steps=n_steps, method=method)
-
-        pool = multiprocessing.Pool(n_cpu)
-        coords_destination = np.vstack((pool.map(workhorse, input_data)))
-
-        pool.close()
-        pool.join()
+        n_cpu = min(n_cpu, n_points)
+        
+        if n_cpu == 1:
+            coords_destination = np.zeros((n_points,3))
+            for i in range(n_points):
+                coords_destination[i] = self._get_geodesic_destination(start[i], alpha[i], distance[i], 
+                                                                       n_steps=n_steps, method=method)
+        else:
+            # prepare input data
+            input_data = [np.hstack(([start[i, :].flatten(), alpha[i], distance[i]])) for i in range(n_points)]
+            
+            workhorse = partial(self._workhorse_geodesic_destination_wrapper, n_steps=n_steps, method=method)
+    
+            pool = multiprocessing.Pool(n_cpu)
+            coords_destination = np.vstack((pool.map(workhorse, input_data)))
+    
+            pool.close()
+            pool.join()
 
         return coords_destination
 

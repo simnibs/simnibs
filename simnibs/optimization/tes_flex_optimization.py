@@ -210,12 +210,16 @@ class TesFlexOptimization:
         self.solver_options = "pardiso"
         self.ofem = None
 
+        # number of CPU cores (set by run(cpus=NN) )
+        self.n_cpu = None
+        
         if matlab_struct:
             self.read_mat_struct(matlab_struct)
 
     def _prepare(self):
         """
         Prepares TESoptimize
+        
         """
         # check variable assignments
         ################################################################################################################
@@ -1027,7 +1031,7 @@ class TesFlexOptimization:
         self.anisotropy_type = self.read_mat_element(mat, "anisotropy_type")
         self.solver_options = self.read_mat_element(mat, "solver_options")
         self.prepared = False
-
+        
         return self
 
     def run(self, cpus=None, allow_multiple_runs=False, save_mat=True, return_n_max=1):
@@ -1037,7 +1041,8 @@ class TesFlexOptimization:
         Parameters
         ----------
         cpus : int, optional, default: None
-            Number of CPU cores to use (not used here because of pardiso solver)
+            Number of CPU cores to use (so far used only during ellipsoid-fitting; 
+                                        still ignored during FEM)
         allow_multiple_runs: bool, optional, default: False
             Whether to allow multiple runs in one folder. (not implemented yet)
         save_mat: bool, optional, default: True
@@ -1049,7 +1054,8 @@ class TesFlexOptimization:
         --------
         <files>: Results files (.hdf5) in self.output_folder.
         """
-
+        self.n_cpu = cpus
+        
         # prepare optimization
         if not self.prepared:
             self._prepare()
@@ -2032,7 +2038,7 @@ class TesFlexOptimization:
             # determine electrode center on ellipsoid
             if not (distance == 0.0).all():
                 electrode_coords_eli_cart = self.ellipsoid.get_geodesic_destination(
-                    start=start, distance=distance, alpha=alpha, n_steps=400
+                    start=start, distance=distance, alpha=alpha, n_steps=400, n_cpu=self.n_cpu
                 )
             else:
                 electrode_coords_eli_cart = start
