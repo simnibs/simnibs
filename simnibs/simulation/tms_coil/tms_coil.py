@@ -375,6 +375,9 @@ class TmsCoil(TcdElement):
         visualization.visibility = np.unique(visualization.mesh.elm.tag1)
 
         for i, key in enumerate(visualization.mesh.field.keys()):
+            #What is this for? O.O
+            if self.version is not None and self.version.endswith('.o'):
+                continue
             if isinstance(self.elements[i], DipoleElements):
                 visualization.add_view(Visible=1, VectorType=2, CenterGlyphs=0)
             elif isinstance(self.elements[i], LineSegmentElements):
@@ -499,6 +502,9 @@ class TmsCoil(TcdElement):
         infix=''
     ):
         for i, element in enumerate(self.elements):
+            #And here again? *.*
+            if self.version is not None and self.version.endswith('.o'):
+                continue
             points = []
             vectors = []
             if isinstance(element, DipoleElements):
@@ -557,7 +563,8 @@ class TmsCoil(TcdElement):
             index_offset = 0 if self.casing is not None else 1
             for i, tag in enumerate(np.unique(casings.elm.tag1)):
                 casing = casings.crop_mesh(tags=[tag])
-
+                if i == 0:
+                    casing = TmsCoil._add_logo(casing)
                 idx_inside = msh_skin.pts_inside_surface(casing.nodes[:])
                 casing.elm.tag1[:] = 0
                 if len(idx_inside):

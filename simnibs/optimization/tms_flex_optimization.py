@@ -28,7 +28,6 @@ from simnibs.simulation.tms_coil.tms_coil_element import DipoleElements, TmsCoil
 from simnibs.utils.matlab_read import (
     matlab_field_to_list,
     matlab_struct_to_dict,
-    matlab_sub_struct_to_matlab_struct,
     remove_None,
     try_to_read_matlab_field,
 )
@@ -376,7 +375,7 @@ class TmsFlexOptimization:
 
         logger.info(f"Matsimnibs result:{os.linesep}{opt_matsimnibs}")
 
-        logger.info(f"Creating Visualizations")
+        logger.info("Creating Visualizations")
 
         skin_mesh = self._mesh.crop_mesh(tags=[ElementTags.SCALP_TH_SURFACE])
         mesh_name = os.path.splitext(os.path.basename(self._mesh.fn))[0]
@@ -405,7 +404,7 @@ class TmsFlexOptimization:
         v.add_merge(fn_geo)
         v.write_opt(fn_out)
 
-        logger.info(f"Creating Simulation")
+        logger.info("Creating Simulation")
         S = sim_struct.SESSION()
         S.subpath = self.subpath
         S.fnamehead = self.fnamehead
@@ -525,7 +524,7 @@ class TmsFlexOptimization:
             self.pos = POSITION(mat["pos"][0][0])
 
         if "roi" in mat.dtype.names and mat["roi"].size > 0:
-            self.roi = RegionOfInterest(matlab_sub_struct_to_matlab_struct(mat["roi"]))
+            self.roi = RegionOfInterest(mat["roi"][0][0])
 
         return self
 
@@ -1253,6 +1252,10 @@ def optimize_e_mag(
 
     if direct_args is None:
         direct_args = {}
+    else:
+        for k in list(direct_args):
+            if direct_args[k] is None:
+                del direct_args[k]
     direct_args.setdefault("eps", 1e-4)
     direct_args.setdefault("maxiter", 1000)
     direct_args.setdefault("locally_biased", True)
@@ -1261,8 +1264,17 @@ def optimize_e_mag(
 
     if l_bfgs_b_args is None:
         l_bfgs_b_args = {}
+    else:
+        for k in list(l_bfgs_b_args):
+            if l_bfgs_b_args[k] is None:
+                del l_bfgs_b_args[k]
     if "options" not in l_bfgs_b_args:
         l_bfgs_b_args["options"] = {}
+    else:
+        for k in list(l_bfgs_b_args["options"]):
+            if l_bfgs_b_args["options"][k] is None:
+                del l_bfgs_b_args["options"][k] 
+                    
     l_bfgs_b_args["options"].setdefault("maxls", 100)
 
     global_deformations = add_global_deformations(
