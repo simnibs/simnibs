@@ -17,26 +17,26 @@ class TestLoadVolume:
     def test_load_from_msh_instance(self, sphere3_msh: Msh):
         roi = RegionOfInterest()
         roi.load_mesh(mesh=sphere3_msh)
-        assert not np.any(roi._mask)
+        assert np.all(roi._mask)
         np.testing.assert_allclose(
             roi._mesh.nodes.node_coord, sphere3_msh.nodes.node_coord
         )
         np.testing.assert_allclose(
             roi._mesh.elm.node_number_list, sphere3_msh.elm.node_number_list
         )
-        assert len(roi.get_nodes()) == 0
+        assert len(roi.get_nodes()) == sphere3_msh.elm.nr
 
     def test_load_from_msh_path(self, sphere3_msh: Msh):
         roi = RegionOfInterest()
         roi.load_mesh(mesh=str(sphere3_msh.fn))
-        assert not np.any(roi._mask)
+        assert np.all(roi._mask)
         np.testing.assert_allclose(
             roi._mesh.nodes.node_coord, sphere3_msh.nodes.node_coord
         )
         np.testing.assert_allclose(
             roi._mesh.elm.node_number_list, sphere3_msh.elm.node_number_list
         )
-        assert len(roi.get_nodes()) == 0
+        assert len(roi.get_nodes()) == sphere3_msh.elm.nr
 
     @pytest.mark.slow
     def test_load_from_m2m_folder(self, example_dataset):
@@ -45,12 +45,12 @@ class TestLoadVolume:
         roi = RegionOfInterest()
         roi.load_mesh(subpath=m2m_path)
         ernie = mesh_io.read_msh(os.path.join(m2m_path, "ernie.msh"))
-        assert not np.any(roi._mask)
+        assert np.all(roi._mask)
         np.testing.assert_allclose(roi._mesh.nodes.node_coord, ernie.nodes.node_coord)
         np.testing.assert_allclose(
             roi._mesh.elm.node_number_list, ernie.elm.node_number_list
         )
-        assert len(roi.get_nodes()) == 0
+        assert len(roi.get_nodes()) == ernie.elm.nr
 
     def test_load_none(self):
         with pytest.raises(Exception) as e_info:
@@ -74,13 +74,13 @@ class TestLoadSurface:
 
         roi = RegionOfInterest()
         roi.load_surfaces(surface_type="central", subpath=m2m_path)
-        assert not np.any(roi._mask)
+        assert np.all(roi._mask)
         np.testing.assert_allclose(roi._mesh.nodes.node_coord, central.nodes.node_coord)
         np.testing.assert_allclose(
             roi._mesh.elm.node_number_list, central.elm.node_number_list
         )
         assert roi._surface_divide == lh_central.nodes.nr
-        assert len(roi.get_nodes()) == 0
+        assert len(roi.get_nodes()) == central.nodes.nr
 
     def test_load_custom_surface(self, sphere3_msh: Msh, tmp_path):
         surface = sphere3_msh.crop_mesh(1004)
@@ -89,12 +89,12 @@ class TestLoadSurface:
 
         roi = RegionOfInterest()
         roi.load_surfaces(surface_type="custom", surface_path=surface_path)
-        assert not np.any(roi._mask)
+        assert np.all(roi._mask)
         np.testing.assert_allclose(roi._mesh.nodes.node_coord, surface.nodes.node_coord)
         np.testing.assert_allclose(
             roi._mesh.elm.node_number_list, surface.elm.node_number_list
         )
-        assert len(roi.get_nodes()) == 0
+        assert len(roi.get_nodes()) == surface.nodes.nr
 
 
 class TestLoadSurfaceFromFile:
@@ -617,7 +617,7 @@ class TestApplySurfaceMask:
                 4,
                 5,
             ],
-            ["union", "union", "intersection", "union", "difference"],
+            ["intersection", "union", "intersection", "union", "difference"],
             subpath=m2m_path,
         )
 
@@ -763,7 +763,7 @@ class TestApplyTissueMask:
     def test_apply_tissue_mask_union(self, sphere3_msh: Msh):
         roi = RegionOfInterest()
         roi.load_mesh(sphere3_msh)
-        roi.apply_tissue_mask(ElementTags.BONE, "union")
+        roi.apply_tissue_mask(ElementTags.BONE, "intersection")
 
         cropped_sphere = sphere3_msh.crop_mesh(ElementTags.BONE)
 
@@ -777,7 +777,7 @@ class TestApplyTissueMask:
     def test_apply_tissue_mask_intersection(self, sphere3_msh: Msh):
         roi = RegionOfInterest()
         roi.load_mesh(sphere3_msh)
-        roi.apply_tissue_mask([ElementTags.SCALP, ElementTags.BONE], "union")
+        roi.apply_tissue_mask([ElementTags.SCALP, ElementTags.BONE], "intersection")
         roi.apply_tissue_mask(ElementTags.BONE, "intersection")
 
         cropped_sphere = sphere3_msh.crop_mesh(ElementTags.BONE)
@@ -792,7 +792,7 @@ class TestApplyTissueMask:
     def test_apply_tissue_mask_difference(self, sphere3_msh: Msh):
         roi = RegionOfInterest()
         roi.load_mesh(sphere3_msh)
-        roi.apply_tissue_mask([ElementTags.SCALP, ElementTags.BONE], "union")
+        roi.apply_tissue_mask([ElementTags.SCALP, ElementTags.BONE], "intersection")
         roi.apply_tissue_mask(ElementTags.SCALP, "difference")
 
         cropped_sphere = sphere3_msh.crop_mesh(ElementTags.BONE)
@@ -861,7 +861,7 @@ class TestApplyVolumeMask:
             mask_space=["subject", "mni", "subject"],
             mask_path=[sub_mask_path, mni_mask_path, sub2_mask_path],
             mask_value=[42, 31, 86],
-            mask_operator=["union", "intersection", "difference"],
+            mask_operator=["intersection", "intersection", "difference"],
             subpath=m2m_path,
         )
 
@@ -920,11 +920,10 @@ class TestApplyVolumeMaskFromSurfaceRoi:
         surface_path = os.path.join(tmp_path, "surf.msh")
         sphere3_msh.crop_mesh(tags=[1003]).write(surface_path)
         surface_roi.load_surfaces("custom", surface_path=surface_path)
-        surface_roi.invert()
 
         roi = RegionOfInterest()
         roi.load_mesh(sphere3_msh)
-        roi.apply_volume_mask_from_surface_roi(surface_roi, 5, "union")
+        roi.apply_volume_mask_from_surface_roi(surface_roi, 5, "intersection")
 
         # 1003 has distance 85 from center
         roi_distance = np.sqrt(np.sum(roi.get_nodes() ** 2, axis=1))

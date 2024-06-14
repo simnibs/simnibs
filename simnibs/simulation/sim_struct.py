@@ -1377,7 +1377,6 @@ class POSITION(object):
                 continue
             setattr(self, key, settings.get(key, value))
 
-        self._prepared = False
         return self
 
     def substitute_positions_from_cap(self, cap=None):

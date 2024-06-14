@@ -1,7 +1,7 @@
 import numpy as np
 import multiprocessing.pool
 
-from _functools import partial
+from functools import partial
 from scipy.spatial import ConvexHull, convex_hull_plot_2d
 from scipy.integrate import solve_ivp
 from scipy.optimize import fsolve, minimize
@@ -9,8 +9,8 @@ import warnings
 warnings.filterwarnings("ignore")
 warnings.filterwarnings('ignore', 'The iteration is not making good progress')
 
-from ..mesh_tools import cgal
-from ..mesh_tools.surface import Surface
+from ...mesh_tools import cgal
+from ...mesh_tools.surface import Surface
 
 
 class Ellipsoid():

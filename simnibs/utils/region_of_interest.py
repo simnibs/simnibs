@@ -630,7 +630,17 @@ class RegionOfInterest:
                                     index_mask,
                                     mask_operator,
                                 )
+                                self._mask[self._surface_divide :] = combine_mask(
+                                    self._mask[self._surface_divide :],
+                                    np.array([]),
+                                    mask_operator,
+                                )
                             case "subject_rh":
+                                self._mask[: self._surface_divide] = combine_mask(
+                                    self._mask[: self._surface_divide],
+                                    np.array([]),
+                                    mask_operator,
+                                )
                                 self._mask[self._surface_divide :] = combine_mask(
                                     self._mask[self._surface_divide :],
                                     index_mask,
@@ -645,9 +655,19 @@ class RegionOfInterest:
                                     index_mask,
                                     mask_operator,
                                 )
+                                self._mask[self._surface_divide :] = combine_mask(
+                                    self._mask[self._surface_divide :],
+                                    np.array([]),
+                                    mask_operator,
+                                )
                             case "fs_avg_rh":
                                 index_mask = fs_avr_mask_to_sub(
                                     index_mask, "rh", _init_subject_files(subpath)
+                                )
+                                self._mask[: self._surface_divide] = combine_mask(
+                                    self._mask[: self._surface_divide],
+                                    np.array([]),
+                                    mask_operator,
                                 )
                                 self._mask[self._surface_divide :] = combine_mask(
                                     self._mask[self._surface_divide :],
@@ -1175,14 +1195,17 @@ def combine_mask(
     """
     match operator:
         case "union":
-            bool_mask[index_mask] = True
+            if len(index_mask) > 0:
+                bool_mask[index_mask] = True
         case "intersection":
             bool_index_mask = np.zeros_like(bool_mask, dtype=np.bool_)
-            bool_index_mask[index_mask] = True
+            if len(index_mask) > 0:
+                bool_index_mask[index_mask] = True
             bool_mask = bool_mask & bool_index_mask
         case "difference":
             bool_index_mask = np.ones_like(bool_mask, dtype=np.bool_)
-            bool_index_mask[index_mask] = False
+            if len(index_mask) > 0:
+                bool_index_mask[index_mask] = False
             bool_mask = bool_mask & bool_index_mask
         case _:
             raise ValueError(

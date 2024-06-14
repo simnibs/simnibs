@@ -29,16 +29,14 @@ opt.threshold = [0.1, 0.2]
 opt.e_postproc = "max_TI"
 
 # define first pair of electrodes
-electrode = opt.add_electrode()
-electrode.type = "ElectrodeArrayPair"                   # Pair of TES electrodes
+electrode = opt.add_electrode_layout("ElectrodeArrayPair")
 electrode.center = [[0, 0]]                             # electrode center in reference electrode space (x-y plane)
 electrode.radius = [10]                                 # radius of electrodes
 electrode.dirichlet_correction_detailed = False         # node wise dirichlet correction
 electrode.current = [0.002, -0.002]                     # electrode currents
 
 # define second pair of electrodes
-electrode = opt.add_electrode()
-electrode.type = "ElectrodeArrayPair"                   # Pair of TES electrodes
+electrode = opt.add_electrode_layout("ElectrodeArrayPair")
 electrode.center = [[0, 0]]                             # electrode center in reference electrode space (x-y plane)
 electrode.radius = [10]                                 # radius of electrodes
 electrode.dirichlet_correction_detailed = False         # node wise dirichlet correction

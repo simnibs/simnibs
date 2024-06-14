@@ -19,24 +19,24 @@ from scipy.optimize import (
     basinhopping,
 )
 
-from ..simulation.sim_struct import ELECTRODE
-from ..simulation.fem import get_dirichlet_node_index_cog
-from ..utils.region_of_interest import RegionOfInterest
-from ..simulation.array_layout import (
+from ...simulation.sim_struct import ELECTRODE
+from ...simulation.fem import get_dirichlet_node_index_cog
+from ...utils.region_of_interest import RegionOfInterest
+from .electrode_layout import (
+    ElectrodeArrayPair,
     create_tdcs_session_from_array,
     CircularArray,
-    ElectrodeInitializer,
 )
-from ..simulation.onlinefem import FemTargetPointCloud, OnlineFEM, postprocess_e
-from ..mesh_tools import mesh_io, surface
-from ..utils.file_finder import SubjectFiles, Templates
-from ..utils.transformations import (
+from ...simulation.onlinefem import FemTargetPointCloud, OnlineFEM, postprocess_e
+from ...mesh_tools import mesh_io, surface
+from ...utils.file_finder import SubjectFiles, Templates
+from ...utils.transformations import (
     subject2mni_coords,
     create_new_connectivity_list_point_mask,
 )
-from ..utils.ellipsoid import Ellipsoid, subject2ellipsoid, ellipsoid2subject
-from ..utils.TI_utils import get_maxTI, get_dirTI
-from ..utils.measures import AUC, integral_focality, ROC
+from .ellipsoid import Ellipsoid, subject2ellipsoid, ellipsoid2subject
+from ...utils.TI_utils import get_maxTI, get_dirTI
+from .measures import AUC, integral_focality, ROC
 from simnibs import run_simnibs
 
 
@@ -207,7 +207,7 @@ class TesFlexOptimization:
         self.ofem = None
 
         # number of CPU cores (set by run(cpus=NN) )
-        self.n_cpu = None
+        self._n_cpu = None
         
         if settings_dict:
             self.from_dict(settings_dict)
@@ -259,7 +259,7 @@ class TesFlexOptimization:
         self.logger = setup_logger(
             os.path.join(
                 self.output_folder,
-                "simnibs_simulation_" + time.strftime("%Y%m%d-%H%M%S"),
+                "simnibs_simulation_" + time.strftime("%Y%m%d-%H%M%S") + '.log',
             )
         )
         self.logger.log(20, "Setting up output folders, logging and IO ...")
@@ -354,8 +354,7 @@ class TesFlexOptimization:
 
         # initialize electrodes if not done already
         for i in range(len(self.electrode)):
-            if type(self.electrode[i]) == ElectrodeInitializer:
-                self.electrode[i] = self.electrode[i].initialize()
+            self.electrode[i]._prepare()
 
         # number of independent stimulation channels
         self.n_channel_stim = len(self.electrode)
@@ -490,8 +489,8 @@ class TesFlexOptimization:
             self.optimize_init_vals = False
 
         # define gpc parameters for current estimator
-        if self.electrode[0].current_estimator is not None:
-            if self.electrode[0].current_estimator.method == "gpc":
+        if self.electrode[0]._current_estimator is not None:
+            if self.electrode[0]._current_estimator.method == "gpc":
                 min_idx = 0
                 max_idx = 0
 
@@ -504,7 +503,7 @@ class TesFlexOptimization:
                         else:
                             max_idx += 2
 
-                    self.electrode[i_channel_stim].current_estimator.set_gpc_parameters(
+                    self.electrode[i_channel_stim]._current_estimator.set_gpc_parameters(
                         lb=self.bounds.lb[min_idx:max_idx],
                         ub=self.bounds.ub[min_idx:max_idx],
                     )
@@ -602,21 +601,21 @@ class TesFlexOptimization:
                     25,
                     f"Electrode array [i_channel_stim][i_array]: [{i_channel_stim}][{i_array}]",
                 )
-                self.logger.log(25, f"\tn_ele: {remove_None(_electrode_array.n_ele)}")
-                self.logger.log(25, f"\tcenter: {remove_None(_electrode_array.center)}")
-                self.logger.log(25, f"\tradius: {remove_None(_electrode_array.radius)}")
+                self.logger.log(25, f"\tn_ele: {(_electrode_array.n_ele)}")
+                self.logger.log(25, f"\tcenter: {(_electrode_array.center)}")
+                self.logger.log(25, f"\tradius: {(_electrode_array.radius)}")
                 self.logger.log(
-                    25, f"\tlength_x: {remove_None(_electrode_array.length_x)}"
+                    25, f"\tlength_x: {(_electrode_array.length_x)}"
                 )
                 self.logger.log(
-                    25, f"\tlength_y: {remove_None(_electrode_array.length_y)}"
+                    25, f"\tlength_y: {(_electrode_array.length_y)}"
                 )
 
         self.logger.log(25, "=" * 100)
 
         self.prepared = True
 
-    def add_electrode(self, electrode=None):
+    def add_electrode_layout(self, electrode_type, electrode=None):
         """
         Adds an electrode to the current TESoptimize
 
@@ -627,11 +626,14 @@ class TesFlexOptimization:
 
         Returns
         -------
-        electrode: ElectrodeInitializer
-            ElectrodeInitializer structure added to TESoptimize
+        electrode: ElectrodeLayout
+            ElectrodeLayout structure added to TESoptimize
         """
         if electrode is None:
-            electrode = ElectrodeInitializer()
+            if electrode_type == "CircularArray":
+                electrode = CircularArray()
+            elif electrode_type == "ElectrodeArrayPair":
+                electrode = ElectrodeArrayPair()
         self.electrode.append(electrode)
         return electrode
 
@@ -680,10 +682,6 @@ class TesFlexOptimization:
             roi_dicts.append(roi_class.to_dict())
         settings["roi"] = roi_dicts
 
-
-        if len(self.electrode) > 0 and isinstance(self.electrode[0], ElectrodeInitializer):
-            for i, electrode_class in enumerate(self.electrode):
-                self.electrode[i] = electrode_class.initialize() 
         electrode_dicts = []
         for electrode_class in self.electrode:
             electrode_dicts.append(electrode_class.to_dict())
@@ -707,19 +705,22 @@ class TesFlexOptimization:
 
         self.roi = []
         if 'roi' in settings:
-            if isinstance(settings["roi"], dict):
-                self.roi.append(RegionOfInterest(settings["roi"]))
-            else:
-                for roi_dict in settings["roi"]:
-                    self.roi.append(RegionOfInterest(roi_dict))
+            roi_dicts = settings["roi"]
+            if isinstance(roi_dicts, dict):
+                roi_dicts = [roi_dicts]
+            for roi_dict in roi_dicts:
+                self.roi.append(RegionOfInterest(roi_dict))
 
         self.electrode = []
         if 'electrode' in settings:
-            if isinstance(settings["electrode"], dict):
-                self.electrode.append(ElectrodeInitializer().from_dict(settings["electrode"]).initialize())
-            else:
-                for elec_dict in settings["electrode"]:
-                    self.electrode.append(ElectrodeInitializer().from_dict(elec_dict).initialize())
+            electrode_dicts = settings["electrode"]
+            if isinstance(electrode_dicts, dict):
+                electrode_dicts = [electrode_dicts]
+            for elec_dict in electrode_dicts:
+                if elec_dict['type'] == 'ElectrodeArrayPair':
+                    self.electrode.append(ElectrodeArrayPair().from_dict(elec_dict))
+                elif elec_dict['type'] == 'CircularArray':
+                    self.electrode.append(CircularArray().from_dict(elec_dict))
 
         return self
 
@@ -743,7 +744,7 @@ class TesFlexOptimization:
         --------
         <files>: Results files (.hdf5) in self.output_folder.
         """
-        self.n_cpu = cpus
+        self._n_cpu = cpus
         
         # prepare optimization
         if not self.prepared:
@@ -751,7 +752,7 @@ class TesFlexOptimization:
 
         # save structure in .mat format
         if save_mat:
-            mat = self.sim_struct2mat()
+            mat = self.to_dict()
             scipy.io.savemat(
                 os.path.join(
                     self.output_folder,
@@ -913,7 +914,7 @@ class TesFlexOptimization:
         if self.run_final_electrode_simulation:
             for i_channel_stim in range(self.n_channel_stim):
                 s = create_tdcs_session_from_array(
-                    ElectrodeArray=self.electrode[i_channel_stim],
+                    electrode_array=self.electrode[i_channel_stim],
                     fnamehead=self.mesh.fn,
                     pathfem=os.path.join(
                         self.output_folder, f"final_sim_{i_channel_stim}"
@@ -1333,17 +1334,17 @@ class TesFlexOptimization:
         # TODO: think this works only for one channel_stim right now (HDTES), test with 2 channel stim and adapt
         # add bounds of geometry parameters of electrode (if any)
         for i_channel_stim in range(self.n_channel_stim):
-            if self.electrode[i_channel_stim].any_free_geometry:
+            if self.electrode[i_channel_stim]._any_free_geometry:
                 lb = np.append(
                     lb,
-                    self.electrode[i_channel_stim].geo_para_bounds[
-                        self.electrode[i_channel_stim].free_geometry, 0
+                    self.electrode[i_channel_stim]._geo_para_bounds[
+                        self.electrode[i_channel_stim]._free_geometry, 0
                     ],
                 )
                 ub = np.append(
                     ub,
-                    self.electrode[i_channel_stim].geo_para_bounds[
-                        self.electrode[i_channel_stim].free_geometry, 1
+                    self.electrode[i_channel_stim]._geo_para_bounds[
+                        self.electrode[i_channel_stim]._free_geometry, 1
                     ],
                 )
 
@@ -1392,8 +1393,8 @@ class TesFlexOptimization:
         # TODO: same here I think it only works for one channel_stim
         # extract geometrical electrode parameters from optimal parameters and update electrode
         for i_channel_stim in range(self.n_channel_stim):
-            if self.electrode[i_channel_stim].any_free_geometry:
-                n_free_parameters = np.sum(self.electrode[i_channel_stim].free_geometry)
+            if self.electrode[i_channel_stim]._any_free_geometry:
+                n_free_parameters = np.sum(self.electrode[i_channel_stim]._free_geometry)
                 self.electrode[i_channel_stim].set_geometrical_parameters_optimization(
                     electrode_pos_array[i_para : (i_para + n_free_parameters)]
                 )
@@ -1575,8 +1576,8 @@ class TesFlexOptimization:
                     # add geometric parameters if applicable
                     x0 = np.append(
                         x0,
-                        self.electrode[i_channel_stim].geo_para_mean[
-                            self.electrode[i_channel_stim].free_geometry
+                        self.electrode[i_channel_stim]._geo_para_mean[
+                            self.electrode[i_channel_stim]._free_geometry
                         ],
                     )
 
@@ -1727,7 +1728,7 @@ class TesFlexOptimization:
             # determine electrode center on ellipsoid
             if not (distance == 0.0).all():
                 electrode_coords_eli_cart = self._ellipsoid.get_geodesic_destination(
-                    start=start, distance=distance, alpha=alpha, n_steps=400, n_cpu=self.n_cpu
+                    start=start, distance=distance, alpha=alpha, n_steps=400, n_cpu=self._n_cpu
                 )
             else:
                 electrode_coords_eli_cart = start
@@ -1947,7 +1948,7 @@ class TesFlexOptimization:
 
         # estimate optimal electrode currents from previous simulations
         for i_channel_stim in range(self.n_channel_stim):
-            if self.electrode[i_channel_stim].current_estimator is not None:
+            if self.electrode[i_channel_stim]._current_estimator is not None:
 
                 # estimate optimal currents electrode wise
                 currents_estimate = self.electrode[i_channel_stim].estimate_currents(
@@ -1962,12 +1963,12 @@ class TesFlexOptimization:
                     ]._electrode_arrays:
                         for _ele in _electrode_array.electrodes:
                             mask_estimator = (
-                                self.electrode[i_channel_stim].current_estimator.ele_id
+                                self.electrode[i_channel_stim]._current_estimator.ele_id
                                 == _ele.ele_id
                             ) * (
                                 self.electrode[
                                     i_channel_stim
-                                ].current_estimator.channel_id
+                                ]._current_estimator.channel_id
                                 == _ele.channel_id
                             )
                             _ele.ele_current = currents_estimate[mask_estimator]
@@ -2055,8 +2056,8 @@ class TesFlexOptimization:
                         fn_electrode_txt,
                         np.hstack(
                             (
-                                self.electrode[i_channel_stim].node_coords,
-                                self.electrode[i_channel_stim].node_current[
+                                self.electrode[i_channel_stim]._node_coords,
+                                self.electrode[i_channel_stim]._node_current[
                                     :, np.newaxis
                                 ],
                             )

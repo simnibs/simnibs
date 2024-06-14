@@ -4,7 +4,7 @@ import numpy as np
 # from ...mesh_tools import mesh_io
 # from .. import transformations
 
-from simnibs.utils.ellipsoid import Ellipsoid
+from simnibs.optimization.tes_flex_optimization.ellipsoid import Ellipsoid
 
 class TestEllipsoid:
 

@@ -23,8 +23,7 @@ opt.goal = "mean"
 opt.e_postproc = "magn"
 
 # define electrode
-electrode = opt.add_electrode()
-electrode.type = "ElectrodeArrayPair"                   # pair of TES electrodes
+electrode = opt.add_electrode_layout("ElectrodeArrayPair")
 electrode.center = [[0, 0]]                             # electrode center in reference electrode space (x-y plane)
 electrode.length_x_bounds = [50, 70]                    # x-dimension of electrodes [min, max]
 electrode.length_y_bounds = [50, 70]                    # y-dimension of electrodes [min, max]

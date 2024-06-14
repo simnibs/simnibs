@@ -18,8 +18,7 @@ opt.e_postproc = "magn"                                 # postprocessing of e-fi
                                                         # "normal": normal component, "tangential": tangential component)
 
 ''' Define electrodes and array layout '''
-electrode = opt.add_electrode()
-electrode.type = "ElectrodeArrayPair"                   # Pair of TES electrodes
+electrode = opt.add_electrode_layout("ElectrodeArrayPair")
 electrode.center = [[0, 0]]                             # electrode center in reference electrode space (x-y plane)
 electrode.length_x = [70]                               # x-dimension of electrodes
 electrode.length_y = [50]                               # y-dimension of electrodes

@@ -23,8 +23,7 @@ opt.e_postproc = "magn"
 
 # define first pair of electrodes
 opt.constrain_electrode_locations = True
-electrode = opt.add_electrode()
-electrode.type = "ElectrodeArrayPair"                    # Pair of TES electrodes
+electrode = opt.add_electrode_layout("ElectrodeArrayPair")
 electrode.center = [[-33,  22],                          # electrode center in reference electrode space (x-y plane)
                     [  0,  22],
                     [ 33,  22],
@@ -40,8 +39,7 @@ electrode.current = [1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./
                     -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9]
 
 # define second pair of electrodes
-electrode = opt.add_electrode()
-electrode.type = "ElectrodeArrayPair"                    # Pair of TES electrodes
+electrode = opt.add_electrode_layout("ElectrodeArrayPair")
 electrode.center = [[-33,  22],                          # electrode center in reference electrode space (x-y plane)
                     [  0,  22],
                     [ 33,  22],

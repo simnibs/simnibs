@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import scipy
 
-from simnibs.optimization.tes_flex_optimization import TesFlexOptimization
+from simnibs.optimization.tes_flex_optimization.tes_flex_optimization import TesFlexOptimization
 from simnibs.utils.matlab_read import dict_from_matlab
 
 
@@ -19,8 +19,7 @@ class TestToFromDict:
         opt.threshold = [0.1, 0.2]                                          
         opt.e_postproc = "magn"                                 
                                                                             
-        electrode = opt.add_electrode()
-        electrode.type = "CircularArray"                                     
+        electrode = opt.add_electrode_layout("CircularArray")
         electrode.radius_inner = 10                                         
         electrode.radius_outer = 10                                         
         electrode.distance_bounds = [25, 100]                            
@@ -49,6 +48,8 @@ class TestToFromDict:
         scipy.io.savemat(mat_path, opt.to_dict())
         tes_flex_opt_loaded = TesFlexOptimization(dict_from_matlab(scipy.io.loadmat(mat_path)))
 
+        np.testing.assert_equal(opt.to_dict(), tes_flex_opt_loaded.to_dict())
+
         dict_before = opt.__dict__.copy()
         dict_after = tes_flex_opt_loaded.__dict__.copy()
         del dict_before["_ff_templates"]
@@ -61,12 +62,7 @@ class TestToFromDict:
         del dict_after["_ellipsoid"]
         del dict_after["electrode"]
 
-        assert dict_before == dict_after
-        assert opt.roi[0].__dict__ == tes_flex_opt_loaded.roi[0].__dict__
-        assert opt.roi[1].__dict__ == tes_flex_opt_loaded.roi[1].__dict__
-
-        # Compare electrodes
-
-
-
-
+        np.testing.assert_equal(dict_before, dict_after)
+        np.testing.assert_equal(opt.roi[0].__dict__, tes_flex_opt_loaded.roi[0].__dict__)
+        np.testing.assert_equal(opt.roi[1].__dict__, tes_flex_opt_loaded.roi[1].__dict__)
+        np.testing.assert_equal(opt.electrode[0].__dict__, tes_flex_opt_loaded.electrode[0].__dict__)
