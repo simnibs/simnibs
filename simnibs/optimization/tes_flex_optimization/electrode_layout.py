@@ -1401,22 +1401,16 @@ class ElectrodeArrayPair(ElectrodeLayout):
             if not hasattr(radius, "__len__"):
                 radius = np.array([radius])
             self.radius = radius
-        if not hasattr(self.radius, "__len__"):
-            self.radius = np.array([self.radius])
 
         if length_x is not None:
             if not hasattr(length_x, "__len__"):
                 length_x = np.array([length_x])
             self.length_x = length_x
-        if not hasattr(self.length_x, "__len__"):
-            self.length_x = np.array([self.length_x])
 
         if length_y is not None:
             if not hasattr(length_y, "__len__"):
                 length_y = np.array([length_y])
             self.length_y = length_y
-        if not hasattr(self.length_y, "__len__"):
-            self.length_y = np.array([self.length_y])
 
         self._electrode_arrays = [
             ElectrodeArray(
