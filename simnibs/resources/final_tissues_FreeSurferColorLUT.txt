@@ -8,6 +8,8 @@
 7	  Compact_bone     		   255 239 179 255 
 8	  Spongy_bone     	   	   255 138 57 255 
 9 	  Blood				   0 65 142 255 
-10	  Muscle     	   		   0 118 14 255 
+10	  Muscle     	   		   194 112 112 255
+11   	  Cartilage           		   85 170 0 255
+12  	  Fat                    	   193 161 161 255
 100 	  Electrode			   37 79 255 255 
 500 	  Saline_or_gel			   103 255 226 255 
