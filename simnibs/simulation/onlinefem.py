@@ -435,11 +435,11 @@ class OnlineFEM:
 
             if electrode.dirichlet_correction_detailed:
                 # take nodal current
-                I[i_channel] = electrode._node_current[electrode.node_channel_id == _channel_id]
-                I_sign[i_channel] = electrode._node_current_sign[electrode.node_channel_id == _channel_id]
+                I[i_channel] = electrode._node_current[electrode._node_channel_id == _channel_id]
+                I_sign[i_channel] = electrode._node_current_sign[electrode._node_channel_id == _channel_id]
 
                 # mean current over electrodes [n_channel]
-                I_mean[i_channel] = electrode._current_channel[i_channel] / np.sum(electrode.node_channel_id == _channel_id)
+                I_mean[i_channel] = electrode._current_channel[i_channel] / np.sum(electrode._node_channel_id == _channel_id)
 
             else:
                 # take total electrode current (sum nodal current up)
@@ -553,11 +553,11 @@ class OnlineFEM:
             for i_channel, _channel_id in enumerate(electrode.channel_id_unique):
                 if electrode.dirichlet_correction_detailed:
                     # write nodal current
-                    electrode._node_current[electrode.node_channel_id == _channel_id] = I[i_channel]
+                    electrode._node_current[electrode._node_channel_id == _channel_id] = I[i_channel]
                 else:
                     # calculate nodal current from total electrode current
-                    for i_ele, _ele_id in enumerate(np.unique(electrode.node_ele_id[electrode.node_channel_id == _channel_id])):
-                        mask = (electrode.node_channel_id == _channel_id) * (electrode.node_ele_id == _ele_id)
+                    for i_ele, _ele_id in enumerate(np.unique(electrode.node_ele_id[electrode._node_channel_id == _channel_id])):
+                        mask = (electrode._node_channel_id == _channel_id) * (electrode.node_ele_id == _ele_id)
                         electrode._node_current[mask] = I[i_channel][i_ele] * electrode.node_area[mask] / np.sum(electrode.node_area[mask])
 
             # update electrodes from node arrays
@@ -607,12 +607,12 @@ class OnlineFEM:
             for i_channel, _channel_id in enumerate(electrode.channel_id_unique):
                 if electrode.dirichlet_correction_detailed:
                     # write nodal current
-                    electrode._node_current[electrode.node_channel_id == _channel_id] = I[i_channel]
+                    electrode._node_current[electrode._node_channel_id == _channel_id] = I[i_channel]
                 else:
                     # calculate nodal current from total electrode current
                     for i_ele, _ele_id in enumerate(
-                            np.unique(electrode.node_ele_id[electrode.node_channel_id == _channel_id])):
-                        mask = (electrode.node_channel_id == _channel_id) * (electrode.node_ele_id == _ele_id)
+                            np.unique(electrode.node_ele_id[electrode._node_channel_id == _channel_id])):
+                        mask = (electrode._node_channel_id == _channel_id) * (electrode.node_ele_id == _ele_id)
                         electrode._node_current[mask] = I[i_channel][i_ele] * electrode.node_area[mask] / np.sum(
                             electrode.node_area[mask])
 
