@@ -550,15 +550,15 @@ class OnlineFEM:
             # print(f"sum current: sum(I[0]) = {np.sum(I[0])}   sum(I[1]) = {np.sum(I[1])}")
 
             # write currents in electrodes
-            for i_channel, _channel_id in enumerate(electrode.channel_id_unique):
+            for i_channel, _channel_id in enumerate(electrode._channel_id_unique):
                 if electrode.dirichlet_correction_detailed:
                     # write nodal current
                     electrode._node_current[electrode._node_channel_id == _channel_id] = I[i_channel]
                 else:
                     # calculate nodal current from total electrode current
-                    for i_ele, _ele_id in enumerate(np.unique(electrode.node_ele_id[electrode._node_channel_id == _channel_id])):
-                        mask = (electrode._node_channel_id == _channel_id) * (electrode.node_ele_id == _ele_id)
-                        electrode._node_current[mask] = I[i_channel][i_ele] * electrode.node_area[mask] / np.sum(electrode.node_area[mask])
+                    for i_ele, _ele_id in enumerate(np.unique(electrode._node_ele_id[electrode._node_channel_id == _channel_id])):
+                        mask = (electrode._node_channel_id == _channel_id) * (electrode._node_ele_id == _ele_id)
+                        electrode._node_current[mask] = I[i_channel][i_ele] * electrode._node_area[mask] / np.sum(electrode._node_area[mask])
 
             # update electrodes from node arrays
             electrode.update_electrode_from_node_arrays()
@@ -568,13 +568,13 @@ class OnlineFEM:
 
             # solve
             v = self.solve(b)
-            v_nodes = v[electrode.node_idx]
+            v_nodes = v[electrode._node_idx]
 
             # normalize
             _v_norm, _I_norm = self.normalize_solution(v_nodes=v_nodes,
-                                                       channel_id=electrode.node_channel_id,
-                                                       ele_id=electrode.node_ele_id,
-                                                       node_area=electrode.node_area,
+                                                       channel_id=electrode._node_channel_id,
+                                                       ele_id=electrode._node_ele_id,
+                                                       node_area=electrode._node_area,
                                                        currents=I,
                                                        electrode=electrode)
 
@@ -604,17 +604,17 @@ class OnlineFEM:
             I = [I[i_channel] / np.sum(np.abs(I[i_channel])) * np.abs(I_total[i_channel]) for i_channel in range(n_channel)]
 
             # write final currents in electrode
-            for i_channel, _channel_id in enumerate(electrode.channel_id_unique):
+            for i_channel, _channel_id in enumerate(electrode._channel_id_unique):
                 if electrode.dirichlet_correction_detailed:
                     # write nodal current
                     electrode._node_current[electrode._node_channel_id == _channel_id] = I[i_channel]
                 else:
                     # calculate nodal current from total electrode current
                     for i_ele, _ele_id in enumerate(
-                            np.unique(electrode.node_ele_id[electrode._node_channel_id == _channel_id])):
-                        mask = (electrode._node_channel_id == _channel_id) * (electrode.node_ele_id == _ele_id)
-                        electrode._node_current[mask] = I[i_channel][i_ele] * electrode.node_area[mask] / np.sum(
-                            electrode.node_area[mask])
+                            np.unique(electrode._node_ele_id[electrode._node_channel_id == _channel_id])):
+                        mask = (electrode._node_channel_id == _channel_id) * (electrode._node_ele_id == _ele_id)
+                        electrode._node_current[mask] = I[i_channel][i_ele] * electrode._node_area[mask] / np.sum(
+                            electrode._node_area[mask])
 
             # update electrodes from node arrays
             electrode.update_electrode_from_node_arrays()
@@ -628,13 +628,13 @@ class OnlineFEM:
 
             # solve
             v = self.solve(b)
-            v_nodes = v[electrode.node_idx]
+            v_nodes = v[electrode._node_idx]
 
             # normalize
             _v_norm, _ = self.normalize_solution(v_nodes=v_nodes,
-                                                 channel_id=electrode.node_channel_id,
-                                                 ele_id=electrode.node_ele_id,
-                                                 node_area=electrode.node_area,
+                                                 channel_id=electrode._node_channel_id,
+                                                 ele_id=electrode._node_ele_id,
+                                                 node_area=electrode._node_area,
                                                  currents=I,
                                                  electrode=electrode)
 
@@ -653,7 +653,7 @@ class OnlineFEM:
             I_ele = []
             for i_channel, _channel_id in enumerate(electrode._channel_id_unique):
                 I_ele.append([])
-                for i_ele, _ele_id in enumerate(np.unique(electrode.node_ele_id[electrode._node_channel_id == _channel_id])):
+                for i_ele, _ele_id in enumerate(np.unique(electrode._node_ele_id[electrode._node_channel_id == _channel_id])):
                     mask = (electrode._node_channel_id == _channel_id) * (electrode._node_ele_id == _ele_id)
                     I_ele.append(np.sum(electrode._node_current[mask] * electrode._node_area[mask] / np.sum(electrode._node_area[mask])))
 
@@ -661,7 +661,7 @@ class OnlineFEM:
                                                           current=np.hstack(I_ele))
 
         if fn_electrode_txt is not None:
-            np.savetxt(fn_electrode_txt, np.hstack((electrode.node_coords, electrode._node_current[:, np.newaxis])))
+            np.savetxt(fn_electrode_txt, np.hstack((electrode._node_coords, electrode._node_current[:, np.newaxis])))
 
         return np.squeeze(v)
 
