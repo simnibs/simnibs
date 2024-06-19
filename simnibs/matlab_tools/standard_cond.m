@@ -88,6 +88,19 @@ S(10).name = 'Muscle';
 S(10).value = 0.16;
 S(10).descrip = 'Muscle (from Gabriel et al., 2009)';
 
+% Cartilage
+S(11)=sim_struct('COND');
+S(11).name = 'Cartilage';
+S(11).value = 0.88;
+S(11).descrip = 'Cartilage (average of values from Binette et al. 2004 and Morita et al. 2012)';
+
+% Fat
+S(12)=sim_struct('COND');
+S(12).name = 'Fat';
+S(12).value = 0.078;
+S(12).descrip = 'Fat (from Gabriel et al., 2009)';
+
+
 % Rubber
 S(100)=sim_struct('COND');
 S(100).name = 'Electrode_rubber';

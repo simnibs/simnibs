@@ -43,29 +43,30 @@ is_conda = 'CONDA_PREFIX' in os.environ
 if not is_conda:
     raise Exception("Cannot run setup without conda")
 
-# Information for eigen library
-eigen_headers = os.path.abspath(os.path.join(os.environ['CONDA_PREFIX'], 'include','eigen3'))
-
 #### Setup compilation arguments
 
 if sys.platform == 'win32':
+    # PETSC
     petsc_libs = ['libpetsc', 'msmpi']
     petsc_include = [
         np.get_include(),
         'simnibs/external/include/win/petsc',
         'simnibs/external/include/win/hypre',
-        'simnibs/external/include/win/mpi'
+        'simnibs/external/include/win/mpi',
     ]
     petsc_dirs = ['simnibs/external/lib/win']
+
     petsc_runtime = None
     petsc_extra_link_args = None
+    petsc_compile_args = None
 
-    cgal_libs = ['mpfr', 'gmp', 'zlib', 'tbb', 'tbbmalloc']
+    # CGAL
     cgal_dirs = [os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'lib')]
-    cgal_include = [os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'include')]
-    cgal_include += [
+    cgal_libs = ['mpfr', 'gmp', 'zlib', 'tbb', 'tbbmalloc']
+    cgal_include = [
         np.get_include(),
-        eigen_headers,
+        os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'include'),
+        os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'include','eigen3'),
     ]
     # Find boost headers if installed with conda
     cgal_runtime = None
@@ -78,9 +79,11 @@ if sys.platform == 'win32':
     ]
     cgal_link_args = None
 
+    # CAT
     cat_compile_args = None
 
 elif sys.platform == 'linux':
+    # PETSC
     petsc_libs = ['petsc']
     petsc_include = [
         np.get_include(),
@@ -89,19 +92,15 @@ elif sys.platform == 'linux':
     petsc_dirs = ['simnibs/external/lib/linux']
     petsc_runtime = ['$ORIGIN/../external/lib/linux']
     petsc_extra_link_args = None
+    petsc_compile_args = None
 
+    # CGAL
+    cgal_dirs = None
     cgal_libs = ['mpfr', 'gmp', 'z', 'tbb', 'tbbmalloc', 'pthread']
-    # To find the boost headers if installed with conda
-    cgal_include = []
-    if is_conda:
-        cgal_include += [os.path.join(os.environ['CONDA_PREFIX'], 'include')]
-
-    cgal_include += [
+    cgal_include = [
         np.get_include(),
-        eigen_headers,
+        os.path.join(os.environ['CONDA_PREFIX'], 'include','eigen3'),
     ]
-
-    cgal_dirs = [os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'lib')]
     cgal_runtime = ['$ORIGIN/../../external/lib/linux']
     # Add -Os -flto for much smaller binaries
     cgal_compile_args = [
@@ -112,11 +111,13 @@ elif sys.platform == 'linux':
     cgal_mesh_macros += [('NOMINMAX', None)]
     cgal_link_args = None
 
+    # CAT
     cat_compile_args = [
       '-std=gnu99',
     ]
 
 elif sys.platform == 'darwin':
+    # PETSC
     petsc_libs = ['petsc']
     petsc_include = [
         np.get_include(),
@@ -126,15 +127,15 @@ elif sys.platform == 'darwin':
     petsc_runtime = None
     # add RPATH as the _runtime argument does not work in MacOS, likely bug in setuptools
     petsc_extra_link_args = ['-Wl,-rpath,@loader_path/../external/lib/osx']
+    petsc_compile_args = None
 
+    # CGAL
+    cgal_dirs = None
     cgal_libs = ['mpfr', 'gmp', 'z', 'tbb', 'tbbmalloc']
-    cgal_dirs = [os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'lib')]
-    cgal_include = [os.path.join(os.environ['CONDA_PREFIX'], 'include')]
-    cgal_include += [
+    cgal_include = [
         np.get_include(),
-        eigen_headers,
+        os.path.join(os.environ['CONDA_PREFIX'], 'include','eigen3'),
     ]
-
     cgal_runtime = None
     cgal_compile_args = [
         '-std=gnu++14',
@@ -146,6 +147,7 @@ elif sys.platform == 'darwin':
         '-Wl,-rpath,@loader_path/../../external/lib/osx'
     ]
 
+    # CAT
     cat_compile_args = None
 
 else:
@@ -180,7 +182,8 @@ petsc_solver = Extension(
     library_dirs=petsc_dirs,
     libraries=petsc_libs,
     runtime_library_dirs=petsc_runtime,
-    extra_link_args=petsc_extra_link_args
+    extra_compile_args=petsc_compile_args,
+    extra_link_args=petsc_extra_link_args,
 )
 # I separated the CGAL functions into several files for two reasons
 # 1. Reduce memory consumption during compilation in Linux

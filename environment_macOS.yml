@@ -13,7 +13,7 @@ dependencies:
   - cgal=5.5.1
   - libwebp
   - pillow
-  - numpy
+  - numpy < 2
   - scipy
   - h5py
   - nibabel

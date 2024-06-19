@@ -434,6 +434,7 @@ class TestFEMSystem:
 
         nodes_top = cube_msh_all_nodes_at_tag(m, 1100)
         nodes_bottom = cube_msh_all_nodes_at_tag(m, 1101)
+        electrodes = [nodes_top, nodes_bottom]
 
         if current_type == "float":
             currents = [1, -1]
@@ -445,8 +446,8 @@ class TestFEMSystem:
             weigh_by_area=False
         else:
             raise ValueError
-        S = fem.TDCSFEMNeumann(m, cond, nodes_top, input_type="nodes", weigh_by_area=weigh_by_area)
-        b = S.assemble_rhs(nodes_bottom, currents[1:])
+        S = fem.TDCSFEMNeumann(m, cond, electrodes[0], input_type="nodes", weigh_by_area=weigh_by_area)
+        b = S.assemble_rhs(electrodes[1:], currents[1:])
         x = S.solve(b)
         sol = (m.nodes.node_coord[:, 1] - 50) / 10
         m.nodedata = [mesh_io.NodeData(x, 'FEM'), mesh_io.NodeData(sol, 'Analytical')]
