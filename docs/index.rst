@@ -137,7 +137,7 @@ SimNIBS is copyrighted |copy| by its :ref:`authors <contributors>` and licensed 
   * **Version 4.5.0** introduces exciting new optimization methods for :ref:`TMS <tms_flex_opt>`  and :ref:`TES <tes_flex_opt>`. 
 	* They enable the :ref:`optimization of TMS coil positions also for bent and flexible coils <tms_flex_opt>`, thereby systematically avoiding intersections of the coil with the head.
 	* In addition, they support the :ref:`optimization of several TES montages <tes_flex_opt>`, including those with rectangular electrodes, center-surround montages, temporal interference stimulation and electrode arrays for tumor treating field therapies.
-  * As part of the update, several new TMS coil models were added.
+  * As part of the update to 4.5.0, several new TMS coil models and new :ref:`datasets <dataset>` were added.
   * Version 4.1.0 improves the mesh quality and adds the option to use FreeSurfer results for more accurate representation of smaller sulci in the head meshes
   * Version 4.0.0 is a major update that introduces our new head modeling approach :ref:`charm <head_modeling_tutorial>`. In contrast to the previous methods, *charm* does not have any external dependencies (matlab, freesurfer) and is ready-to-run directly after installation. Head models created by *charm* are more accurate for non-brain tissues and include additional tissue types such as large blood vessels and spongy bone.
 

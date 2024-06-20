@@ -82,7 +82,11 @@ if status ~= 0
 end
 
 % Read output
-coilpos = readmatrix(fn_out,'range',[1 2 1 10]);
+%coilpos = readmatrix(fn_out,'range',[1 2 1 10]);
+fid = fopen(fn_out, 'r' );
+coilpos = textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f',1,'Delimiter',',');
+fclose(fid);
+coilpos = cell2mat(coilpos);
 delete(fn_in);
 delete(fn_out);
 delete(fn_geo);

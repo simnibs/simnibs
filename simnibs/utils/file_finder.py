@@ -24,7 +24,6 @@ import os
 import re
 import numpy as np
 import nibabel
-from . import mesh_element_properties
 from .. import SIMNIBSDIR
 
 __all__ = [

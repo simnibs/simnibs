@@ -65,6 +65,9 @@ Current Contributors
 * Merle Diedrichsen
    * Update of electrode meshing to improve tetrahedral quality at the electrode edges (4.1)
 
+*  Sybren Van Hoornweder
+   * Main contributor to the Ernie Extended dataset
+
 
 Former Contributors
 ---------------------

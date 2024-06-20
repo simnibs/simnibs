@@ -19,12 +19,14 @@
       ~RegionOfInterest.apply_tissue_mask
       ~RegionOfInterest.apply_volume_mask
       ~RegionOfInterest.apply_volume_mask_from_surface_roi
+      ~RegionOfInterest.from_dict
       ~RegionOfInterest.get_nodes
       ~RegionOfInterest.get_roi_mesh
       ~RegionOfInterest.invert
       ~RegionOfInterest.load_mesh
       ~RegionOfInterest.load_surfaces
-      ~RegionOfInterest.to_mat
+      ~RegionOfInterest.run
+      ~RegionOfInterest.to_dict
       ~RegionOfInterest.write_visualization
    
    

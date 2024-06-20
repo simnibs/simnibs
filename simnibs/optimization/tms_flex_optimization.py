@@ -24,24 +24,18 @@ from simnibs.simulation.tms_coil.tms_coil_deformation import (
     TmsCoilRotation,
     TmsCoilTranslation,
 )
+
+from simnibs.simulation import sim_struct
 from simnibs.simulation.tms_coil.tms_coil_element import DipoleElements, TmsCoilElements
-from simnibs.utils.matlab_read import (
-    remove_None,
-    try_to_read_matlab_field,
-)
+from simnibs.mesh_tools.mesh_io import Msh
+from simnibs.utils import file_finder
+from simnibs.utils import simnibs_logger
 
 from ..simulation.sim_struct import POSITION
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import SubjectFiles
 from ..utils.mesh_element_properties import ElementTags
-from simnibs import Msh
-
-from simnibs.utils import file_finder
-
-from simnibs.utils import simnibs_logger
 from .. import __version__
-from simnibs.simulation import sim_struct
-
 
 class TmsFlexOptimization:
     """Class that defines a flexible TMS optimization

@@ -4,25 +4,19 @@ import h5py
 import copy
 import logging
 import numpy as np
-import nibabel as nib
-
-from numpy.linalg import pinv
 from scipy import sparse
-from scipy.ndimage import zoom
-from scipy.optimize import minimize
-import scipy.sparse as sparse
 
+from simnibs.simulation import pardiso
 from simnibs.simulation.tms_coil.tms_coil import TmsCoil
 from simnibs.utils.utils_numba import postp, postp_mag, spmatmul
 
-from .fem import FEMSystem, get_dirichlet_node_index_cog, DirichletBC, dofMap, TDCSFEMDirichlet, TMSFEM, TDCSFEMNeumann
+from .fem import get_dirichlet_node_index_cog, TDCSFEMNeumann
 from .sim_struct import SimuList
-from .. import NodeData
-from ..mesh_tools import Msh, mesh_io, read_msh
+from ..mesh_tools import mesh_io
+from ..mesh_tools.mesh_io import Msh, read_msh
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import Templates, SubjectFiles
-from ..utils.utils_numba import sumf, sumf2, map_coord_lin_trans, node2elmf, sumf3
-from simnibs.simulation import pardiso
+from ..utils.utils_numba import sumf, sumf2, node2elmf, sumf3
 from ..utils.TI_utils import get_maxTI, get_dirTI
 
 
