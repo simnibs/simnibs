@@ -2,7 +2,7 @@
 Example to run TESoptimize with an 4x1 center-surround TES montage to optimize 
 the intensity-focality tradeoff between the field strengths in ROI vs non-ROI
 
-Written by: Konstantin Weise (2023)
+© SimNIBS developers 2024 under the GPL v3 license
 """
 from simnibs import opt_struct
 
@@ -18,7 +18,7 @@ opt.threshold = [0.1, 0.2]                                           # define th
 opt.e_postproc = "magn"                                              # postprocessing of e-fields ("magn": magnitude, 
                                                                      # "normal": normal component, "tangential": tangential component)
 ''' Define electrodes and array layout '''
-electrode = opt.add_electrode_layout("CircularArray")
+electrode = opt.add_electrode_layout("CircularArray")                # Nx1 center surround montage
 electrode.radius_inner = 10                                          # radius of inner electrode
 electrode.radius_outer = 10                                          # radius of outer electrodes
 electrode.distance_bounds = [25, 100]                                # distance bounds between inner and outer electrodes

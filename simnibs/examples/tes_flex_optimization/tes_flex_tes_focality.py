@@ -1,7 +1,7 @@
 """
 Example to run TESoptimize with a standard TES montage to optimize the field focality in the ROI vs non-ROI
 
-Written by: Konstantin Weise (2023)
+© SimNIBS developers 2024 under the GPL v3 license
 """
 from simnibs import opt_struct
 
@@ -18,7 +18,7 @@ opt.e_postproc = "magn"                                 # postprocessing of e-fi
                                                         # "normal": normal component, "tangential": tangential component)
 
 ''' Define electrodes and array layout '''
-electrode = opt.add_electrode_layout("ElectrodeArrayPair")
+electrode = opt.add_electrode_layout("ElectrodeArrayPair")                   # Pair of TES electrode arrays (here: 1 electrode per array)
 electrode.center = [[0, 0]]                             # electrode center in reference electrode space (x-y plane)
 electrode.length_x = [70]                               # x-dimension of electrodes
 electrode.length_y = [50]                               # y-dimension of electrodes

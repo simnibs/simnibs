@@ -2,7 +2,7 @@
 Example to run TESoptimize with a standard TES montage to optimize the strength 
 of the normal component of the electric field in the ROI.
 
-Written by: Konstantin Weise (2023)
+© SimNIBS developers 2024 under the GPL v3 license
 """
 from simnibs import opt_struct
 
@@ -17,7 +17,7 @@ opt.goal = "mean"                                       # maximize the mean of "
 opt.e_postproc = "normal"                               # postprocessing of e-fields ("magn": magnitude,
                                                         # "normal": normal component, "tangential": tangential component)
 ''' Define electrodes and array layout '''
-electrode = opt.add_electrode_layout("ElectrodeArrayPair")
+electrode = opt.add_electrode_layout("ElectrodeArrayPair")                  # Pair of TES electrode arrays (here: 1 electrode per array)
 electrode.center = [[0, 0]]                             # electrode center in reference electrode space (x-y plane)
 electrode.length_x = [70]                               # x-dimension of electrodes
 electrode.length_y = [50]                               # y-dimension of electrodes
