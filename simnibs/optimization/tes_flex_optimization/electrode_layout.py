@@ -1909,7 +1909,7 @@ def create_tdcs_session_from_array(electrode_array, fnamehead, pathfem, thicknes
         tdcslist.cond[499].value = sigma_saline
 
     # Set currents
-    tdcslist.currents = electrode_array.current_channel
+    tdcslist.currents = electrode_array._current_channel
 
     # Initialize the electrodes
     for i_array, _electrode_array in enumerate(electrode_array._electrode_arrays):
