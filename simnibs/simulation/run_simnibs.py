@@ -21,7 +21,6 @@ def run_simnibs(simnibs_struct, cpus=1):
         p = read_mat(simnibs_struct)
     else:
         p = simnibs_struct
-
     out = p.run(cpus=cpus)
     logging.shutdown()
     return out

@@ -127,9 +127,6 @@ def test_define_target_region(sphere3_msh):
     r = 5
     t = 3
     elm = tms_optimization.define_target_region(sphere3_msh, c, r, t)
-    outside = sphere3_msh.elm.elm_number[
-        ~np.isin(sphere3_msh.elm.elm_number, elm)
-    ]
     bar = sphere3_msh.elements_baricenters()
     dist = np.linalg.norm(bar[:] - c, axis=1)
     assert np.all(dist[elm - 1] < r)

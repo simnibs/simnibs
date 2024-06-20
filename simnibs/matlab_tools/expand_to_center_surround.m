@@ -54,7 +54,7 @@ for k=1:numel(fn)
                 cmdstr = [cmdstr ' --' fn{k}];
             end
         else
-            hlpstr = mat2str(s.(fn{k}));
+            hlpstr = mat2str(s.(fn{k}),6);
             if length(s.(fn{k})) > 1
                 hlpstr=hlpstr(2:end-1);
             end

@@ -240,7 +240,7 @@ class TMSoptimize:
             mat, "fname_tensor", str, self.fname_tensor
         )
         self.target = try_to_read_matlab_field(mat, "target", list, self.target)
-        self.multiple_targets = try_to_read_matlab_field(mat, "multiple_targets", list, self.target)
+        self.multiple_targets = try_to_read_matlab_field(mat, "multiple_targets", list, self.multiple_targets)
         self.target_direction = try_to_read_matlab_field(
             mat, "target_direction", list, self.target_direction
         )

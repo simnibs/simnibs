@@ -3,9 +3,8 @@ import nibabel as nib
 import numpy as np
 import os
 
-from simnibs import mesh_io, __version__, opt_struct
+from simnibs import mesh_io, opt_struct
 from simnibs.utils.file_finder import SubjectFiles
-from simnibs.utils.simnibs_logger import logger
 
 from simnibs.utils import transformations
 from simnibs.utils.file_finder import get_reference_surf
