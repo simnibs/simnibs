@@ -8,7 +8,6 @@ import logging
 
 import numpy as np
 import scipy.spatial
-import h5py
 import nibabel
 
 from ..mesh_tools import mesh_io, gmsh_view
@@ -17,9 +16,6 @@ from ..utils.simnibs_logger import logger
 from ..utils.matlab_read import try_to_read_matlab_field, remove_None
 from ..utils.mesh_element_properties import ElementTags
 
-import copy
-import functools
-import numpy as np
 import scipy.optimize
 import scipy.linalg
 

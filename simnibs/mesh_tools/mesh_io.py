@@ -33,7 +33,6 @@ import threading
 from itertools import combinations
 from typing import Union
 from functools import partial
-from pathlib import Path
 
 import numpy as np
 from numpy.lib import recfunctions
@@ -44,11 +43,11 @@ import scipy.sparse.csgraph
 import scipy.interpolate
 import nibabel
 import h5py
+
 from simnibs.utils import file_finder
-
 from simnibs.utils.mesh_element_properties import ElementTags
-from ..utils.spawn_process import spawn_process
 
+from ..utils.spawn_process import spawn_process
 from ..utils.transformations import nifti_transform
 from . import gmsh_view
 from ..utils.file_finder import HEMISPHERES, get_reference_surf, path2bin, SubjectFiles, FreeSurferSubject

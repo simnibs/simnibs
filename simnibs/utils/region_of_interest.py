@@ -1,5 +1,4 @@
 import os
-from typing import get_type_hints
 import numpy as np
 import numpy.typing as npt
 import nibabel as nib
@@ -7,14 +6,13 @@ import scipy
 
 from simnibs.mesh_tools import mesh_io
 from simnibs.mesh_tools.mesh_io import Elements, Msh, Nodes
-
 import simnibs.utils.file_finder as file_finder
-from simnibs.utils.mesh_element_properties import ElementTags
-from .file_finder import SubjectFiles
-from .transformations import (
-    mni2subject_coords,
-)
 from simnibs.utils import transformations
+from simnibs.utils.mesh_element_properties import ElementTags
+
+from .file_finder import SubjectFiles
+from .transformations import mni2subject_coords
+
 
 
 class RegionOfInterest:

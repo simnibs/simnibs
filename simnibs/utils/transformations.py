@@ -33,7 +33,7 @@ import scipy.spatial
 from scipy.sparse import coo_matrix, csr_matrix
 from typing import Union
 
-from simnibs.utils.mesh_element_properties import ElementTags
+from ..utils.mesh_element_properties import ElementTags
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import templates, SubjectFiles, get_reference_surf
 from ..utils.csv_reader import write_csv_positions, read_csv_positions
