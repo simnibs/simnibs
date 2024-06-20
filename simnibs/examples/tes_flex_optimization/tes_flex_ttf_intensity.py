@@ -1,9 +1,11 @@
 """
-  Example to run TESoptimize for Tumor Treating Fields (TTF) to optimize the field intensity in the ROI
+Example to run TESoptimize for Tumor Treating Fields (TTF) to optimize 
+the field intensity in the ROI
 
-  © SimNIBS developers 2024 under the GPL v3 license
+© SimNIBS developers 2024 under the GPL v3 license
 """
 from simnibs import opt_struct, ElementTags
+
 
 ''' Initialize structure '''
 opt = opt_struct.TesFlexOptimization()
@@ -22,7 +24,7 @@ electrode.center = [[-33,  22], [  0,  22], [ 33,  22],       # electrode center
                     [-33,   0], [  0,   0], [ 33,   0],
                     [-33, -22], [  0, -22], [ 33, -22]]
 electrode.radius = [10, 10, 10, 10, 10, 10, 10, 10, 10]       # radii of electrodes
-electrode.dirichlet_correction_detailed = False               # no node wise dirichlet correction
+electrode.dirichlet_correction = False                        # set to True when all electrodes of an array are connected to the same channel (slower)
 electrode.current = [1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  # electrode currents: 1/9 for each electrode of the first array
                     -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9]  # -1/9 for each electrode of the second array
 
@@ -31,8 +33,8 @@ electrode = opt.add_electrode_layout("ElectrodeArrayPair")
 electrode.center = [[-33,  22], [  0,  22], [ 33,  22],
                     [-33,   0], [  0,   0], [ 33,   0],
                     [-33, -22], [  0, -22], [ 33, -22]]
-electrode.radius = [10, 10, 10, 10, 10, 10, 10, 10, 10] 
-electrode.dirichlet_correction_detailed = False
+electrode.radius = [10, 10, 10, 10, 10, 10, 10, 10, 10]
+electrode.dirichlet_correction = False
 electrode.current = [1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9, 
                     -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9] 
 

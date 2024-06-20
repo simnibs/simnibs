@@ -4,7 +4,7 @@ focality in the ROI vs non-ROI
 
 © SimNIBS developers 2024 under the GPL v3 license
 """
-from simnibs import opt_struct, ElementTags
+from simnibs import opt_struct
 
 
 ''' Initialize structure '''
@@ -20,18 +20,14 @@ opt.e_postproc = "max_TI"                               # postprocessing of e-fi
                                                         # "dir_TI_normal": envelope of normal component
                                                         # "dir_TI_tangential": envelope of tangential component
 ''' Define first electrode pair '''
-electrode = opt.add_electrode_layout("ElectrodeArrayPair")                   # Pair of TES electrode arrays (here: 1 electrode per array)
-electrode.center = [[0, 0]]                             # electrode center in reference electrode space (x-y plane)
-electrode.radius = [10]                                 # radius of electrodes
-electrode.dirichlet_correction_detailed = False         # node wise dirichlet correction
+electrode = opt.add_electrode_layout("ElectrodeArrayPair") # Pair of TES electrode arrays (here: 1 electrode per array)
+electrode.radius = [10]                                 # radii of electrodes
 electrode.current = [0.002, -0.002]                     # electrode currents
 
 ''' Define second electrode pair '''
-electrode = opt.add_electrode_layout("ElectrodeArrayPair")                 # Pair of TES electrodes
-electrode.center = [[0, 0]]                             # electrode center in reference electrode space (x-y plane)
-electrode.radius = [10]                                 # radius of electrodes
-electrode.dirichlet_correction_detailed = False         # node wise dirichlet correction
-electrode.current = [0.002, -0.002]                     # electrode currents
+electrode = opt.add_electrode_layout("ElectrodeArrayPair")
+electrode.radius = [10]
+electrode.current = [0.002, -0.002]
 
 ''' Define ROI '''
 roi = opt.add_roi()
@@ -45,12 +41,17 @@ roi.roi_sphere_radius = 20                              # radius of spherical RO
 #roi.write_visualization('','roi.msh')
 
 ''' Define non-ROI '''
-roi = opt.add_roi()
-roi.method = "volume"                                   # define non-ROI as volume
-roi.tissues = [ElementTags.WM, ElementTags.GM]          # include WM and GM in non-ROI
+# all of GM surface except a spherical region with 25 mm around roi center
+non_roi = opt.add_roi()
+non_roi.method = "surface"
+non_roi.surface_type = "central"
+non_roi.roi_sphere_center_space = "subject"
+non_roi.roi_sphere_center = [-41.0, -13.0,  66.0]
+non_roi.roi_sphere_radius = 25
+non_roi.roi_sphere_operator = ["difference"]                             # take difference between GM surface and the sphere region
 # uncomment for visual control of non-ROI:
-#roi.subpath = opt.subpath
-#roi.write_visualization('','non-roi.msh')
+#non_roi.subpath = opt.subpath
+#non_roi.write_visualization('','non-roi.msh')
 
 ''' Run optimization '''
 opt.run(cpus=1)

@@ -20,17 +20,13 @@ opt.e_postproc = "max_TI"                           # postprocessing of e-fields
                                                     # "dir_TI_tangential": envelope of e-field tangential component
 ''' Define first electrode pair '''
 electrode = opt.add_electrode_layout("ElectrodeArrayPair") # Pair of TES electrode arrays (here: 1 electrode per array)
-electrode.center = [[0, 0]]                         # electrode center in reference electrode space (x-y plane)
-electrode.radius = [10]                             # radius of electrodes
-electrode.dirichlet_correction_detailed = False     # node wise dirichlet correction
+electrode.radius = [10]                             # radii of electrodes
 electrode.current = [0.002, -0.002]                 # electrode currents
 
 ''' Define second electrode pair '''
-electrode = opt.add_electrode_layout("ElectrodeArrayPair")                # Pair of TES electrodes
-electrode.center = [[0, 0]]                          # electrode center in reference electrode space (x-y plane)
-electrode.radius = [10]                              # radius of electrodes
-electrode.dirichlet_correction_detailed = False      # node wise dirichlet correction
-electrode.current = [0.002, -0.002]                  # electrode currents
+electrode = opt.add_electrode_layout("ElectrodeArrayPair")
+electrode.radius = [10]
+electrode.current = [0.002, -0.002]
 
 ''' Define ROI '''
 roi = opt.add_roi()
@@ -39,6 +35,9 @@ roi.surface_type = "central"
 roi.roi_sphere_center_space = "subject"
 roi.roi_sphere_center = [-41.0, -13.0,  66.0]        # center of spherical ROI in subject space (in mm)
 roi.roi_sphere_radius = 20                           # radius of spherical ROI (in mm)
+# uncomment for visual control of ROI:
+#roi.subpath = opt.subpath
+#roi.write_visualization('','roi.msh')
 
 ''' Run optimization '''
 opt.run(cpus=1)

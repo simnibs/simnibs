@@ -17,11 +17,10 @@ opt.goal = "mean"                                       # maximize the mean of "
 opt.e_postproc = "normal"                               # postprocessing of e-fields ("magn": magnitude,
                                                         # "normal": normal component, "tangential": tangential component)
 ''' Define electrodes and array layout '''
-electrode = opt.add_electrode_layout("ElectrodeArrayPair")                  # Pair of TES electrode arrays (here: 1 electrode per array)
-electrode.center = [[0, 0]]                             # electrode center in reference electrode space (x-y plane)
+electrode = opt.add_electrode_layout("ElectrodeArrayPair") # Pair of TES electrode arrays (here: 1 electrode per array)
 electrode.length_x = [70]                               # x-dimension of electrodes
 electrode.length_y = [50]                               # y-dimension of electrodes
-electrode.dirichlet_correction_detailed = False         # node wise dirichlet correction
+electrode.dirichlet_correction_detailed = False         # account for inhomogenous current distribution at electrode-skin interface (slow)
 electrode.current = [0.002, -0.002]                     # electrode currents
 
 ''' Define ROI '''

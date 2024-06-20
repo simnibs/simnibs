@@ -18,11 +18,10 @@ opt.e_postproc = "magn"                                 # postprocessing of e-fi
                                                         # "normal": normal component, "tangential": tangential component)
 
 ''' Define electrodes and array layout '''
-electrode = opt.add_electrode_layout("ElectrodeArrayPair")                   # Pair of TES electrode arrays (here: 1 electrode per array)
-electrode.center = [[0, 0]]                             # electrode center in reference electrode space (x-y plane)
+electrode = opt.add_electrode_layout("ElectrodeArrayPair") # Pair of TES electrode arrays (here: 1 electrode per array)
 electrode.length_x = [70]                               # x-dimension of electrodes
 electrode.length_y = [50]                               # y-dimension of electrodes
-electrode.dirichlet_correction_detailed = False         # node wise dirichlet correction
+electrode.dirichlet_correction_detailed = False         # account for inhomogenous current distribution at electrode-skin interface (slow)
 electrode.current = [0.002, -0.002]                     # electrode currents
 
 ''' Define ROI '''
@@ -38,16 +37,16 @@ roi.roi_sphere_radius = 20                              # radius of spherical RO
 
 ''' Define non-ROI '''
 # all of GM surface except a spherical region with 25 mm around roi center
-roi = opt.add_roi()
-roi.method = "surface"
-roi.surface_type = "central"
-roi.roi_sphere_center_space = "subject"
-roi.roi_sphere_center = [-41.0, -13.0,  66.0]
-roi.roi_sphere_radius = 25
-roi.roi_sphere_operator = ["difference"]                # take difference between GM surface and the sphere region
+non_roi = opt.add_roi()
+non_roi.method = "surface"
+non_roi.surface_type = "central"
+non_roi.roi_sphere_center_space = "subject"
+non_roi.roi_sphere_center = [-41.0, -13.0,  66.0]
+non_roi.roi_sphere_radius = 25
+non_roi.roi_sphere_operator = ["difference"]            # take difference between GM surface and the sphere region
 # uncomment for visual control of non-ROI:
-#roi.subpath = opt.subpath
-#roi.write_visualization('','non-roi.msh')
+#non_roi.subpath = opt.subpath
+#non_roi.write_visualization('','non-roi.msh')
 
 ''' Run optimization '''
 opt.run(cpus=1)

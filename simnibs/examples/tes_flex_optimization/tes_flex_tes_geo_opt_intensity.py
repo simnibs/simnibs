@@ -16,19 +16,22 @@ opt.goal = "mean"                                       # maximize the mean of e
 opt.e_postproc = "magn"                                 # postprocessing of e-fields ("magn": magnitude, 
                                                         # "normal": normal component, "tangential": tangential component)
 ''' Define electrodes and array layout '''
-electrode = opt.add_electrode_layout("ElectrodeArrayPair")                  # pair of TES electrodes
-electrode.center = [[0, 0]]                             # electrode center in reference electrode space (x-y plane)
+electrode = opt.add_electrode_layout("ElectrodeArrayPair") # Pair of TES electrode arrays (here: 1 electrode per array)
 electrode.length_x_bounds = [50, 70]                    # x-dimension of electrodes [min, max]
 electrode.length_y_bounds = [50, 70]                    # y-dimension of electrodes [min, max]
-electrode.dirichlet_correction_detailed = False         # node wise dirichlet correction
+electrode.dirichlet_correction_detailed = False         # account for inhomogenous current distribution at electrode-skin interface (slow)
 electrode.current = [0.002, -0.002]                     # electrode currents
 
 ''' Define ROI '''
 roi = opt.add_roi()
-roi.metShod = 'custom'
-roi.nodes = [[-13.754, 13.104, 71.152],                # list of ROI points
-             [-16.096, 12.434, 71.120],
-             [-16.141, 12.429, 70.581]]
+roi.method = "surface"
+roi.surface_type = "central"                        # define ROI on central GM surfaces
+roi.roi_sphere_center_space = "subject"
+roi.roi_sphere_center = [-41.0, -13.0,  66.0]       # center of spherical ROI in subject space (in mm)
+roi.roi_sphere_radius = 20                          # radius of spherical ROI (in mm)
+# uncomment for visual control of ROI:
+#roi.subpath = opt.subpath
+#roi.write_visualization('','roi.msh')
 
 ''' Run optimization '''
 opt.run(cpus=1)

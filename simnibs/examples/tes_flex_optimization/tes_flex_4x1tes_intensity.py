@@ -22,8 +22,7 @@ electrode.radius_inner = 10                                          # radius of
 electrode.radius_outer = 10                                          # radius of outer electrodes
 electrode.distance_bounds = [25, 100]                                # distance bounds between inner and outer electrodes
 electrode.n_outer = 4                                                # number of outer electrodes
-electrode.dirichlet_correction = False                               # electrode wise dirichlet correction
-electrode.dirichlet_correction_detailed = False                      # node wise dirichlet correction
+electrode.dirichlet_correction = False                               # set to True when all outer electrodes are connected to the same channel (slower)
 electrode.current = [0.002, -0.002/4, -0.002/4, -0.002/4, -0.002/4]  # initial currents
 
 ''' Define ROI '''

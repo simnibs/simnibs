@@ -1113,7 +1113,7 @@ class ElectrodeArrayPair(ElectrodeLayout):
     def __init__(self, settings_dict=None):
         super().__init__()
 
-        self.center = None
+        self.center = [[0, 0]]
         self.radius = None
         self.length_x = None
         self.length_y = None
