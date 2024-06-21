@@ -23,6 +23,7 @@ from ...simulation.sim_struct import ELECTRODE
 from ...simulation.fem import get_dirichlet_node_index_cog
 from ...utils.region_of_interest import RegionOfInterest
 from .electrode_layout import (
+    ElectrodeArray,
     ElectrodeArrayPair,
     create_tdcs_session_from_array,
     CircularArray,
@@ -144,14 +145,14 @@ class TesFlexOptimization:
         self._fn_electrode_mask = self._ff_templates.mni_volume_upper_head_mask
 
         # roi
-        self.roi = []
+        self.roi : list[RegionOfInterest] = []
         self._n_roi = None
         self._con = []
         self._nodes = []
         self._vol = []
 
         # electrode
-        self.electrode = []
+        self.electrode: list[ElectrodeArray] = []
         self.electrode_pos = None
         self.electrode_pos_opt = None
         self.min_electrode_distance = 1e-3
@@ -2094,7 +2095,7 @@ def save_optimization_results(
     e_pp,
     time,
     msh,
-    electrode,
+    electrode: list[ElectrodeArray],
     goal,
     n_test=None,
     n_sim=None,
@@ -2190,19 +2191,20 @@ def save_optimization_results(
                     f.write(f"\talpha:  {sep(p[2])}{p[2]:.3f}\n")
                 else:
                     f.write(f"\talpha:  {sep(0.000)}{0.000}\n")
-
-                if type(electrode[i_stim]) is CircularArray:
+                
+                electrode_array = electrode[i_stim]
+                if isinstance(electrode_array, CircularArray):
                     f.write(
-                        f"\tradius_inner:  {sep(electrode[i_stim].radius_inner)}{electrode[i_stim].radius_inner}\n"
+                        f"\tradius_inner:  {sep(electrode_array.radius_inner)}{electrode_array.radius_inner}\n"
                     )
                     f.write(
-                        f"\tradius_outer:  {sep(electrode[i_stim].radius_outer)}{electrode[i_stim].radius_outer}\n"
+                        f"\tradius_outer:  {sep(electrode_array.radius_outer)}{electrode_array.radius_outer}\n"
                     )
                     f.write(
-                        f"\tdistance:  {sep(electrode[i_stim].distance)}{electrode[i_stim].distance}\n"
+                        f"\tdistance:  {sep(electrode_array.distance)}{electrode_array.distance}\n"
                     )
                     f.write(
-                        f"\tn_outer:  {sep(electrode[i_stim].n_outer)}{electrode[i_stim].n_outer}\n"
+                        f"\tn_outer:  {sep(electrode_array.n_outer)}{electrode_array.n_outer}\n"
                     )
 
         f.write("\n")
@@ -2315,44 +2317,44 @@ def save_optimization_results(
                 )
 
         # electrodes
-        for i_stim in range(len(electrode)):
+        for i_stim, elec in enumerate(electrode):
             f.create_dataset(
-                data=electrode[i_stim].center, name=f"electrode/channel_{i_stim}/center"
+                data=elec.center, name=f"electrode/channel_{i_stim}/center"
             )
             f.create_dataset(
-                data=electrode[i_stim].length_x,
+                data=electrode[i_stim].radius, name=f"electrode/channel_{i_stim}/radius"
+            )
+            f.create_dataset(
+                data=elec.length_x,
                 name=f"electrode/channel_{i_stim}/length_x",
             )
             f.create_dataset(
-                data=electrode[i_stim].length_y,
+                data=elec.length_y,
                 name=f"electrode/channel_{i_stim}/length_y",
             )
             f.create_dataset(
-                data=electrode[i_stim].current,
+                data=elec.current,
                 name=f"electrode/channel_{i_stim}/current",
             )
 
-            if type(electrode[i_stim]) is CircularArray:
+            if isinstance(elec, CircularArray):
                 f.create_dataset(
-                    data=electrode[i_stim].radius_inner,
+                    data=elec.radius_inner,
                     name=f"electrode/channel_{i_stim}/radius_inner",
                 )
                 f.create_dataset(
-                    data=electrode[i_stim].radius_outer,
+                    data=elec.radius_outer,
                     name=f"electrode/channel_{i_stim}/radius_outer",
                 )
                 f.create_dataset(
-                    data=electrode[i_stim].distance,
+                    data=elec.distance,
                     name=f"electrode/channel_{i_stim}/distance",
                 )
                 f.create_dataset(
-                    data=electrode[i_stim].n_outer,
+                    data=elec.n_outer,
                     name=f"electrode/channel_{i_stim}/n_outer",
                 )
-            else:
-                f.create_dataset(
-                    data=electrode[i_stim].radius, name=f"electrode/channel_{i_stim}/radius"
-                )
+                
 
             for i_array, _electrode_array in enumerate(
                 electrode[i_stim]._electrode_arrays
