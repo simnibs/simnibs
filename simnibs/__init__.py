@@ -23,8 +23,9 @@ elif sys.platform == 'darwin':
     ])
 from ._version import __version__
 from .mesh_tools import mesh_io
+from .mesh_tools.mesh_io import read_msh
 from .utils import transformations
-from .utils.transformations import *
+from .utils.transformations import mni2subject_coilpos, mni2subject_coords, subject2mni_coords
 from .utils import file_finder
 from .utils.file_finder import *
 from .utils.nnav import localite, softaxic, brainsight, ant

@@ -2320,9 +2320,6 @@ def save_optimization_results(
                 data=electrode[i_stim].center, name=f"electrode/channel_{i_stim}/center"
             )
             f.create_dataset(
-                data=electrode[i_stim].radius, name=f"electrode/channel_{i_stim}/radius"
-            )
-            f.create_dataset(
                 data=electrode[i_stim].length_x,
                 name=f"electrode/channel_{i_stim}/length_x",
             )
@@ -2351,6 +2348,10 @@ def save_optimization_results(
                 f.create_dataset(
                     data=electrode[i_stim].n_outer,
                     name=f"electrode/channel_{i_stim}/n_outer",
+                )
+            else:
+                f.create_dataset(
+                    data=electrode[i_stim].radius, name=f"electrode/channel_{i_stim}/radius"
                 )
 
             for i_array, _electrode_array in enumerate(
