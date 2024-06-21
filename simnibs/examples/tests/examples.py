@@ -424,3 +424,30 @@ class TestTESflexoptimize:
             "tes_flex_tes_Enormal_intensity.py",
             "tes_flex_tes_Enormal_intensity")
         assert ret.returncode == 0
+
+
+class TestMatlabTESflexoptimize:
+    def run_script(self, script_folder, script_name, clean=None):
+        if clean is not None and os.path.exists(clean):
+            shutil.rmtree(clean)
+        shutil.copy(
+            os.path.join(EXAMPLES_DIR, script_folder, script_name),
+            script_name
+        )
+        return subprocess.run(octave_call(script_name), shell=True)
+    
+    def test_tes_flex_4x1tes_intensity(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tes_flex_optimization', 'tes_flex_4x1tes_intensity.m', 'tes_optimze_4x1tes_intensity')
+        assert ret.returncode == 0   
+    
+    def test_tes_flex_4x1tes_focality(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tes_flex_optimization', 'tes_flex_4x1tes_focality.m', 'tes_optimze_4x1tes_focality')
+        assert ret.returncode == 0  
+        
+    def test_tes_flex_tes_Enormal_intensity(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tes_flex_optimization', 'tes_flex_tes_Enormal_intensity.m', 'tes_optimize_tes_Enormal_intensity')
+        assert ret.returncode == 0  
+            

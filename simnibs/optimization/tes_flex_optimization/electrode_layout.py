@@ -1122,7 +1122,7 @@ class ElectrodeArrayPair(ElectrodeLayout):
         self.length_x_bounds = None
         self.length_y_bounds = None
         self.current_estimator_method = None
-        self.dirichlet_correction = True
+        self.dirichlet_correction = False
         self.dirichlet_correction_detailed = False
         self.current_outlier_correction = False
 
@@ -1492,7 +1492,7 @@ class CircularArray(ElectrodeLayout):
         self.radius_outer_bounds = None
         self.current = None
         self.current_estimator_method = None
-        self.dirichlet_correction = True
+        self.dirichlet_correction = False
         self.dirichlet_correction_detailed = False
         self.current_outlier_correction = False
 

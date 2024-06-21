@@ -27,7 +27,8 @@ function S = opt_struct(type)
 
 
 validtypes={'TMSoptimize', 'TDCSoptimize', 'TDCStarget', 'TDCSavoid', 'TDCSDistributedOptimize', ...
-            'TmsFlexOptimization', 'RegionOfInterest'};
+            'TmsFlexOptimization', 'RegionOfInterest', 'TesFlexOptimization', 'CircularArray', ...
+            'ElectrodeArrayPair'};
 
 if ~any(strcmp(type,validtypes))
     disp(validtypes)
@@ -154,5 +155,29 @@ switch S.type
         S.surface_inclusion_radius = []; % 1x1 array; only for method = "volume_from_surface" -> The radius from the surface nodes at which the volume elements should be included in mm (example: 5)
         S.node_mask = []; % Nx1 array of bool; only for method = "mesh+mask" -> a boolean node mask (exclusive with elm_mask) (example: [True, ..., False])
         S.elm_mask = []; % Nx1 array of bool; only for method = "mesh+mask" -> a boolean node mask (exclusive with node_mask) (example: [True, ..., False])
+        
+    case 'TesFlexOptimization'
+        S.subpath = ''; % path to the 'm2m_{subID}' folder created by charm
+        S.output_folder = ''; % path to save the results
+        S.fn_eeg_cap = ''; % EEG cap used for substituting EEG position names with 3d coordinates
+        S.goal = ''; % goal function: 'intensity' or 'focality'
+        S.threshold = []; % thresholds for focality optimization (vector with length 2)
+        S.e_postproc = ''; % postprocessing of e-fields ('magn': magnitude, % 'normal': normal component, 'tangential': tangential component)
+        S.electrode = []; % opt_struct.CircularArray or opt_struct.ElectrodeArrayPair
+        S.roi = {}; % either a single opt_struct.ROI to define a brain target, or cell array of two opt_struct.ROI {roi, non_roi}
+        
+    case 'CircularArray' % Nx1 center surround montage                     
+        S.radius_inner = []; % radius of inner electrode
+        S.radius_outer = []; % radius of outer electrodes
+        S.distance_bounds = []; % distance bounds (min, max) between inner and outer electrodes
+        S.n_outer = []; % number of outer electrodes
+        S.dirichlet_correction = ''; % set to true when all outer electrodes are connected to the same channel (slower)
+        S.current = []; % currents for each electrode
 
+   case 'ElectrodeArrayPair' % Pair of TES electrode arrays
+        S.length_x = []; % x-dimension of electrodes
+        S.length_y = []; % y-dimension of electrodes
+        S.dirichlet_correction_detailed = false;  % account for inhomogenous current distribution at electrode-skin interface (slow)
+        S.current = [];  % currents for each electrode      
+        
 end
