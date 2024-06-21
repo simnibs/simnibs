@@ -9,8 +9,7 @@ import pytest
 from ... import SIMNIBSDIR
 from .. import gpc as simnibs_gpc
 from .. import sim_struct
-from .. import mesh_io
-
+from simnibs.mesh_tools import mesh_io
 
 @pytest.fixture(scope='module')
 def sphere3():
