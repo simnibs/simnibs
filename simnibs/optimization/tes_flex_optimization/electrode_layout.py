@@ -1544,6 +1544,7 @@ class CircularArray(ElectrodeLayout):
             self.n_outer_bounds = self.n_outer_bounds
             self.n_outer = int(np.round(np.mean(self.n_outer_bounds)))
         else:
+            self.n_outer = int(self.n_outer)
             self._n_outer_free = False
             self.n_outer_bounds = [self.n_outer, self.n_outer]
             self.n_outer = self.n_outer
@@ -1583,7 +1584,7 @@ class CircularArray(ElectrodeLayout):
             (self.radius_inner, self.distance, self.n_outer, self.radius_outer)
         )
         self._n_ele = self.n_outer + 1
-        self._channel_id = np.array([0] + [1] * self.n_outer)
+        self._channel_id = np.array([0] + [1] * int(self.n_outer))
         self._channel_id_unique = np.unique(self._channel_id)
         self._n_channel = len(self._channel_id_unique)
 

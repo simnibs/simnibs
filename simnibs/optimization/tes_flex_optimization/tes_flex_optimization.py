@@ -2095,7 +2095,7 @@ def save_optimization_results(
     e_pp,
     time,
     msh,
-    electrode: list[ElectrodeArray],
+    electrode: list[ElectrodeLayout],
     goal,
     n_test=None,
     n_sim=None,
@@ -2322,9 +2322,6 @@ def save_optimization_results(
                 data=elec.center, name=f"electrode/channel_{i_stim}/center"
             )
             f.create_dataset(
-                data=electrode[i_stim].radius, name=f"electrode/channel_{i_stim}/radius"
-            )
-            f.create_dataset(
                 data=elec.length_x,
                 name=f"electrode/channel_{i_stim}/length_x",
             )
@@ -2353,6 +2350,11 @@ def save_optimization_results(
                 f.create_dataset(
                     data=elec.n_outer,
                     name=f"electrode/channel_{i_stim}/n_outer",
+                )
+            
+            if isinstance(elec, ElectrodeArrayPair):
+                f.create_dataset(
+                    data=elec.radius, name=f"electrode/channel_{i_stim}/radius"
                 )
                 
 
