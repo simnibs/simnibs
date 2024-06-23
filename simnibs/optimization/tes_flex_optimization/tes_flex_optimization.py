@@ -25,6 +25,7 @@ from ...utils.region_of_interest import RegionOfInterest
 from .electrode_layout import (
     ElectrodeArray,
     ElectrodeArrayPair,
+    ElectrodeLayout,
     create_tdcs_session_from_array,
     CircularArray,
 )
