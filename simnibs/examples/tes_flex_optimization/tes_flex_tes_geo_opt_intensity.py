@@ -34,4 +34,4 @@ roi.roi_sphere_radius = 20                          # radius of spherical ROI (i
 #roi.write_visualization('','roi.msh')
 
 ''' Run optimization '''
-opt.run(cpus=1)
+opt.run()

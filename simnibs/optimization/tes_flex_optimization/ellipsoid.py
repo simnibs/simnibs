@@ -2,7 +2,7 @@ import numpy as np
 import multiprocessing.pool
 
 from functools import partial
-from scipy.spatial import ConvexHull, convex_hull_plot_2d
+from scipy.spatial import ConvexHull
 from scipy.integrate import solve_ivp
 from scipy.optimize import fsolve, minimize
 import warnings

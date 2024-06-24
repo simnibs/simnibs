@@ -198,11 +198,6 @@ class TestPythonErnie:
 
     def test_tms_optimize_with_region(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
-        shutil.copy(
-            os.path.join(simnibs.SIMNIBSDIR, '_internal_resources',
-                'testing_files', 'masks', 'P1_LH_M1_control'),
-            example_dataset
-        )
         ret = self.run_script('optimization', 'tms_optimization_with_region.py')
         assert ret.returncode == 0
 
@@ -449,5 +444,24 @@ class TestMatlabTESflexoptimize:
     def test_tes_flex_tes_Enormal_intensity(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
         ret = self.run_script('tes_flex_optimization', 'tes_flex_tes_Enormal_intensity.m', 'tes_optimize_tes_Enormal_intensity')
-        assert ret.returncode == 0  
-            
+        assert ret.returncode == 0
+        
+    def test_tes_flex_tes_focality(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tes_flex_optimization', 'tes_flex_tes_focality.m', 'tes_optimize_tes_focality')
+        assert ret.returncode == 0
+        
+    def test_tes_flex_tes_intensity(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tes_flex_optimization', 'tes_flex_tes_intensity.m', 'tes_optimize_tes_intensity')
+        assert ret.returncode == 0              
+     
+    def test_tes_flex_ti_focality(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tes_flex_optimization', 'tes_flex_ti_focality.m', 'tes_optimize_ti_focality')
+        assert ret.returncode == 0
+     
+    def test_tes_flex_ti_intensity(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tes_flex_optimization', 'tes_flex_ti_intensity.m', 'tes_optimize_ti_intensity')
+        assert ret.returncode == 0     

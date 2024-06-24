@@ -175,6 +175,7 @@ switch S.type
         S.current = []; % currents for each electrode
 
    case 'ElectrodeArrayPair' % Pair of TES electrode arrays
+        S.radius = []; % radii of electrodes
         S.length_x = []; % x-dimension of electrodes
         S.length_y = []; % y-dimension of electrodes
         S.dirichlet_correction_detailed = false;  % account for inhomogenous current distribution at electrode-skin interface (slow)

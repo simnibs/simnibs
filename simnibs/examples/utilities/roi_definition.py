@@ -1,6 +1,7 @@
 """
 Examples to define ROIs 
 """
+import os
 import simnibs
 from simnibs import ElementTags
 
@@ -22,6 +23,21 @@ roi.roi_sphere_operator = ["intersection", "difference"]
 roi.roi_sphere_radius = [20, 10]
 
 roi.write_visualization('', 'roi_surf_vis')
+del roi
+
+
+# Surface ROI
+# ======================================================================
+# Define a midlayer ROI from a mask in fsaverage space
+# ====================================================   
+roi = simnibs.RegionOfInterest()
+roi.subpath = "m2m_ernie"
+roi.method = "surface"
+roi.surface_type = "central"
+roi.mask_path = os.path.join(simnibs.SIMNIBSDIR, 'examples','utilities','P1_LH_M1_control')
+roi.mask_space = 'fs_avg_lh'
+
+roi.write_visualization('', 'roi_P1_LH_M1_control')
 del roi
 
 

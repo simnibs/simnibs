@@ -6,6 +6,7 @@ import h5py
 import types
 import datetime
 import logging
+import sys
 
 import numpy as np
 import scipy.spatial
@@ -39,8 +40,9 @@ from ...utils.transformations import (
 from .ellipsoid import Ellipsoid, subject2ellipsoid, ellipsoid2subject
 from ...utils.TI_utils import get_maxTI, get_dirTI
 from .measures import AUC, integral_focality, ROC
-from simnibs import run_simnibs
-
+from simnibs.utils import simnibs_logger
+from simnibs.utils.simnibs_logger import logger
+from simnibs import __version__
 
 class TesFlexOptimization:
     """
@@ -128,7 +130,6 @@ class TesFlexOptimization:
         self.plot = False
         self.fn_final_sim = []
         self.fn_results_hdf5 = None
-        self._logger = None
         self._prepared = False
 
         # headmodel
@@ -210,6 +211,7 @@ class TesFlexOptimization:
 
         # number of CPU cores (set by run(cpus=NN) )
         self._n_cpu = None
+        self._log_handlers = []
         
         if settings_dict:
             self.from_dict(settings_dict)
@@ -257,18 +259,11 @@ class TesFlexOptimization:
         if not os.path.exists(self.plot_folder):
             os.makedirs(self.plot_folder)
 
-        # setup logger
-        self._logger = setup_logger(
-            os.path.join(
-                self.output_folder,
-                "simnibs_simulation_" + time.strftime("%Y%m%d-%H%M%S") + '.log',
-            )
-        )
-        self._logger.log(20, "Setting up output folders, logging and IO ...")
+        logger.info( "Setting up output folders, logging and IO ...")
 
         # setup headmodel
         ################################################################################################################
-        self._logger.log(20, "Setting up headmodel ...")
+        logger.info( "Setting up headmodel ...")
 
         # get subject specific filenames
         self._ff_subject = SubjectFiles(subpath=self.subpath)
@@ -325,7 +320,7 @@ class TesFlexOptimization:
 
         # setup ROI
         ################################################################################################################
-        self._logger.log(20, "Setting up ROI ...")
+        logger.info( "Setting up ROI ...")
 
         if type(self.roi) is not list:
             self.roi = [self.roi]
@@ -349,7 +344,7 @@ class TesFlexOptimization:
 
         # setup electrode
         ################################################################################################################
-        self._logger.log(20, "Setting up electrodes ...")
+        logger.info( "Setting up electrodes ...")
 
         if type(self.electrode) is not list:
             self.electrode = [self.electrode]
@@ -412,7 +407,7 @@ class TesFlexOptimization:
 
         # setup optimization
         ################################################################################################################
-        self._logger.log(20, "Setting up optimization algorithm ...")
+        logger.info( "Setting up optimization algorithm ...")
 
         # equal ROI weighting if None is provided
         if type(self.weights) is float or type(self.weights) is int:
@@ -548,75 +543,111 @@ class TesFlexOptimization:
 
         # log summary
         ################################################################################################################
-        self._logger.log(25, "=" * 100)
-        self._logger.log(25, f"headmodel:                        {self._mesh.fn}")
-        self._logger.log(25, f"n_roi:                            {self._n_roi}")
-        self._logger.log(
+        logger.log(25, "=" * 100)
+        logger.log(25, f"headmodel:                        {self._mesh.fn}")
+        logger.log(25, f"n_roi:                            {self._n_roi}")
+        logger.log(
             25, f"anisotropy type:                  {self._ofem.anisotropy_type}"
         )
-        self._logger.log(25, f"n_channel_stim:                   {self.n_channel_stim}")
-        self._logger.log(25, f"fn_eeg_cap:                       {self.fn_eeg_cap}")
-        self._logger.log(
+        logger.log(25, f"n_channel_stim:                   {self.n_channel_stim}")
+        logger.log(25, f"fn_eeg_cap:                       {self.fn_eeg_cap}")
+        logger.log(
             25, f"fn_electrode_mask:                {self._fn_electrode_mask}"
         )
-        self._logger.log(
+        logger.log(
             25, f"FEM solver options:               {self._ofem.solver_options}"
         )
-        self._logger.log(
+        logger.log(
             25,
             f"dirichlet_correction:             {self.electrode[0].dirichlet_correction}",
         )
-        self._logger.log(
+        logger.log(
             25,
             f"dirichlet_correction_detailed:    {self.electrode[0].dirichlet_correction_detailed}",
         )
-        self._logger.log(
+        logger.log(
             25,
             f"current_outlier_correction:       {self.electrode[0].current_outlier_correction}",
         )
-        self._logger.log(25, f"optimizer:                        {self.optimizer}")
-        self._logger.log(25, f"goal:                             {self.goal}")
-        self._logger.log(25, f"e_postproc:                       {self.e_postproc}")
-        self._logger.log(25, f"threshold:                        {self.threshold}")
-        self._logger.log(25, f"weights:                          {self.weights}")
-        self._logger.log(25, f"output_folder:                    {self.output_folder}")
-        self._logger.log(25, f"fn_results_hdf5:                  {self.fn_results_hdf5}")
+        logger.log(25, f"optimizer:                        {self.optimizer}")
+        logger.log(25, f"goal:                             {self.goal}")
+        logger.log(25, f"e_postproc:                       {self.e_postproc}")
+        logger.log(25, f"threshold:                        {self.threshold}")
+        logger.log(25, f"weights:                          {self.weights}")
+        logger.log(25, f"output_folder:                    {self.output_folder}")
+        logger.log(25, f"fn_results_hdf5:                  {self.fn_results_hdf5}")
 
         if self.optimizer_options is not None:
             for key in self.optimizer_options:
                 if key != "bounds":
-                    self._logger.log(
+                    logger.log(
                         25, f"{key}:                {self.optimizer_options[key]}"
                     )
 
         for i_channel_stim in range(self.n_channel_stim):
-            self._logger.log(
+            logger.log(
                 25,
                 f"Stimulation: {i_channel_stim} (n_ele_free: {self.n_ele_free[i_channel_stim]})",
             )
-            self._logger.log(25, "---------------------------------------------")
+            logger.log(25, "---------------------------------------------")
 
             for i_array, _electrode_array in enumerate(
                 self.electrode[i_channel_stim]._electrode_arrays
             ):
-                self._logger.log(
+                logger.log(
                     25,
                     f"Electrode array [i_channel_stim][i_array]: [{i_channel_stim}][{i_array}]",
                 )
-                self._logger.log(25, f"\tn_ele: {(_electrode_array.n_ele)}")
-                self._logger.log(25, f"\tcenter: {(_electrode_array.center)}")
-                self._logger.log(25, f"\tradius: {(_electrode_array.radius)}")
-                self._logger.log(
-                    25, f"\tlength_x: {(_electrode_array.length_x)}"
-                )
-                self._logger.log(
-                    25, f"\tlength_y: {(_electrode_array.length_y)}"
-                )
+                logger.log(25, f"\tn_ele: {(_electrode_array.n_ele)}")
+                logger.log(25, f"\tcenter: {(_electrode_array.center)}")
+                logger.log(25, f"\tradius: {(_electrode_array.radius)}")
+                logger.log(25, f"\tlength_x: {(_electrode_array.length_x)}")
+                logger.log(25, f"\tlength_y: {(_electrode_array.length_y)}")
 
-        self._logger.log(25, "=" * 100)
+        logger.log(25, "=" * 100)
 
         self._prepared = True
 
+    def _set_logger(self, fname_prefix='simnibs_simulation', summary=True):
+        """
+        Set-up loggger to write to a file
+
+        Parameters
+        ----------
+        fname_prefix: str, optional
+            Prefix of log-file. Defaults to 'simnibs_simulation'.
+        summary: bool, optional
+            Create summary file 'fields_summary.txt'. Default: True.
+        """
+        if not os.path.isdir(self.output_folder):
+            os.mkdir(self.output_folder)
+        log_fn = os.path.join(
+            self.output_folder,
+            fname_prefix + '_{0}.log'.format(self.time_str))
+        fh = logging.FileHandler(log_fn, mode='w')
+        formatter = logging.Formatter(
+            f'[ %(name)s {__version__} - %(asctime)s - %(process)d ]%(levelname)s: %(message)s')
+        fh.setFormatter(formatter)
+        fh.setLevel(logging.DEBUG)
+        logger = logging.getLogger("simnibs")
+        logger.addHandler(fh)
+        self._log_handlers += [fh]
+
+        if summary:
+            fn_summary = os.path.join(self.output_folder, 'summary_AUTO.txt')
+            fh_s = logging.FileHandler(fn_summary, mode='w')
+            fh_s.setFormatter(logging.Formatter('%(message)s'))
+            fh_s.setLevel(25)
+            logger.addHandler(fh_s)
+            self._log_handlers += [fh_s]
+        simnibs_logger.register_excepthook(logger)
+    
+    def _finish_logger(self):
+        logger = logging.getLogger("simnibs")
+        [logger.removeHandler(lh) for lh in self._log_handlers]
+        self._log_handlers = []
+        simnibs_logger.unregister_excepthook()
+        
     def add_electrode_layout(self, electrode_type, electrode=None):
         """
         Adds an electrode to the current TESoptimize
@@ -746,6 +777,7 @@ class TesFlexOptimization:
         --------
         <files>: Results files (.hdf5) in self.output_folder.
         """
+        self._set_logger()
         self._n_cpu = cpus
         
         # prepare optimization
@@ -819,9 +851,7 @@ class TesFlexOptimization:
                 f"Specified optimization method: '{self.optimizer}' not implemented."
             )
 
-        self._logger.log(
-            20, f"Optimization finished! Best electrode position: {result.x}"
-        )
+        logger.info(f"Optimization finished! Best electrode position: {result.x}")
         fopt_before_polish = result.fun
         stop = time.time()
         t_optimize = stop - start
@@ -829,7 +859,7 @@ class TesFlexOptimization:
         # polish optimization
         ################################################################################################################
         if self.polish:
-            self._logger.log(20, "Polishing optimization results!")
+            logger.info( "Polishing optimization results!")
             result = minimize(
                 self.goal_fun,
                 x0=result.x,
@@ -838,9 +868,7 @@ class TesFlexOptimization:
                 jac="2-point",
                 options={"finite_diff_rel_step": 0.01},
             )
-            self._logger.log(
-                20, f"Optimization finished! Best electrode position: {result.x}"
-            )
+            logger.info(f"Optimization finished! Best electrode position: {result.x}")
 
         # transform electrode pos from array to list of list
         self.electrode_pos_opt = self.get_electrode_pos_from_array(result.x)
@@ -922,7 +950,7 @@ class TesFlexOptimization:
                         self.output_folder, f"final_sim_{i_channel_stim}"
                     ),
                 )
-                self.fn_final_sim.append(run_simnibs(s)[0])
+                self.fn_final_sim.append(s.run()[0])
 
         # print optimization summary
         save_optimization_results(
@@ -946,6 +974,7 @@ class TesFlexOptimization:
             AUC=self.AUC,
             integral_focality=self.integral_focality,
         )
+        self._finish_logger()
 
     def goal_fun(self, parameters):
         """
@@ -964,7 +993,7 @@ class TesFlexOptimization:
         """
         self.n_test += 1
         parameters_str = f"Parameters: {parameters}"
-        self._logger.log(20, parameters_str)
+        logger.info( parameters_str)
 
         # transform electrode pos from array to list of list
         self.electrode_pos = self.get_electrode_pos_from_array(parameters)
@@ -999,11 +1028,10 @@ class TesFlexOptimization:
         # compute goal function value
         goal_fun_value = self.compute_goal(e_pp)
 
-        self._logger.log(
-            20,
+        logger.info(
             f"Goal ({self.goal}): {goal_fun_value:.3f} (n_sim: {self.n_sim}, n_test: {self.n_test})",
         )
-        self._logger.log(20, "-" * len(parameters_str))
+        logger.info( "-" * len(parameters_str))
 
         return goal_fun_value
 
@@ -1028,7 +1056,7 @@ class TesFlexOptimization:
         )  # shape: [n_channel_stim x n_roi]
 
         if e is None:
-            self._logger.log(20, f"Goal ({self.goal}): 2.0")
+            logger.info( f"Goal ({self.goal}): 2.0")
             return 2.0
 
         # user provided goal function
@@ -1092,8 +1120,8 @@ class TesFlexOptimization:
                 for i_roi in range(self._n_roi):
                     for i_channel_stim in range(self.n_channel_stim):
                         if e[i_channel_stim][i_roi] is None:
-                            self._logger.log(
-                                20, f"Goal ({self.goal}): 2.0 (one e-field was None)"
+                            logger.info(
+                                f"Goal ({self.goal}): 2.0 (one e-field was None)"
                             )
                             return 2.0
                         else:
@@ -1423,8 +1451,7 @@ class TesFlexOptimization:
         """
 
         if optimize:
-            self._logger.log(
-                20,
+            logger.info(
                 "Finding valid initial values for electrode position for optimization.",
             )
             n_max = 5000
@@ -1476,12 +1503,10 @@ class TesFlexOptimization:
                 else:
                     valid = True
 
-                self._logger.log(
-                    20, f"Testing position #{i + 1}: {para_test_grid[i, :]} -> {valid}"
-                )
+                logger.info(f"Testing position #{i + 1}: {para_test_grid[i, :]} -> {valid}")
 
                 if not valid:
-                    self._logger.log(20, f"> electrode_pos_valid: {node_idx_dict[1]}")
+                    logger.info( f"> electrode_pos_valid: {node_idx_dict[1]}")
 
                 if valid:
                     return para_test_grid[i, :]
@@ -1729,8 +1754,13 @@ class TesFlexOptimization:
 
             # determine electrode center on ellipsoid
             if not (distance == 0.0).all():
+                if sys.platform == 'win32' and self._n_cpu != 1:
+                    n_cpu = 1
+                    logger.info("Restricting geodesic destination calculatoins on Windows to one CPU core.")
+                else:
+                    n_cpu = self._n_cpu
                 electrode_coords_eli_cart = self._ellipsoid.get_geodesic_destination(
-                    start=start, distance=distance, alpha=alpha, n_steps=400, n_cpu=self._n_cpu
+                    start=start, distance=distance, alpha=alpha, n_steps=400, n_cpu=n_cpu
                 )
             else:
                 electrode_coords_eli_cart = start
@@ -2018,11 +2048,9 @@ class TesFlexOptimization:
         # perform one electric field calculation for every stimulation condition (one at a time is on)
         for i_channel_stim in range(self.n_channel_stim):
             if type(node_idx_dict[0]) is str:
-                self._logger.log(20, node_idx_dict[0])
+                logger.info( node_idx_dict[0])
                 return None
-            self._logger.log(
-                20, f"Electrode position for stimulation {i_channel_stim}: valid"
-            )
+            logger.info(f"Electrode position for stimulation {i_channel_stim}: valid")
 
             # set RHS
             b = self._ofem.set_rhs(electrode=self.electrode[i_channel_stim])
@@ -2071,9 +2099,7 @@ class TesFlexOptimization:
             for i_roi, r in enumerate(self._roi):
                 if v is None:
                     e[i_channel_stim][i_roi] = None
-                    self._logger.log(
-                        20, "Warning! Simulation failed! Returning e-field: None!"
-                    )
+                    logger.info("Warning! Simulation failed! Returning e-field: None!")
                 else:
                     e[i_channel_stim][i_roi] = r.calc_fields(
                         v, dataType=self.dataType[i_roi]
@@ -2588,44 +2614,6 @@ def get_array_direction(electrode_pos, ellipsoid):
     angle_jac = np.arccos(np.dot((c4c1), (l2c1)))
 
     return angle_jac
-
-
-def setup_logger(
-    logname,
-    filemode="w",
-    format="[ %(name)s ] %(levelname)s: %(message)s",
-    datefmt="%H:%M:%S",
-):
-    """
-    Parameters
-    ----------
-    logname : str
-        Filename of logfile
-    filemode : str, optional, default: 'w'
-        'a' append or 'w' overwrite existing logfile.
-    format : str, optional, default: '[ %(name)s ] %(levelname)s: %(message)s'
-        format of the output message.
-    datefmt : str, optional, default: '%H:%M:%S'
-        Format of the output time.
-
-    Returns
-    -------
-    logger : logger instance
-        Logger using loging module
-    """
-
-    logging.basicConfig(
-        filename=logname,
-        filemode=filemode,
-        format=format,
-        datefmt=datefmt,
-        level=logging.DEBUG,
-    )
-
-    logger = logging.getLogger("simnibs")
-
-    return logger
-
 
 def plot_roi_field(e, roi, fn_out, e_label=None):
     """

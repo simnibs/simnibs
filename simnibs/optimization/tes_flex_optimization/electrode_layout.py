@@ -1361,19 +1361,18 @@ class ElectrodeArrayPair(ElectrodeLayout):
             "Number of free parameters in electrode does not match "
             "number of provided parameters!"
         )
-
         # the order of the parameters is fixed
         i_para = 0
         if self._radius_free:
-            self.radius = params[i_para]
+            self.radius = np.asarray(params[i_para]).reshape((1))
             i_para += 1
 
         if self._length_x_free:
-            self.length_x = params[i_para]
+            self.length_x = np.asarray(params[i_para]).reshape((1))
             i_para += 1
 
         if self._length_y_free:
-            self.length_y = params[i_para]
+            self.length_y = np.asarray(params[i_para]).reshape((1))
             i_para += 1
 
         # update geometry

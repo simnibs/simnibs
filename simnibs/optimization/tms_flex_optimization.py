@@ -418,6 +418,8 @@ class TmsFlexOptimization:
 
         if self.run_simulation:
             S.run()
+            
+        self._finish_logger()
 
     def to_dict(self) -> dict:
         """ Makes a dictionary storing all settings as key value pairs

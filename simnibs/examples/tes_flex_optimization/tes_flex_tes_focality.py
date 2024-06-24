@@ -49,4 +49,4 @@ non_roi.roi_sphere_operator = ["difference"]            # take difference betwee
 #non_roi.write_visualization('','non-roi.msh')
 
 ''' Run optimization '''
-opt.run(cpus=1)
+opt.run()
