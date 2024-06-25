@@ -244,7 +244,7 @@ class TmsFlexOptimization:
                     self.roi.subpath = self.subpath
                 elif self.roi.subpath is None and self.roi.mesh is None:
                     self.roi.mesh = self._mesh
-                self._roi = FemTargetPointCloud(self._mesh, self.roi.get_nodes(), nearest_neighbor=(self.roi._mask_type == "elm_center" and self.disable_SPR_for_volume_roi))
+                self._roi = FemTargetPointCloud(self._mesh, self.roi.get_nodes(), nearest_neighbor=((self.roi.method == "volume" or self.roi.method == "volume_from_surface") and self.disable_SPR_for_volume_roi))
             else:
                 raise ValueError("No ROI specified")
 
