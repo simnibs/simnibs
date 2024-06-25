@@ -65,6 +65,8 @@ class TesFlexOptimization:
         - 'EEG10-20_Okamoto_2004.csv'
     roi : list of RegionOfInterest class instances
         Region of interest(s) the field is evaluated in.
+    disable_SPR_for_volume_roi : bool
+        Weather to use SPR interpolation for volume rois, defaul: True
     anisotropy_type : str
         Specify type of anisotropy for simulation ('scalar', 'vn' or 'mc')
     weights : np.array of float [n_roi]
@@ -152,6 +154,7 @@ class TesFlexOptimization:
         self._con = []
         self._nodes = []
         self._vol = []
+        self.disable_SPR_for_volume_roi = True
 
         # electrode
         self.electrode: list[ElectrodeArray] = []
@@ -338,7 +341,7 @@ class TesFlexOptimization:
                     self.roi[i].subpath = self.subpath
             elif self.roi[i].subpath is None and self.roi.mesh is None:
                 self.roi[i].mesh = self._mesh
-            self._roi.append(FemTargetPointCloud(self._mesh, self.roi[i].get_nodes(node_type="elm_center")))
+            self._roi.append(FemTargetPointCloud(self._mesh, self.roi[i].get_nodes(), nearest_neighbor=(self.roi[i]._mask_type == "elm_center" and self.disable_SPR_for_volume_roi)))
 
         self._n_roi = len(self._roi)
 

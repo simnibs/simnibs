@@ -1207,18 +1207,10 @@ class FemTargetPointCloud:
         Head mesh
     center : np.ndarray of flloat [n_roi_center x 3]
         The point coordinates where the e-field is calculated, e.g. element center of triangles or tetrahedra.
-    nodes : np.ndarray of float [n_roi_nodes x 3], optional, default: None
-        Node coordinates of ROI (triangles or tetrahedra). Not requires to calculate e-field but to determine the
-        area or volume of the ROI elements, which are required to determine for example focality measures.
-        If not provided, all elements will have the same area/volume.
-    con : np.ndarray of float [n_ele x 3(4)], optional, default: None
-        Connectivity list of ROI (triangles or tetrahedra). Not requires to calculate e-field but to determine the
-        area or volume of the ROI elements, which are required to determine for example focality measures.
-        If not provided, all elements will have the same area/volume.
-    domains : int or list of int or np.ndarray of int
-        Domain indices the ROI is defined for (1: WM, 2: GM, 3: CSF, etc.)
-    mask : np.ndarray of bool, optional, default: None
-        Mask (boolean array) applied to mesh.node_number_list to include in ROI.
+    gradient : np.array of float [n_tet_mesh_required x 4 x 3]
+        Gradient operator of the tetrahedral edges.
+    nearest_neighbor : bool
+        Weather to use SPR interpolation or nearest naigbor
     out_fill : float or None
         Value to be given to points outside the volume. If None then use nearest neighbor assigns the nearest value;
         otherwise assign to out_fill, for example 0)
@@ -1249,7 +1241,7 @@ class FemTargetPointCloud:
     vol : float
         Volume or area of ROI elements
     """
-    def __init__(self, mesh, center=None, gradient=None, out_fill=1):
+    def __init__(self, mesh, center=None, gradient=None, nearest_neighbor=False, out_fill=0):
         """
         Initializes RegionOfInterest class instance
         """
@@ -1263,7 +1255,7 @@ class FemTargetPointCloud:
             self.center = np.array(self.center)
 
         # crop mesh that only tetrahedra are included
-        mesh_cropped = mesh.crop_mesh(elm_type=4)
+        mesh_cropped: Msh = mesh.crop_mesh(elm_type=4)
 
         # ensure that the nodes did not change
         assert mesh_cropped.nodes.nr == mesh.nodes.nr
@@ -1279,13 +1271,21 @@ class FemTargetPointCloud:
             # get gradient operator
             gradient = _get_gradient(local_dist)
 
-        # determine sF matrix for fast interpolation
-       
-        # compute sF matrix
-        self._get_sF_matrix(mesh_cropped, self.center, out_fill)
-        self.gradient = gradient[self.idx]
-        self.node_index_list = mesh_cropped.elm.node_number_list[self.idx] - 1
-        self.n_center = self.center.shape[0]      
+        if nearest_neighbor:
+            th_with_points, bar = mesh_cropped.find_tetrahedron_with_points(center, compute_baricentric=True)
+            self.inside = th_with_points != -1
+            self.idx = th_with_points
+
+            self.gradient = gradient[self.idx]
+            self.node_index_list = mesh_cropped.elm.node_number_list[self.idx] - 1
+            self.n_center = self.center.shape[0]      
+        else:
+            # determine sF matrix for fast interpolation
+            # compute sF matrix
+            self._get_sF_matrix(mesh_cropped, self.center, out_fill)
+            self.gradient = gradient[self.idx]
+            self.node_index_list = mesh_cropped.elm.node_number_list[self.idx] - 1
+            self.n_center = self.center.shape[0]      
         
 
     def calc_fields(self, v, dadt=None, dataType=0):

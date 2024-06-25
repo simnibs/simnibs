@@ -71,6 +71,8 @@ class TmsFlexOptimization:
     """The method of optimization {"distance", "emag"}"""
     roi: RegionOfInterest | None
     """The region of interest in which the e field is simulated, method = "emag" """
+    disable_SPR_for_volume_roi: bool
+    """ Weather to use SPR interpolation for volume rois, defaul True"""
     distance: float
     """The distance at which the coil is supposed to be placed relative to the head"""
     global_translation_ranges: list | None
@@ -111,6 +113,7 @@ class TmsFlexOptimization:
 
         self.method = None
         self.roi = None
+        self.disable_SPR_for_volume_roi = True
         self.distance = 4.0
         self.global_translation_ranges = None
         self.global_rotation_ranges = None
@@ -241,7 +244,7 @@ class TmsFlexOptimization:
                     self.roi.subpath = self.subpath
                 elif self.roi.subpath is None and self.roi.mesh is None:
                     self.roi.mesh = self._mesh
-                self._roi = FemTargetPointCloud(self._mesh, self.roi.get_nodes())
+                self._roi = FemTargetPointCloud(self._mesh, self.roi.get_nodes(), nearest_neighbor=(self.roi._mask_type == "elm_center" and self.disable_SPR_for_volume_roi))
             else:
                 raise ValueError("No ROI specified")
 

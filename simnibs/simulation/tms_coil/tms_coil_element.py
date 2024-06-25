@@ -812,7 +812,7 @@ class LineSegmentElements(PositionalTmsCoilElements):
         target_positions_m = target_positions * 1e-3
 
         if directions_m.shape[0] >= 300:
-            A = fmm3dpy.l3ddir(
+            B = fmm3dpy.l3ddir(
                 sources=segment_position_m.T,
                 charges=directions_m.T,
                 targets=target_positions_m.T,
@@ -820,7 +820,7 @@ class LineSegmentElements(PositionalTmsCoilElements):
                 pgt=1,
             )
         else:
-            A = fmm3dpy.lfmm3d(
+            B = fmm3dpy.lfmm3d(
                 sources=segment_position_m.T,
                 charges=directions_m.T,
                 targets=target_positions_m.T,
@@ -1017,7 +1017,7 @@ class SampledGridPointElements(TmsCoilElements):
         npt.NDArray[np.float_] (N x 3)
             The B-field at every target positions in Tesla*meter
         """
-        pass
+        raise NotImplementedError()
 
     def generate_element_mesh(
         self,
