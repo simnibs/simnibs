@@ -465,3 +465,14 @@ class TestMatlabTESflexoptimize:
         os.chdir(example_dataset)
         ret = self.run_script('tes_flex_optimization', 'tes_flex_ti_intensity.m', 'tes_optimize_ti_intensity')
         assert ret.returncode == 0     
+
+    def test_tes_flex_ttf_intensity(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tes_flex_optimization', 'tes_flex_ttf_intensity.m', 'tes_optimize_ttf_intensity')
+        assert ret.returncode == 0   
+
+    def test_tes_flex_tes_geo_opt_intensity(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tes_flex_optimization', 'tes_flex_tes_geo_opt_intensity.m', 'tes_optimize_tes_geo_opt_intensity')
+        assert ret.returncode == 0   
+        

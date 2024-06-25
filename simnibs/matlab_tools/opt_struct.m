@@ -165,6 +165,7 @@ switch S.type
         S.e_postproc = ''; % postprocessing of e-fields ('magn': magnitude, % 'normal': normal component, 'tangential': tangential component)
         S.electrode = []; % opt_struct.CircularArray or opt_struct.ElectrodeArrayPair
         S.roi = {}; % either a single opt_struct.ROI to define a brain target, or cell array of two opt_struct.ROI {roi, non_roi}
+        S.constrain_electrode_locations = []; % whether to constrain the search space for each electrode array pair (standard: false; useful for TTF)
         
     case 'CircularArray' % Nx1 center surround montage                     
         S.radius_inner = []; % radius of inner electrode
