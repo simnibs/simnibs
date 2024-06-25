@@ -1274,7 +1274,7 @@ class FemTargetPointCloud:
         if nearest_neighbor:
             th_with_points, bar = mesh_cropped.find_tetrahedron_with_points(center, compute_baricentric=True)
             self.inside = th_with_points != -1
-            self.idx = th_with_points
+            self.idx = th_with_points - 1
 
             self.gradient = gradient[self.idx]
             self.node_index_list = mesh_cropped.elm.node_number_list[self.idx] - 1
