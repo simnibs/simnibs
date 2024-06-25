@@ -87,6 +87,23 @@ roi.write_visualization('', 'roi_vol_from_surf_vis')
 del roi
 
 
+# Volume ROI from Surface ROI mask
+# ======================================================================
+# Define a volumetric ROI from a mask in fsaverage space
+# =================================
+roi = simnibs.RegionOfInterest()
+roi.subpath = "m2m_ernie"
+roi.method = "volume_from_surface"
+roi.surface_type = "central"
+#path to mask in fsaverage space
+roi.mask_path = os.path.join(simnibs.SIMNIBSDIR, 'examples','utilities','P1_LH_M1_control')
+roi.mask_space = 'fs_avg_lh'
+# radius around surface in which volume elements will be included
+roi.surface_inclusion_radius = 2
+
+roi.write_visualization('', 'roi_P1_LH_M1_control_volume')
+del roi
+
 # Custom ROI
 # ======================================================================
 # Define a custom ROI from coordinates
