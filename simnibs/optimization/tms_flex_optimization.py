@@ -338,6 +338,7 @@ class TmsFlexOptimization:
                 self.run_local_optimization,
                 self.direct_args,
                 self.l_bfgs_b_args,
+                cpus=cpus,
             )
         elif self.method == "emag":
             initial_cost, optimized_cost, opt_matsimnibs, optimized_e_mag, direct = (
@@ -355,6 +356,7 @@ class TmsFlexOptimization:
                     self.run_local_optimization,
                     self.direct_args,
                     self.l_bfgs_b_args,
+                    cpus=cpus,
                 )
             )
         else:
@@ -734,6 +736,7 @@ def optimize_distance(
     local_optimization: bool = True,
     direct_args: dict | None = None,
     l_bfgs_b_args: dict | None = None,
+    cpus: int = None,
 ) -> tuple[float, float, npt.NDArray[np.float_], list]:
     """Optimizes the deformations of the coil elements as well as the global transformation to minimize the distance between the optimization_surface
     and the min distance points (if not present, the coil casing points) while preventing intersections of the
@@ -781,6 +784,16 @@ def optimize_distance(
         If the coil has no coil casing or no min distance points
     """
 
+    if not cpus is None:
+        # print(f'Attempting to limit number of threads to {cpus}')
+        # os.environ['MKL_NUM_THREADS'] = str(int(cpus))
+        os.environ['MKL_DOMAIN_NUM_THREADS'] = f'MKL_DOMAIN_PARDISO={str(int(cpus))}'
+        # Note: Using MKL_DOMAIN_PARDISO means that only PARDISO is affected, VML, BLAS, LAPACK is potentially still more threads otherwise change to MKL_NUM_THREADS OR MKL_DOMAIN_ALL
+        from numba import set_num_threads
+        set_num_threads(int(cpus))
+        # from numba import get_num_threads
+        # print(f'Numba reports {get_num_threads()} threads available')
+        
     coil_deformation_ranges = coil.get_deformation_ranges()
 
     if (
@@ -1140,6 +1153,7 @@ def optimize_e_mag(
     direct_args: dict | None = None,
     l_bfgs_b_args: dict | None = None,
     debug: bool = False,
+    cpus: int = None,
 ) -> tuple[float, float, npt.NDArray[np.float_], npt.NDArray[np.float_], list]:
     """Optimizes the deformations of the coil elements as well as the global transformation to maximize the mean e-field magnitude in the ROI while preventing intersections of the
     scalp surface and the coil casing
@@ -1191,6 +1205,16 @@ def optimize_e_mag(
     ValueError
         If the coil has no casing
     """
+    if not cpus is None:
+        # print(f'Attempting to limit number of threads to {cpus}')
+        # os.environ['MKL_NUM_THREADS'] = str(int(cpus))
+        os.environ['MKL_DOMAIN_NUM_THREADS'] = f'MKL_DOMAIN_PARDISO={str(int(cpus))}'
+        # Note: Using MKL_DOMAIN_PARDISO means that only PARDISO is affected, VML, BLAS, LAPACK is potentially still more threads otherwise change to MKL_NUM_THREADS OR MKL_DOMAIN_ALL
+        from numba import set_num_threads
+        set_num_threads(int(cpus))
+        # from numba import get_num_threads
+        # print(f'Numba reports {get_num_threads()} threads available')
+    
     from simnibs.simulation.onlinefem import OnlineFEM
 
     coil_sampled = coil.as_sampled()
