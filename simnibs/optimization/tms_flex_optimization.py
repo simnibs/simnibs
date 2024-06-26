@@ -348,7 +348,6 @@ class TmsFlexOptimization:
                 self.run_local_optimization,
                 self.direct_args,
                 self.l_bfgs_b_args,
-                cpus=cpus,
             )
         elif self.method == "emag":
             initial_cost, optimized_cost, opt_matsimnibs, optimized_e_mag, direct = (
@@ -366,7 +365,6 @@ class TmsFlexOptimization:
                     self.run_local_optimization,
                     self.direct_args,
                     self.l_bfgs_b_args,
-                    cpus=cpus,
                 )
             )
         else:
@@ -746,7 +744,6 @@ def optimize_distance(
     local_optimization: bool = True,
     direct_args: dict | None = None,
     l_bfgs_b_args: dict | None = None,
-    cpus: int = None,
 ) -> tuple[float, float, npt.NDArray[np.float_], list]:
     """Optimizes the deformations of the coil elements as well as the global transformation to minimize the distance between the optimization_surface
     and the min distance points (if not present, the coil casing points) while preventing intersections of the
@@ -1153,7 +1150,6 @@ def optimize_e_mag(
     direct_args: dict | None = None,
     l_bfgs_b_args: dict | None = None,
     debug: bool = False,
-    cpus: int = None,
 ) -> tuple[float, float, npt.NDArray[np.float_], npt.NDArray[np.float_], list]:
     """Optimizes the deformations of the coil elements as well as the global transformation to maximize the mean e-field magnitude in the ROI while preventing intersections of the
     scalp surface and the coil casing
