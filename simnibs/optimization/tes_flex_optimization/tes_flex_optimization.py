@@ -314,7 +314,7 @@ class TesFlexOptimization:
         for i in range(len(self.roi)):
             if self.subpath is not None and self.roi[i].subpath is None and self.roi[i].mesh is None:
                     self.roi[i].subpath = self.subpath
-            elif self.roi[i].subpath is None and self.roi.mesh is None:
+            elif self.roi[i].subpath is None and self.roi[i].mesh is None:
                 self.roi[i].mesh = self._mesh
             self._roi.append(FemTargetPointCloud(self._mesh, self.roi[i].get_nodes(), nearest_neighbor=((self.roi[i].method == "volume" or self.roi[i].method == "volume_from_surface") and self.disable_SPR_for_volume_roi)))
 

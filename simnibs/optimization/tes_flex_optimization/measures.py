@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.integrate import simps
+from scipy.integrate import simpson
 
 
 def integral_focality(e1, e2, v1, v2):
@@ -70,7 +70,7 @@ def AUC(e1, e2):
     sensitivity = np.append(sensitivity, 1)
 
     # calculate area under curve
-    auc = simps(y=sensitivity, x=specificity_inv)
+    auc = simpson(y=sensitivity, x=specificity_inv)
 
     # import matplotlib.pyplot as plt
     # import matplotlib
