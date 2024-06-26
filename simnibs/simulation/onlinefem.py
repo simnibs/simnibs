@@ -1135,67 +1135,6 @@ def delete_col_csr(mat, i):
     return mat[:, mask]
 
 
-def postprocess_e(e, e2=None, dirvec=None, type="magn"):
-    """
-    Post-processing electric field according to specified type.
-
-    Parameters
-    ----------
-    e : np.ndarray of float [n_nodes x 3]
-        Electric field components in query points (Ex, Ey, Ez)
-    e2 : np.ndarray of float [n_nodes x 3]
-        Electric field components in query points of second channel (Ex, Ey, Ez) for TI fields.
-    dirvec : np.ndarray of float [n_nodes x 3]
-        Normal vectors for normal and tangential e-field component calculation or general direction vectors the
-        directional TI fields are calculated for. Can be either a single vector (1 x 3)
-        that is applied to all positions or one vector per position (N x 3).
-    type : str, optional, default: "magn"
-        Type of postprocessing to apply:
-        - "magn": electric field magnitude (default)
-        - "normal": determine normal component (required surface normals in dirvec)
-        - "tangential": determine tangential component (required surface normals in dirvec)
-        - "max_TI": maximum envelope for TI fields
-        - "dir_TI": directional sensitive maximum envelope for TI fields
-
-    Returns
-    -------
-    e_pp: np.ndarray of float [n_nodes, ]
-        Post-processed electric field in query points
-    """
-    assert e.shape[1] == 3, "Shape of electric field does not match the requirement [n_roi x 3]. " \
-                            "Electric field components needed (Ex, Ey, Ez)!"
-
-    if dirvec is not None:
-        if dirvec.shape[0] == 1:
-            dirvec = np.repeat(dirvec, e.shape[0], axis=0)
-
-    if type in ["max_TI", "dir_TI"] and e2 is None:
-        raise ValueError("Please provide second e-field to calculate TI field!")
-
-    if type == "magn":
-        e_pp = np.linalg.norm(e, axis=1)
-
-    elif type == "normal":
-        e_pp = -np.sum(e * dirvec, axis=1)
-
-    elif type == "tangential":
-        e_pp = np.sqrt(np.linalg.norm(e, axis=1) ** 2 - np.sum(e * dirvec, axis=1) ** 2)
-
-    elif type == "max_TI":
-        e_pp = get_maxTI(E1_org=e, E2_org=e2)
-
-    elif type == "dir_TI" or type == "dir_TI_normal" or type == "dir_TI_tangential":
-        e_pp = get_dirTI(E1=e, E2=e2, dirvec_org=dirvec)
-
-    elif type is None:
-        e_pp = e
-
-    else:
-        raise NotImplementedError(f"Specified type for e-field post-processing '{type}' not implemented.")
-
-    return e_pp
-
-
 class FemTargetPointCloud:
     """
     Region of interest class containing methods to compute the electric field from the electric potential (fast).
