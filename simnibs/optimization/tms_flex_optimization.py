@@ -316,6 +316,16 @@ class TmsFlexOptimization:
             logger.info(f"Running optimization on new directory: {dir_name}")
             os.makedirs(dir_name)
 
+        if not cpus is None:
+            logger.info(f"Attempting to limit number of threads to {cpus}")
+            os.environ['MKL_DOMAIN_NUM_THREADS'] = f'MKL_DOMAIN_PARDISO={str(int(cpus))}'
+            # Note: Using MKL_DOMAIN_PARDISO means that only PARDISO is affected, VML, BLAS, LAPACK is potentially still more threads otherwise change to MKL_NUM_THREADS OR MKL_DOMAIN_ALL
+            from numba import set_num_threads
+            set_num_threads(int(cpus))
+            from numba import get_num_threads
+            logger.info(f"Numba reports {get_num_threads()} threads available")
+    
+
         self._prepare()
 
         if self.method == "emag" and self._roi.n_center == 0:
@@ -784,16 +794,6 @@ def optimize_distance(
         If the coil has no coil casing or no min distance points
     """
 
-    if not cpus is None:
-        # print(f'Attempting to limit number of threads to {cpus}')
-        # os.environ['MKL_NUM_THREADS'] = str(int(cpus))
-        os.environ['MKL_DOMAIN_NUM_THREADS'] = f'MKL_DOMAIN_PARDISO={str(int(cpus))}'
-        # Note: Using MKL_DOMAIN_PARDISO means that only PARDISO is affected, VML, BLAS, LAPACK is potentially still more threads otherwise change to MKL_NUM_THREADS OR MKL_DOMAIN_ALL
-        from numba import set_num_threads
-        set_num_threads(int(cpus))
-        # from numba import get_num_threads
-        # print(f'Numba reports {get_num_threads()} threads available')
-        
     coil_deformation_ranges = coil.get_deformation_ranges()
 
     if (
@@ -1205,15 +1205,6 @@ def optimize_e_mag(
     ValueError
         If the coil has no casing
     """
-    if not cpus is None:
-        # print(f'Attempting to limit number of threads to {cpus}')
-        # os.environ['MKL_NUM_THREADS'] = str(int(cpus))
-        os.environ['MKL_DOMAIN_NUM_THREADS'] = f'MKL_DOMAIN_PARDISO={str(int(cpus))}'
-        # Note: Using MKL_DOMAIN_PARDISO means that only PARDISO is affected, VML, BLAS, LAPACK is potentially still more threads otherwise change to MKL_NUM_THREADS OR MKL_DOMAIN_ALL
-        from numba import set_num_threads
-        set_num_threads(int(cpus))
-        # from numba import get_num_threads
-        # print(f'Numba reports {get_num_threads()} threads available')
     
     from simnibs.simulation.onlinefem import OnlineFEM
 
