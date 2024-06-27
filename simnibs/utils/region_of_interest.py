@@ -480,6 +480,7 @@ class RegionOfInterest:
         surface = surfaces[0]
         if len(surfaces) == 2:
             self._surface_divide = surface.nodes.nr
+            self._surface_divide_elements = surface.elm.nr
             surface = surface.join_mesh(surfaces[1])
         self._mesh = surface
         self._mask_type = "node"

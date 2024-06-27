@@ -1325,8 +1325,6 @@ class TmsCoil(TcdElement):
         if resolution is None:
             raise ValueError("resolution needs to be set")
         
-        print(limits, resolution)
-
         dims = [
             int((max_ - min_) // res) + 1 for [min_, max_], res in zip(limits, resolution)
         ]

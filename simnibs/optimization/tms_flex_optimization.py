@@ -30,12 +30,14 @@ from simnibs.simulation.tms_coil.tms_coil_element import DipoleElements, TmsCoil
 from simnibs.mesh_tools.mesh_io import Msh
 from simnibs.utils import file_finder
 from simnibs.utils import simnibs_logger
+from simnibs.utils.roi_result_visualization import RoiResultVisualization
 
 from ..simulation.sim_struct import POSITION
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import SubjectFiles
 from ..utils.mesh_element_properties import ElementTags
 from .. import __version__
+
 
 class TmsFlexOptimization:
     """Class that defines a flexible TMS optimization
@@ -66,6 +68,10 @@ class TmsFlexOptimization:
     """Path to a eeg cap file (example: "path/to/csv")"""
     run_simulation: bool | None
     """Weather to run a full simulation at the optimized position after the optimization"""
+    run_simulation: bool | None
+    """Weather to run a full simulation at the optimized position after the optimization"""
+    open_in_gmsh: bool
+    """Weather to open the optimization result in gmsh"""
 
     method: str | None
     """The method of optimization {"distance", "emag"}"""
@@ -110,6 +116,7 @@ class TmsFlexOptimization:
         self.path_optimization = None
         self.eeg_cap = None
         self.run_simulation = True
+        self.open_in_gmsh = True
 
         self.method = None
         self.roi = None
@@ -244,7 +251,17 @@ class TmsFlexOptimization:
                     self.roi.subpath = self.subpath
                 elif self.roi.subpath is None and self.roi.mesh is None:
                     self.roi.mesh = self._mesh
-                self._roi = FemTargetPointCloud(self._mesh, self.roi.get_nodes(), nearest_neighbor=((self.roi.method == "volume" or self.roi.method == "volume_from_surface") and self.disable_SPR_for_volume_roi))
+                self._roi = FemTargetPointCloud(
+                    self._mesh,
+                    self.roi.get_nodes(),
+                    nearest_neighbor=(
+                        (
+                            self.roi.method == "volume"
+                            or self.roi.method == "volume_from_surface"
+                        )
+                        and self.disable_SPR_for_volume_roi
+                    ),
+                )
             else:
                 raise ValueError("No ROI specified")
 
@@ -301,6 +318,9 @@ class TmsFlexOptimization:
 
     def run(self, cpus=1):
         """Runs the tms flex optimization"""
+        if self.path_optimization is None:
+            raise AttributeError("path_optimization is None")
+
         self._set_logger()
         dir_name = os.path.abspath(os.path.expanduser(self.path_optimization))
         if os.path.isdir(dir_name):
@@ -318,15 +338,27 @@ class TmsFlexOptimization:
 
         if not cpus is None:
             logger.info(f"Attempting to limit number of threads to {cpus}")
-            os.environ['MKL_DOMAIN_NUM_THREADS'] = f'MKL_DOMAIN_PARDISO={str(int(cpus))}'
+            os.environ["MKL_DOMAIN_NUM_THREADS"] = (
+                f"MKL_DOMAIN_PARDISO={str(int(cpus))}"
+            )
             # Note: Using MKL_DOMAIN_PARDISO means that only PARDISO is affected, VML, BLAS, LAPACK is potentially still more threads otherwise change to MKL_NUM_THREADS OR MKL_DOMAIN_ALL
             from numba import set_num_threads
+
             set_num_threads(int(cpus))
             from numba import get_num_threads
+
             logger.info(f"Numba reports {get_num_threads()} threads available")
-    
 
         self._prepare()
+
+        if self.pos is None:
+            raise AttributeError("pos is None")
+        
+        if self.fnamecoil is None:
+            raise AttributeError("fnamecoil is None")
+        
+        if self._mesh is None:
+            raise AttributeError("mesh is not loaded")
 
         if self.method == "emag" and self._roi.n_center == 0:
             raise ValueError("The region of interest contains no positions")
@@ -376,38 +408,18 @@ class TmsFlexOptimization:
             f"Optimized cost: {optimized_cost}"
         )
         if self.method == "emag":
-            logger.info(f"Optimized mean E-field magnitude in ROI: {optimized_e_mag}")
+            logger.info(
+                f"Optimized mean E-field magnitude in ROI: {np.mean(optimized_e_mag)}"
+            )
 
         logger.info(f"Matsimnibs result:{os.linesep}{opt_matsimnibs}")
 
-        logger.info("Creating Visualizations")
-
-        skin_mesh = self._mesh.crop_mesh(tags=[ElementTags.SCALP_TH_SURFACE])
         mesh_name = os.path.splitext(os.path.basename(self._mesh.fn))[0]
         coil_name = os.path.splitext(os.path.basename(self.fnamecoil))[0]
-        fn_geo = os.path.join(
-            self.path_optimization, f"{mesh_name}_{coil_name}_optimization.geo"
-        )
-        fn_out = os.path.join(
-            self.path_optimization, f"{mesh_name}_{coil_name}_optimization.msh"
-        )
-
-        skin_mesh.write(fn_out)
-        v = self._mesh.view(visible_tags=[ElementTags.SCALP_TH_SURFACE.value])
-        self._coil.append_simulation_visualization(
-            v, fn_geo, skin_mesh, self.pos.matsimnibs, visibility=0, infix="-initial"
-        )
-        self._coil.append_simulation_visualization(
-            v, fn_geo, skin_mesh, opt_matsimnibs, infix="-optimized"
-        )
-
         fn_optimized_coil = os.path.join(
-            self.path_optimization, f"{mesh_name}_{coil_name}_optimized.tcd"
+            self.path_optimization, f"{mesh_name}_{coil_name}_{self.method}-optimization.tcd"
         )
         self._coil.freeze_deformations().write(fn_optimized_coil)
-
-        v.add_merge(fn_geo)
-        v.write_opt(fn_out)
 
         logger.info("Creating Simulation")
         S = sim_struct.SESSION()
@@ -421,8 +433,10 @@ class TmsFlexOptimization:
         tms.fnamecoil = fn_optimized_coil
 
         # Define the coil position
-        pos = tms.add_position(self.pos)
+        pos = tms.add_position()
         pos.matsimnibs = opt_matsimnibs
+        pos.name = self.pos.name
+        pos.didt = self.pos.didt
 
         fn_sim = os.path.join(
             self.path_optimization, f"optimized_simnibs_simulation_{self.time_str}.mat"
@@ -430,12 +444,61 @@ class TmsFlexOptimization:
         sim_struct.save_matlab_sim_struct(S, fn_sim)
 
         if self.run_simulation:
-            S.run()
-            
+            S.open_in_gmsh = False
+            result_pathes = S.run()
+
+            logger.info("Creating Visualizations")
+
+            rois = []
+            roi_names = []
+            base_head_mesh = None
+            if self.method == 'emag':
+                rois.append(self.roi)
+                roi_names.append('roi')
+            elif self.method == 'distance':
+                base_head_mesh = self._mesh
+
+            roi_result_vis = RoiResultVisualization(
+                rois,
+                result_pathes,
+                self.path_optimization,
+                f"{mesh_name}_{coil_name}_{self.method}-optimization",
+                roi_names,
+                [""],
+                base_head_mesh
+            )
+            roi_result_vis.create_visualization()
+            vis_msh_file_names = roi_result_vis.write_visualization()
+
+            if roi_result_vis.has_head_mesh():
+                self._coil.append_simulation_visualization(
+                    roi_result_vis.head_mesh_opt,
+                    roi_result_vis.geo_file_name,
+                    self._mesh.crop_mesh(tags=[ElementTags.SCALP_TH_SURFACE]),
+                    self.pos.matsimnibs,
+                    visibility=0,
+                    infix="-initial",
+                )
+
+            if roi_result_vis.has_surface_mesh():
+                self._coil.append_simulation_visualization(
+                    roi_result_vis.surface_mesh_opt,
+                    roi_result_vis.geo_file_name,
+                    self._mesh.crop_mesh(tags=[ElementTags.SCALP_TH_SURFACE]),
+                    self.pos.matsimnibs,
+                    visibility=0,
+                    infix="-initial",
+                )
+            roi_result_vis.write_gmsh_options()
+
+            if self.open_in_gmsh:
+                for vis_msh_file_name in vis_msh_file_names:
+                    mesh_io.open_in_gmsh(vis_msh_file_name, True)
+
         self._finish_logger()
 
     def to_dict(self) -> dict:
-        """ Makes a dictionary storing all settings as key value pairs
+        """Makes a dictionary storing all settings as key value pairs
 
         Returns
         --------------------
@@ -466,7 +529,7 @@ class TmsFlexOptimization:
         return settings
 
     def from_dict(self, settings: dict) -> "TmsFlexOptimization":
-        """ Reads parameters from a dict
+        """Reads parameters from a dict
 
         Parameters
         ----------
@@ -479,16 +542,21 @@ class TmsFlexOptimization:
             Self with applied settings
         """
         for key, value in self.__dict__.items():
-            if key.startswith('__') or key.startswith('_') or callable(value) or callable(getattr(value, "__get__", None)):
+            if (
+                key.startswith("__")
+                or key.startswith("_")
+                or callable(value)
+                or callable(getattr(value, "__get__", None))
+            ):
                 continue
             setattr(self, key, settings.get(key, value))
 
         # Load all instance variables that are classes
         if "pos" in settings:
-            self.pos = POSITION().from_dict(settings['pos'])
+            self.pos = POSITION().from_dict(settings["pos"])
 
         if "roi" in settings:
-            self.roi = RegionOfInterest(settings['roi'])
+            self.roi = RegionOfInterest(settings["roi"])
 
         self._prepared = False
         return self
@@ -828,7 +896,7 @@ def optimize_distance(
     else:
         for k in list(l_bfgs_b_args["options"]):
             if l_bfgs_b_args["options"][k] is None:
-                del l_bfgs_b_args["options"][k]       
+                del l_bfgs_b_args["options"][k]
     l_bfgs_b_args["options"].setdefault("maxls", 100)
 
     global_deformations = add_global_deformations(
@@ -1201,7 +1269,7 @@ def optimize_e_mag(
     ValueError
         If the coil has no casing
     """
-    
+
     from simnibs.simulation.onlinefem import OnlineFEM
 
     coil_sampled = coil.as_sampled()
@@ -1239,8 +1307,8 @@ def optimize_e_mag(
     else:
         for k in list(l_bfgs_b_args["options"]):
             if l_bfgs_b_args["options"][k] is None:
-                del l_bfgs_b_args["options"][k] 
-                    
+                del l_bfgs_b_args["options"][k]
+
     l_bfgs_b_args["options"].setdefault("maxls", 100)
 
     global_deformations = add_global_deformations(
