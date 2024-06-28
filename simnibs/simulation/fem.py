@@ -10,6 +10,7 @@ import copy
 import warnings
 import atexit
 import h5py
+import logging
 import numpy as np
 import scipy.sparse as sparse
 from simnibs.mesh_tools import gmsh_view
@@ -491,6 +492,9 @@ class FEMSystem(object):
         Wether to store the gradient matrix. Default: False
     solver_options: str
         Options to be used by the solver. Default: DEFAULT_SOLVER_OPTIONS
+    solver_loglevel: int (optional)
+        sets the log level of the standard logging messages of the solvers.
+        Default: logging.INFO 
 
     Attributes
     ----------
@@ -513,11 +517,12 @@ class FEMSystem(object):
 
     '''
     def __init__(self, mesh, cond, dirichlet=None, units='mm', store_G=False,
-                 solver_options=None):
+                 solver_options=None, solver_loglevel=logging.INFO):
         if units in ['mm', 'm']:
             self.units = units
         else:
             raise ValueError('Invalid unit: {0}'.format(units))
+        self.solver_loglevel = solver_loglevel
         self._mesh = mesh
         if isinstance(cond, mesh_io.ElementData):
             cond = cond.value.squeeze()
@@ -596,11 +601,11 @@ class FEMSystem(object):
             A, dof_map = self.dirichlet.apply_to_matrix(A, dof_map)
 
         if self._solver_options == 'pardiso':
-            self._solver = pardiso.Solver(A)
+            self._solver = pardiso.Solver(A, log_level=self.solver_loglevel)
         else:
             _initialize_petsc()
             self._A_reduced = A  # We need to save this as PETSc does not copy the vectors
-            self._solver = petsc_solver.Solver(self._solver_options, A)
+            self._solver = petsc_solver.Solver(self._solver_options, A, log_level=self.solver_loglevel)
 
     def solve(self, b=None):
         ''' Solves the FEM system
@@ -678,7 +683,8 @@ class TMSFEM(FEMSystem):
             cond,
             solver_options=None,
             units='mm',
-            store_G=True
+            store_G=True,
+            solver_loglevel=logging.INFO
         ):
         '''Set up a TMS problem.
 
@@ -692,7 +698,7 @@ class TMSFEM(FEMSystem):
             Options to be used by the solver. Default: DEFAULT_SOLVER_OPTIONS
         '''
         dirichlet_bc = set_ground_at_nodes(mesh)
-        super().__init__(mesh, cond, dirichlet_bc, units, store_G, solver_options)
+        super().__init__(mesh, cond, dirichlet_bc, units, store_G, solver_options, solver_loglevel)
 
     def assemble_rhs(self, dadt):
         '''Assemble the right-hand side for a TMS simulation.
@@ -756,6 +762,7 @@ class TDCSFEMDirichlet(FEMSystem):
             solver_options=None,
             units='mm',
             store_G=False,
+            solver_loglevel=logging.INFO
         ):
         '''Set up a TDCS problem using Dirichlet boundary conditions in all
         electrodes.
@@ -778,7 +785,7 @@ class TDCSFEMDirichlet(FEMSystem):
         # self.input_type = input_type
 
         dirichlet_bc = self._init_dirichlet_bcs(mesh)
-        super().__init__(mesh, cond, dirichlet_bc, units, store_G, solver_options)
+        super().__init__(mesh, cond, dirichlet_bc, units, store_G, solver_options, solver_loglevel)
 
     def _init_dirichlet_bcs(self, mesh):
         """Set Dirichlet boundary conditions on all electrodes."""
@@ -805,6 +812,7 @@ class TDCSFEMNeumann(FEMSystem):
             solver_options=None,
             units='mm',
             store_G=False,
+            solver_loglevel=logging.INFO
         ):
         '''Set up a TDCS problem using Dirichlet boundary conditions in the
         ground electrode and Neumann boundary conditions in the other
@@ -834,7 +842,7 @@ class TDCSFEMNeumann(FEMSystem):
         self.areas = mesh.nodes_areas() if self.weigh_by_area else None
 
         dirichlet_bc = self._init_dirichlet_bc(mesh)
-        super().__init__(mesh, cond, dirichlet_bc, units, store_G, solver_options)
+        super().__init__(mesh, cond, dirichlet_bc, units, store_G, solver_options, solver_loglevel)
 
     def _init_dirichlet_bc(self, mesh):
         """Set Dirichlet boundary condition on the ground electrode only."""
@@ -912,6 +920,7 @@ class DipoleFEM(FEMSystem):
             solver_options=None,
             units='mm',
             store_G=True,
+            solver_loglevel=logging.INFO
         ):
         '''Set up an electric dipole simulation using the selected source
         model (i.e., the "direct" approach).
@@ -926,7 +935,7 @@ class DipoleFEM(FEMSystem):
             Options to be used by the solver. Default: DEFAULT_SOLVER_OPTIONS
         '''
         dirichlet_bc = set_ground_at_nodes(mesh)
-        super().__init__(mesh, cond, dirichlet_bc, units, store_G, solver_options)
+        super().__init__(mesh, cond, dirichlet_bc, units, store_G, solver_options, solver_loglevel)
 
     # def assemble_rhs(self, primary_j, source_model):
     def assemble_rhs(self, dip_pos, dip_mom, source_model):

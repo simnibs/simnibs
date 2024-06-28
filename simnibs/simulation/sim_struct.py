@@ -38,7 +38,7 @@ import simnibs.utils.cond_utils
 from simnibs.utils.cond_utils import COND
 from simnibs.utils.mesh_element_properties import ElementTags
 
-from ..mesh_tools import mesh_io, gmsh_view
+from ..mesh_tools import mesh_io
 from ..utils import transformations
 from ..utils import simnibs_logger
 from ..utils import file_finder

@@ -104,6 +104,7 @@ roi.surface_inclusion_radius = 2
 roi.write_visualization('', 'roi_P1_LH_M1_control_volume')
 del roi
 
+
 # Custom ROI
 # ======================================================================
 # Define a custom ROI from coordinates

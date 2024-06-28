@@ -96,6 +96,27 @@ run_simnibs(roi)
 clear roi
 
 
+% Volume ROI from Surface ROI mask
+% ======================================================================
+% Define a volumetric ROI from a mask in fsaverage space
+% =================================
+roi = opt_struct('RegionOfInterest');
+roi.subpath = 'm2m_ernie';
+roi.method = 'volume_from_surface';
+roi.surface_type = 'central';
+% path to mask in fsaverage space
+roi.mask_path = fullfile(SIMNIBSDIR, 'examples','utilities','P1_LH_M1_control');
+roi.mask_space = 'fs_avg_lh';
+% radius around surface in which volume elements will be included
+roi.surface_inclusion_radius = 2;
+
+% for visual control:
+% define a mesh filename for ROI visualization, and call run_simnibs
+roi.fname_visu = 'roi_P1_LH_M1_control_volume';
+run_simnibs(roi)
+clear roi
+
+
 % Custom ROI
 % ======================================================================
 % Define a custom ROI from coordinates

@@ -1,24 +1,21 @@
-import os
 import time
-import h5py
 import copy
 import logging
 import numpy as np
 from scipy import sparse
 
+from simnibs import __version__
 from simnibs.simulation import pardiso
 from simnibs.simulation.tms_coil.tms_coil import TmsCoil
-from simnibs.utils.utils_numba import postp, postp_mag, spmatmul
+from simnibs.mesh_tools import mesh_io
+from simnibs.mesh_tools.mesh_io import Msh, read_msh
+from simnibs.utils import simnibs_logger
+from simnibs.utils.simnibs_logger import logger
+from simnibs.utils.file_finder import Templates, SubjectFiles
+from simnibs.utils.utils_numba import sumf, sumf2, node2elmf, sumf3, postp, postp_mag, spmatmul
 
 from .fem import get_dirichlet_node_index_cog, TDCSFEMNeumann
 from .sim_struct import SimuList
-from ..mesh_tools import mesh_io
-from ..mesh_tools.mesh_io import Msh, read_msh
-from ..utils.simnibs_logger import logger
-from ..utils.file_finder import Templates, SubjectFiles
-from ..utils.utils_numba import sumf, sumf2, node2elmf, sumf3
-from ..utils.TI_utils import get_maxTI, get_dirTI
-
 
 class OnlineFEM:
     """
@@ -36,8 +33,8 @@ class OnlineFEM:
         Type of anisotropy for simulation ('scalar', 'vn', 'mc')
     solver_options : str
         Options for theF EM solver (Node or "pardiso))
-    fn_results : str
-        Filename of results file the data is saved in
+    fn_logger : str
+        Filename of log file (optional)
     useElements : bool
         True: interpolate the dadt field using positions (coordinates) of elements centroids
         False: interpolate the dadt field using positions (coordinates) of nodes
@@ -52,9 +49,9 @@ class OnlineFEM:
     dirichlet_node : int
         Index of dirichlet node (indexing starting with 1)
     """
-    # TODO: move roi.calc_fields method from ROI to OnlineFEM
-    def __init__(self, mesh, method, roi, anisotropy_type="scalar", solver_options="pardiso", fn_results=None,
-                 useElements=True, fn_coil=None, dataType=0, coil=None, electrode=None, dirichlet_node=None):
+    def __init__(self, mesh, method, roi, anisotropy_type="scalar", solver_options="pardiso", fn_logger=None,
+                 useElements=True, fn_coil=None, dataType=0, coil=None, electrode=None, dirichlet_node=None,
+                 solver_loglevel=logging.DEBUG):
         """
         Constructor of the OnlineFEM class
         """
@@ -67,7 +64,7 @@ class OnlineFEM:
         self.solver = None                          # solver
         self.fn_coil = fn_coil                      # filename of TMS coil (.nii)
         self.roi = roi                              # list of ROI instances
-        self.fn_results = fn_results                # name of output results file (.hdf5)
+        self.fn_logger = fn_logger                  # either name of log file or True (using standard simnibs logger in later case)
         self.ff_templates = Templates()             # initialize file finder templates
         self.force_integrals = None                 # precomputed force integrals for rhs
         self.coil = coil                            # TMS coil
@@ -89,16 +86,19 @@ class OnlineFEM:
         self.useElements = useElements
 
         if solver_options != "pardiso":
-            self.solver_options = ""
+            self.solver_options = "" # "" will use PETsc with DEFAULT_SOLVER_OPTIONS from fem.py
         else:
             self.solver_options = solver_options
-
+            
         # creating logger
-        if fn_results is not None:
-            self.logger = setup_logger(os.path.join(os.path.split(fn_results)[0], "simnibs_simulation_" + time.strftime("%Y%m%d-%H%M%S")))
+        if fn_logger is not None:
+            self._logging = True
+            self._set_logger(fn_logger)
         else:
-            self.logger = None
-
+            self._logging = False
+            
+        self.solver_loglevel = solver_loglevel
+        
         # read mesh or store in self
         if type(mesh) is str:
             self.mesh = mesh_io.read_msh(mesh)
@@ -131,20 +131,41 @@ class OnlineFEM:
                 raise AssertionError("Provide either filename of TMS coil or Coil object.")
 
             if coil is None:
-                # TODO: replace Coil class here
                 self.coil = TmsCoil.from_file(self.fn_coil)
-                # scale field to make it more appropriate for matrix solve
-                # self.coil.a_field *= 1e9
-
-                if self.logger:
-                    self.logger.info(f'Loaded coil from file: {self.fn_coil}')
+                
+                if self._logging:
+                    logger.info(f'Loaded coil from file: {self.fn_coil}')
 
         # prepare electrode for TES
         ################################################################################################################
         if method == "TES" and electrode is None:
             raise AssertionError("Please provide TES electrode object for TES simulations.")
 
-    def update_field(self, electrode=None, matsimnibs=None, sim_idx_hdf5=0, didt=1e6, fn_electrode_txt=None,
+    def _set_logger(self,log_fn):
+        """
+        Set-up loggger to write to a file
+    
+        Parameters
+        ----------
+        log_fn: str, or bool
+            if True, the standard simnibs logger is used
+            if a filename is given, the imnibs logger is set up to save to this file
+        """
+        if type(log_fn) == bool:
+            self._logging = log_fn
+            return
+        if type(log_fn) == str:
+            fh = logging.FileHandler(log_fn, mode='w')
+            formatter = logging.Formatter(
+                f'[ %(name)s {__version__} - %(asctime)s - %(process)d ]%(levelname)s: %(message)s')
+            fh.setFormatter(formatter)
+            fh.setLevel(logging.DEBUG)
+            logger.addHandler(fh)
+            simnibs_logger.register_excepthook(logger)
+            return
+        raise ValueError(f"log_fn {log_fn}: has to be string or bool")
+
+    def update_field(self, electrode=None, matsimnibs=None, didt=1e6, fn_electrode_txt=None,
                      dirichlet_correction=False):
         """
         Calculating and updating electric field for given coil position (matsimnibs) for TMS or electrode position (TES)
@@ -159,12 +180,11 @@ class OnlineFEM:
             obtained from previous runs to accelerate convergence.
         matsimnibs : np.array of float [4 x 4 x n_sim]
             Tensor containing the coil positions and orientations in SimNIBS space for multiple simulations.
-        sim_idx_hdf5 : int
-            Simulation index, to continue to write in .hdf5 file
         didt : float
             Rate of change of coil current (A/s) (e.g. 1 A/us = 1e6 A/s)
         fn_electrode_txt : str, optional, default: None
             Filename of .txt file containing the electrode node coords and the optimized currents
+            Note: Will be only used if dirichlet_correction == True
         dirichlet_correction : bool, optional, default: False
             Apply iterative Dirichlet correction to ensure same voltage over the whole electrode when solving.
 
@@ -211,31 +231,18 @@ class OnlineFEM:
             for i_roi, r in enumerate(self.roi):
                 if self.v is None:
                     self.e[i_sim][i_roi] = None
-                    if self.logger is not None:
-                        self.logger.log(20, "Warning! Simulation failed! Returning e-field: None!")
+                    if self._logging:
+                        logger.warning("Warning! Simulation failed! Returning e-field: None!")
                 else:
                     self.e[i_sim][i_roi] = r.calc_fields(v=self.v, dadt=self.dadt, dataType=self.dataType[i_roi])
 
                 if self.method == "TMS":
                     self.e[i_sim][i_roi] *= didt
 
-                # TODO save e-fields outside this function?
-                # store results (overwrite if existing)
-                if self.fn_results:
-                    with h5py.File(self.fn_results, "a") as f:
-                        try:
-                            if f"{sim_idx_hdf5:04}" in f[f"e/roi_{i_roi}"].keys():
-                                del f[f"e/roi_{i_roi}/{sim_idx_hdf5:04}"]
-                        except KeyError:
-                            pass
-                        f.create_dataset(name=f"e/roi_{i_roi}/{sim_idx_hdf5:04}", data=self.e[i_sim][i_roi])
-
-            sim_idx_hdf5 += 1
-
             stop = time.time()
 
-            if self.logger is not None:
-                self.logger.info(f"Finished simulation #{i_sim + 1}/{n_sim} (time: {(stop-start):.3f}s).")
+            if self._logging:
+                logger.info(f"Finished simulation #{i_sim + 1}/{n_sim} (time: {(stop-start):.3f}s).")
 
         return self.e
 
@@ -471,20 +478,21 @@ class OnlineFEM:
         denom_factor = 100
         n_wrong_current_signs = [0]
 
-        while maxrelerr > th_maxrelerr or n_wrong_current_signs[-1] / n_nodes_total > th_wrong_current_sign:
-            if j == 0:
-                print(
-                    f"iter: {j:03}, err: {maxrelerr:.3f}, df={denom_factor:.3f}")
-            else:
-                print(f"iter: {j:03}, err: {maxrelerr:.3f}, wcs: {n_wrong_current_signs[-1] / n_nodes_total:.3f}, df={denom_factor:.3f}")
+        while maxrelerr > th_maxrelerr or n_wrong_current_signs[-1] / n_nodes_total > th_wrong_current_sign:    
+            if self._logging:
+                if j == 0:
+                    logger.debug(
+                        f"iter: {j:03}, err: {maxrelerr:.3f}, df={denom_factor:.3f}")
+                else:
+                    logger.debug(f"iter: {j:03}, err: {maxrelerr:.3f}, wcs: {n_wrong_current_signs[-1] / n_nodes_total:.3f}, df={denom_factor:.3f}")
 
             j += 1
-
             if j == maxiter:
                 break
 
             if j > maxiter:
-                print('warning: did not converge after ' + str(maxiter) + ' iterations')
+                if self._logging:
+                    logger.warning('warning: did not converge after ' + str(maxiter) + ' iterations')
 
                 # reset to original currents
                 for _electrode_array in electrode._electrode_arrays:
@@ -511,7 +519,8 @@ class OnlineFEM:
 
                             if ((I[i_channel] - np.mean(I[i_channel]) + 1) < 0).any():
                                 step_size_factor /= 10
-                                print(f"Decreasing step size factor to {step_size_factor}")
+                                if self._logging:
+                                    logger.debug(f"Decreasing step size factor to {step_size_factor}")
                                 all_pos = False
                                 break
 
@@ -635,8 +644,9 @@ class OnlineFEM:
             # final error
             maxrelerr = np.max([np.max(np.abs(_v_norm[i_channel])) for i_channel in range(n_channel)])
 
-            print(f"Correcting current signs (pos: {np.sum(masks_sign_not[0])}/{len(masks_sign_not[0])}, "
-                  f"neg: {np.sum(masks_sign_not[1])}/{len(masks_sign_not[1])}), final maxrelerr: {maxrelerr:3f}")
+            if self._logging:
+                logger.debug(f"Correcting current signs (pos: {np.sum(masks_sign_not[0])}/{len(masks_sign_not[0])}, "
+                      f"neg: {np.sum(masks_sign_not[1])}/{len(masks_sign_not[1])}), final maxrelerr: {maxrelerr:3f}")
 
         # add optimal currents to CurrentEstimator (training data) to improve estimation in further iterations
         # this is done electrode wise and not node wise because the number of nodes changes depending on the
@@ -674,8 +684,6 @@ class OnlineFEM:
             Solution (including the Dirichlet node at the right position)
         """
 
-        logger.disabled = True
-
         # remove dirichlet node
         b_reduced = np.delete(b, self.dirichlet_node-1)
 
@@ -684,8 +692,6 @@ class OnlineFEM:
 
         # add Dirichlet node to solution
         v = np.insert(x, self.dirichlet_node-1, 0)
-
-        logger.disabled = False
 
         return np.squeeze(v)
 
@@ -713,7 +719,6 @@ class OnlineFEM:
             self.node_numbers = self.mesh.elm.node_number_list  # self.node_numbers
             useElements = self.useElements
             node_coordinates = self.mesh.nodes.node_coord.T
-            tag1 = self.mesh.elm.tag1
 
             # get the number of nodes
             number_of_nodes = node_coordinates.shape[1]
@@ -757,7 +762,9 @@ class OnlineFEM:
                                       cond=self.cond,
                                       ground_electrode=self.dirichlet_node,
                                       input_type="nodes",
-                                      solver_options=self.solver_options)
+                                      solver_options=self.solver_options,
+                                      solver_loglevel=self.solver_loglevel
+                                      )
 
             self.fem.prepare_solver()
             self.solver = self.fem._solver
@@ -1041,38 +1048,6 @@ def get_mesh_with_tetrahedra(mesh_file, logger=None):
         logger.info('Loaded mesh file: ' + mesh_file)
 
     return mesh
-
-
-def setup_logger(logname, filemode='w', format='[ %(name)s ] %(levelname)s: %(message)s', datefmt='%H:%M:%S'):
-    """
-    Setup logger.
-
-    Parameters
-    ----------
-    logname : str
-        Filename of logfile
-    filemode : str, optional, default: 'w'
-        'a' append or 'w' overwrite existing logfile.
-    format : str, optional, default: '[ %(name)s ] %(levelname)s: %(message)s'
-        format of the output message.
-    datefmt : str, optional, default: '%H:%M:%S'
-        Format of the output time.
-
-    Returns
-    -------
-    logger : logger instance
-        Logger using loging module
-    """
-
-    logging.basicConfig(filename=logname,
-                        filemode=filemode,
-                        format=format,
-                        datefmt=datefmt,
-                        level=logging.INFO)
-
-    logger = logging.getLogger("simnibs")
-
-    return logger
 
 
 def delete_row_csr(mat, i):

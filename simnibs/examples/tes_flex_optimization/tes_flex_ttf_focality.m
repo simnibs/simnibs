@@ -1,6 +1,7 @@
 %
 % Example to run TESoptimize for Tumor Treating Fields (TTF) to 
-% optimize the field focality in the ROI vs non-ROI
+% maximize the field in the ROI while at the same time making
+% the field as unfocal as possible to cover most of the brain
 %
 % © SimNIBS developers 2024 under the GPL v3 license
 %
@@ -11,7 +12,7 @@ opt.subpath = 'm2m_ernie';                                            % path of 
 opt.output_folder = 'tes_optimize_ttf_focality';
 
 % Set up goal function %
-opt.goal = 'focality';                                                % optimize intensity-focality tradeoff of 'magn' ('magn' defined by e_postproc)
+opt.goal = 'focality_inv';                                            % optimize intensity - non-focality tradeoff of 'magn' ('magn' defined by e_postproc)
 opt.threshold = [100, 100];                                           % define threshold(s)
 opt.e_postproc = 'magn';                                              % postprocessing of e-fields ('magn': magnitude, 'normal': normal component, 'tangential': tangential component)
 opt.constrain_electrode_locations = true;                             % WHAT IS THIS?

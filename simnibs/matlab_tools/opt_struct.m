@@ -130,6 +130,7 @@ switch S.type
         % options for L-BFGS-B solver (OPTIONAL)
         % see online documenation of scipy.optimize.minimize(method=’L-BFGS-B’)) for a list of available options
         S.l_bfgs_b_args.options.maxls = []; % maximal line-search steps; added just as example here (OPTIONAL, standard: 100)
+		S.open_in_gmsh=false; % Open result in gmsh when done
 
     case 'RegionOfInterest'
         S.method = ''; %  method to create the ROI {"manual", "custom", "surface", "volume", "volume_from_surface", "mesh+mask"}
@@ -166,6 +167,7 @@ switch S.type
         S.electrode = []; % opt_struct.CircularArray or opt_struct.ElectrodeArrayPair
         S.roi = {}; % either a single opt_struct.ROI to define a brain target, or cell array of two opt_struct.ROI {roi, non_roi}
         S.constrain_electrode_locations = []; % whether to constrain the search space for each electrode array pair (standard: false; useful for TTF)
+		S.open_in_gmsh=false; % Open result in gmsh when done
         
     case 'CircularArray' % Nx1 center surround montage                     
         S.radius_inner = []; % radius of inner electrode
