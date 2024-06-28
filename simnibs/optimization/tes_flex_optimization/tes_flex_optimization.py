@@ -1235,14 +1235,19 @@ class TesFlexOptimization:
             )
             logger.info(f"Local optimization finished! Best electrode position: {result.x}")
 
-        # transform electrode pos from array to list of list
+        # TODO: ensure that polish indeed improved the results, otherwise that global result and write warning
+        
+        # transform optimal electrode pos from array to list of list
         self.electrode_pos_opt = self.get_electrode_pos_from_array(result.x)
-
+        
+        # internally update electrodes to correspond to optimal electrode pos
+        _ = self.get_nodes_electrode(electrode_pos=self.electrode_pos_opt)
+        
         logger.log(26, f"Total number of function evaluations:                   {self.n_test}")
         logger.log(26, f"Total number of FEM evaluations:                        {self.n_sim}")
         logger.log(26, f"Final goal function value:                              {result.fun}")
         logger.log(26, f"Duration (setup and optimization):                      {time.time() - start}")
-        
+                
         # run final simulation with real electrode including remeshing
         #########################################################################################################
         if self.run_final_electrode_simulation:
