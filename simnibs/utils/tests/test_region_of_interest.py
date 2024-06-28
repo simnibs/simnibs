@@ -804,6 +804,83 @@ class TestApplyTissueMask:
             roi.get_roi_mesh().elm.node_number_list, cropped_sphere.elm.node_number_list
         )
 
+    def test_apply_tissue_mask_on_node_mask_union(self, sphere3_msh: Msh, tmp_path):
+        surface_roi = RegionOfInterest()
+        surface_path = os.path.join(tmp_path, "surf.msh")
+        sphere3_msh.crop_mesh(tags=[1003, 1004]).write(surface_path)
+        surface_roi.load_surfaces("custom", surface_path=surface_path)
+        surface_roi.apply_tissue_mask(1003, "intersection")
+
+        cropped_sphere = sphere3_msh.crop_mesh(1004)
+
+        np.testing.assert_allclose(
+            surface_roi.get_roi_mesh().nodes.node_coord, cropped_sphere.nodes.node_coord
+        )
+        np.testing.assert_allclose(
+            surface_roi.get_roi_mesh().elm.node_number_list, cropped_sphere.elm.node_number_list
+        )
+
+class TestApplyElementTypeMask:
+    def test_apply_element_mask_volume(self, sphere3_msh: Msh):
+        roi = RegionOfInterest()
+        roi.load_mesh(sphere3_msh)
+        roi.apply_element_type_mask(4, "intersection")
+
+        cropped_sphere = sphere3_msh.crop_mesh(elm_type=[4])
+
+        np.testing.assert_allclose(
+            roi.get_roi_mesh().nodes.node_coord, cropped_sphere.nodes.node_coord
+        )
+        np.testing.assert_allclose(
+            roi.get_roi_mesh().elm.node_number_list, cropped_sphere.elm.node_number_list
+        )
+
+    def test_apply_element_mask_surface(self, sphere3_msh: Msh, tmp_path):
+        surface_roi = RegionOfInterest()
+        surface_path = os.path.join(tmp_path, "surf.msh")
+        sphere3_msh.crop_mesh(tags=[1003]).write(surface_path)
+        surface_roi.load_surfaces("custom", surface_path=surface_path)
+
+        # This will not do anything, but that is tested here
+        surface_roi.apply_element_type_mask(2, "intersection")
+
+        cropped_sphere = sphere3_msh.crop_mesh(tags=[1003]).crop_mesh(elm_type=[2])
+
+        np.testing.assert_allclose(
+            surface_roi.get_roi_mesh().nodes.node_coord, cropped_sphere.nodes.node_coord
+        )
+        np.testing.assert_allclose(
+            surface_roi.get_roi_mesh().elm.node_number_list, cropped_sphere.elm.node_number_list
+        )
+
+class TestRoiGetElementTypes:
+    def test_get_mixed_element_types(self, sphere3_msh: Msh):
+        roi = RegionOfInterest()
+        roi.load_mesh(sphere3_msh)
+
+        elm_types_in_roi = roi.get_roi_element_types()
+        assert len(elm_types_in_roi) == 2
+        assert 2 in elm_types_in_roi
+        assert 4 in elm_types_in_roi
+
+    def test_get_surface_element_types(self, sphere3_msh: Msh, tmp_path):
+        surface_roi = RegionOfInterest()
+        surface_path = os.path.join(tmp_path, "surf.msh")
+        sphere3_msh.crop_mesh(tags=[1003]).write(surface_path)
+        surface_roi.load_surfaces("custom", surface_path=surface_path)
+
+        elm_types_in_roi = surface_roi.get_roi_element_types()
+        assert len(elm_types_in_roi) == 1
+        assert 2 in elm_types_in_roi
+
+    def test_get_tetrahedra_element_types(self, sphere3_msh: Msh):
+        roi = RegionOfInterest()
+        roi.load_mesh(sphere3_msh)
+        roi.apply_element_type_mask([4])
+
+        elm_types_in_roi = roi.get_roi_element_types()
+        assert len(elm_types_in_roi) == 1
+        assert 4 in elm_types_in_roi
 
 class TestApplyVolumeMask:
     def test_apply_simple_volume_mask(self, sphere3_msh, tmp_path):

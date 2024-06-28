@@ -157,6 +157,7 @@ class RegionOfInterest:
                     self.roi_sphere_operator,
                     self.subpath,
                 )
+                self.apply_element_type_mask(4)
 
             case "volume_from_surface":
                 surface_roi = RegionOfInterest()
@@ -185,6 +186,8 @@ class RegionOfInterest:
                 self.apply_volume_mask_from_surface_roi(
                     surface_roi, self.surface_inclusion_radius
                 )
+                self.apply_element_type_mask(4)
+
             case "mesh+mask":
                 self.load_mesh(self.mesh, self.subpath)
                 if self.node_mask is not None and self.elm_mask is None:
@@ -321,6 +324,29 @@ class RegionOfInterest:
                 if len(elm_indexes) == 0:
                     return Msh()
                 return self._mesh.crop_mesh(elements=elm_indexes)
+            case _:
+                raise ValueError("No mesh or surface was loaded")
+            
+    def get_roi_element_types(self) -> list[int]:
+        """Returns the element types that are present in the masked mesh
+
+        Returns
+        -------
+        list[int]
+            The element types present in the masked mesh
+
+        Raises
+        ------
+        ValueError
+            If no mesh or surface was loaded
+        """
+        match self._mask_type:
+            case "node":
+                masked_nodes_in_elm_mask = np.isin(self._mesh.elm.node_number_list, self._mesh.nodes.node_number[self._mask])
+                elm_mask = np.all(masked_nodes_in_elm_mask | (self._mesh.elm.node_number_list == -1), axis = 1)
+                return list(np.unique(self._mesh.elm.elm_type[elm_mask]))
+            case "elm_center":
+                return list(np.unique(self._mesh.elm.elm_type[self._mask]))
             case _:
                 raise ValueError("No mesh or surface was loaded")
 
@@ -979,11 +1005,68 @@ class RegionOfInterest:
 
         tissues = np.array(tissues)
 
-        self._mask = combine_mask(
-            self._mask,
-            self._mesh.elm.elm_number[np.in1d(self._mesh.elm.tag1, tissues)] - 1,
-            tissue_mask_operator,
-        )
+        match self._mask_type:
+            case "node":
+                node_indexes = np.unique(self._mesh.elm.node_number_list[np.in1d(self._mesh.elm.tag1, tissues)]) - 1
+                node_indexes = node_indexes[node_indexes >= 0]
+                self._mask = combine_mask(
+                    self._mask,
+                    node_indexes,
+                    tissue_mask_operator,
+                )
+            case "elm_center":
+                self._mask = combine_mask(
+                    self._mask,
+                    self._mesh.elm.elm_number[np.in1d(self._mesh.elm.tag1, tissues)] - 1,
+                    tissue_mask_operator,
+                )
+            case _:
+                raise ValueError("No mesh or surface was loaded")
+        
+
+    def apply_element_type_mask(
+        self,
+        element_types: int | list[int],
+        element_type_mask_operator: str | None = None,
+    ):
+        """Applies a mask based on the tissue tags in the mesh using the tissue_mask_operator.
+
+        Parameters
+        ----------
+        element_types : int | list[int] | None
+            The element types that are supposed to be masked
+        element_type_mask_operator : str | None, optional {"union", "intersection", "difference"}
+            The operator to be used, by default "union"
+            union: current_mask or element_type_mask
+            intersection: current_mask and element_type_mask
+            difference: current_mask and not element_type_mask
+        """
+
+        if not isinstance(element_types, list):
+            element_types = [element_types]
+
+        if element_type_mask_operator is None:
+            element_type_mask_operator = "intersection"
+
+        element_types = np.array(element_types)
+
+        match self._mask_type:
+            case "node":
+                node_indexes = np.unique(self._mesh.elm.node_number_list[np.in1d(self._mesh.elm.elm_type, element_types)]) - 1
+                node_indexes = node_indexes[node_indexes >= 0]
+                self._mask = combine_mask(
+                    self._mask,
+                    node_indexes,
+                    element_type_mask_operator,
+                )
+            case "elm_center":
+                self._mask = combine_mask(
+                    self._mask,
+                    self._mesh.elm.elm_number[np.in1d(self._mesh.elm.elm_type, element_types)] - 1,
+                    element_type_mask_operator,
+                )
+            case _:
+                raise ValueError("No mesh or surface was loaded")
 
     def invert(self):
         """Inverts the current mask"""
@@ -1058,9 +1141,7 @@ def load_surface_from_file(surface_path: str) -> Msh:
     surface = None
     match file_extension:
         case ".msh":
-            surface: Msh = mesh_io.read_msh(surface_path)
-            if np.any(surface.elm.elm_type != 2):
-                raise ValueError(".msh file contains non triangle elements")
+            surface: Msh = mesh_io.read_msh(surface_path).crop_mesh(elm_type=[2])
         case ".gii":
             surface = mesh_io.read_gifti_surface(surface_path)
         case _:
