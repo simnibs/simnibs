@@ -137,6 +137,32 @@ class TmsCoilElements(ABC, TcdElement):
             The B field at every target positions in Tesla*meter
         """
         pass
+    
+    def get_db_dt(
+        self,
+        target_positions: npt.NDArray[np.float_],
+        coil_affine: npt.NDArray[np.float_],
+        eps: float = 1e-3,
+    ) -> npt.NDArray[np.float_]:
+        """Calculate the dA/dt field applied by the coil element at each target point
+
+        Parameters
+        ----------
+        target_positions : npt.NDArray[np.float_]
+            The target positions in mm at which the dA/dt field should be calculated
+        coil_affine : npt.NDArray[np.float_]
+            The affine transformation that is applied to the coil
+        eps : float, optional
+            The requested precision, by default 1e-3
+
+        Returns
+        -------
+        npt.NDArray[np.float_]
+            The dA/dt field in V/m at every target position
+        """
+        return self.stimulator.di_dt * self.get_b_field(
+            target_positions, coil_affine, eps
+        )
 
     def get_combined_transformation(
         self, affine_matrix: Optional[npt.NDArray[np.float_]] = None
@@ -812,24 +838,30 @@ class LineSegmentElements(PositionalTmsCoilElements):
         target_positions_m = target_positions * 1e-3
 
         if directions_m.shape[0] >= 300:
-            B = fmm3dpy.l3ddir(
+            out = fmm3dpy.l3ddir(
                 sources=segment_position_m.T,
                 charges=directions_m.T,
                 targets=target_positions_m.T,
-                nd=1,
-                pgt=1,
+                nd=3,
+                pgt=2,
             )
         else:
-            B = fmm3dpy.lfmm3d(
+            out = fmm3dpy.lfmm3d(
                 sources=segment_position_m.T,
                 charges=directions_m.T,
                 targets=target_positions_m.T,
-                nd=1,
+                nd=3,
                 eps=eps,
-                pgt=1,
+                pgt=2,
             )
+            
+        B = np.empty((target_positions_m.shape[0], 3), dtype=float)
 
-        B = 1e-7 * B.pottarg.T
+        B[:, 0] = out.gradtarg[1][2] - out.gradtarg[2][1]
+        B[:, 1] = out.gradtarg[2][0] - out.gradtarg[0][2]
+        B[:, 2] = out.gradtarg[0][1] - out.gradtarg[1][0]
+
+        B *= -1e-7
         return B
 
     def generate_element_mesh(
