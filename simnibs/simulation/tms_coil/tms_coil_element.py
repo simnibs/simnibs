@@ -144,12 +144,12 @@ class TmsCoilElements(ABC, TcdElement):
         coil_affine: npt.NDArray[np.float_],
         eps: float = 1e-3,
     ) -> npt.NDArray[np.float_]:
-        """Calculate the dA/dt field applied by the coil element at each target point
+        """Calculate the dB/dt field applied by the coil element at each target point
 
         Parameters
         ----------
         target_positions : npt.NDArray[np.float_]
-            The target positions in mm at which the dA/dt field should be calculated
+            The target positions in mm at which the dB/dt field should be calculated
         coil_affine : npt.NDArray[np.float_]
             The affine transformation that is applied to the coil
         eps : float, optional
@@ -158,7 +158,7 @@ class TmsCoilElements(ABC, TcdElement):
         Returns
         -------
         npt.NDArray[np.float_]
-            The dA/dt field in V/m at every target position
+            The dB/dt field in V/m at every target position
         """
         return self.stimulator.di_dt * self.get_b_field(
             target_positions, coil_affine, eps
@@ -1047,7 +1047,7 @@ class SampledGridPointElements(TmsCoilElements):
         Returns
         -------
         npt.NDArray[np.float_] (N x 3)
-            The B-field at every target positions in Tesla*meter
+            The B-field at every target positions in Tesla
         """
         raise NotImplementedError()
 
