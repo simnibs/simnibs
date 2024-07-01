@@ -115,8 +115,9 @@ class TestLoadSurfaceFromFile:
         surface = sphere3_msh
         surface_path = os.path.join(tmp_path, "surface.msh")
         surface.write(surface_path)
-        with pytest.raises(Exception) as e_info:
-            region_of_interest.load_surface_from_file(surface_path)
+        surface = region_of_interest.load_surface_from_file(surface_path)
+
+        assert not np.any(surface.elm.elm_type != 2)
 
     def test_load_gifti(self, sphere3_msh: Msh, tmp_path):
         surface = sphere3_msh.crop_mesh(1004)
@@ -811,7 +812,7 @@ class TestApplyTissueMask:
         surface_roi.load_surfaces("custom", surface_path=surface_path)
         surface_roi.apply_tissue_mask(1003, "intersection")
 
-        cropped_sphere = sphere3_msh.crop_mesh(1004)
+        cropped_sphere = sphere3_msh.crop_mesh(1003)
 
         np.testing.assert_allclose(
             surface_roi.get_roi_mesh().nodes.node_coord, cropped_sphere.nodes.node_coord

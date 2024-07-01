@@ -45,7 +45,7 @@ class TestOnlineFEM:
                          roi=[roi],
                          anisotropy_type="scalar",
                          solver_options="pardiso",
-                         fn_results=None,
+                         fn_logger=None,
                          useElements=True,
                          dataType=[1],
                          dirichlet_node=1)
@@ -94,7 +94,7 @@ class TestOnlineFEM:
                          roi=[roi],
                          anisotropy_type="scalar",
                          solver_options="pardiso",
-                         fn_results=None,
+                         fn_logger=None,
                          useElements=True,
                          dataType=[1],
                          dirichlet_node=1)
@@ -128,7 +128,7 @@ class TestOnlineFEM:
                          roi=[roi],
                          anisotropy_type="scalar",
                          solver_options="pardiso",
-                         fn_results=None,
+                         fn_logger=None,
                          useElements=True,
                          dataType=[1],
                          dirichlet_node=1)
