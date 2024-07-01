@@ -369,24 +369,31 @@ class RoiResultVisualization:
 
         dont_duplicate_views = ["scalp"]
         added_views = []
-        self.geo_content = ""
+        geo_content = []
+        added_geo_views_indexes = []
+
+        post_geo_content = []
+        post_added_geo_views_indexes = []
         for i, geo_filename in enumerate(geo_filenames):
             geo_views = RoiResultVisualization._read_geo(geo_filename)
-            added_geo_views_indexes = []
             for j, geo_view_name in enumerate(geo_views):
                 if geo_view_name in dont_duplicate_views:
                     if geo_view_name not in added_views:
                         added_views.append(geo_view_name)
-                        self.geo_content += geo_views[geo_view_name]
-                        added_geo_views_indexes.append(j)
+                        post_geo_content.append(geo_views[geo_view_name])
+                        post_added_geo_views_indexes.append(j)
                 else:
                     new_geo_view_name = f"{self.result_prefixes[i]}{geo_view_name}"
                     added_views.append(new_geo_view_name)
-                    self.geo_content += geo_views[geo_view_name].replace(
+                    geo_content.append(geo_views[geo_view_name].replace(
                         geo_view_name, new_geo_view_name
-                    )
+                    ))
                     added_geo_views_indexes.append(j)
-
+        
+        self.geo_content = ''.join(geo_content) + ''.join(post_geo_content)
+        added_geo_views_indexes.extend(post_added_geo_views_indexes)
+            
+        for i, geo_filename in enumerate(geo_filenames):
             if self.head_mesh is not None:
                 for added_views_index in added_geo_views_indexes:
                     view = gmsh_options[i].View[
@@ -408,6 +415,7 @@ class RoiResultVisualization:
                     view: gmsh_view.View = deepcopy(view)
                     view.indx = self.surface_mesh_opt.View[-1].indx + 1
                     self.surface_mesh_opt.View.append(view)
+
 
     def write_visualization(self):
         """Writes a visualization of the results and region of interests to a folder
