@@ -14,11 +14,12 @@ class RoiResultVisualization:
     def __init__(
         self,
         rois: list[RegionOfInterest],
-        sim_result_filenames: list[str]
-        , folder_path: str, base_file_name: str,
+        sim_result_filenames: list[str],
+        folder_path: str,
+        base_file_name: str,
         roi_names: list[str] | None = None,
         result_prefixes: list[str] | None = None,
-        base_head_mesh: Msh | None = None
+        base_head_mesh: Msh | None = None,
     ) -> None:
         self.head_mesh: Msh | None = None
         self.surface_mesh: Msh | None = None
@@ -26,7 +27,9 @@ class RoiResultVisualization:
         self.sim_result_filenames = sim_result_filenames
         self.folder_path = folder_path
         self.base_file_name = base_file_name
-        self.geo_file_name = os.path.join(self.folder_path, f'{self.base_file_name}.geo')
+        self.geo_file_name = os.path.join(
+            self.folder_path, f"{self.base_file_name}.geo"
+        )
 
         if roi_names is None:
             self.roi_names = [f"roi_{i}" for i in np.arange(len(rois))]
@@ -124,7 +127,9 @@ class RoiResultVisualization:
         for i, filename in enumerate(self.sim_result_filenames):
             result_mesh = Msh(fn=filename)
             if self.head_mesh is not None:
-                result_mesh = result_mesh.crop_mesh(tags=np.unique(self.head_mesh.elm.tag1))
+                result_mesh = result_mesh.crop_mesh(
+                    tags=np.unique(self.head_mesh.elm.tag1)
+                )
             self.elm_field_count_per_file.append(len(result_mesh.elmdata))
             self.node_field_count_per_file.append(len(result_mesh.nodedata))
 
@@ -158,7 +163,6 @@ class RoiResultVisualization:
                         f"{self.result_prefixes[i]}{node_data.field_name}",
                     )
 
-
     def has_surface_mesh(self) -> bool:
         return self.surface_mesh is not None
 
@@ -176,6 +180,39 @@ class RoiResultVisualization:
             return self.head_mesh
         else:
             raise AttributeError()
+        
+    def remove_field_from_surface_mesh(self, field_name: str):
+        if self.surface_mesh is not None:
+            RoiResultVisualization._remove_field(self.surface_mesh, self.surface_mesh_opt, field_name)
+
+    def remove_field_from_head_mesh(self, field_name: str):
+        if self.head_mesh is not None:
+            RoiResultVisualization._remove_field(self.head_mesh, self.head_mesh_opt, field_name)
+    
+    @staticmethod
+    def _remove_field(mesh:Msh, gmsh_options: gmsh_view.Visualization, field_name):
+        view_index = 0
+        found = False
+        for node_data_field in mesh.nodedata:
+            if field_name == node_data_field.field_name:
+                found = True
+                mesh.nodedata.remove(node_data_field)
+                break
+            view_index += 1
+
+        if not found:
+            for elm_data_field in mesh.elmdata:
+                if field_name == elm_data_field.field_name:
+                    found = True
+                    mesh.nodedata.remove(elm_data_field)
+                    break
+                view_index += 1
+
+        if found:
+            del gmsh_options.View[view_index]
+
+            for i, gmsh_view in enumerate(gmsh_options.View):
+                gmsh_view.indx = i
 
     def create_visualization(self):
         gmsh_options: list[gmsh_view.Visualization] = []
@@ -191,9 +228,7 @@ class RoiResultVisualization:
             self.head_mesh_opt = deepcopy(gmsh_options[0])
             self.head_mesh_opt.View = []
             self.head_mesh_opt.merge = []
-            self.head_mesh_opt.add_merge(
-                self.geo_file_name
-            )
+            self.head_mesh_opt.add_merge(self.geo_file_name)
             unique_tags = np.unique(self.head_mesh.elm.tag1)
             for tag in list(self.head_mesh_opt.PhysicalNames.PhysicalSurfaces.keys()):
                 if tag not in unique_tags:
@@ -233,17 +268,22 @@ class RoiResultVisualization:
             for i in range(self._node_data_roi_count):
                 mesh_opt.add_view()
                 current_view_index += 1
-                mesh_data_name_to_gmsh_view[
-                    mesh.nodedata[i].field_name
-                ] = mesh_opt.View[-1]
+                mesh_data_name_to_gmsh_view[mesh.nodedata[i].field_name] = (
+                    mesh_opt.View[-1]
+                )
                 data_count_sum += 1
 
             # 2. node data of all input files
             for i, result_filename in enumerate(self.sim_result_filenames):
                 node_data_count = self.node_field_count_per_file[i]
                 opt = gmsh_options[i]
-                for j in range(self._node_data_roi_count, node_data_count + self._node_data_roi_count):
-                    view: gmsh_view.View = deepcopy(opt.View[j - self._node_data_roi_count])
+                for j in range(
+                    self._node_data_roi_count,
+                    node_data_count + self._node_data_roi_count,
+                ):
+                    view: gmsh_view.View = deepcopy(
+                        opt.View[j - self._node_data_roi_count]
+                    )
                     view.indx = current_view_index
                     current_view_index += 1
                     mesh_opt.View.append(view)
@@ -263,9 +303,9 @@ class RoiResultVisualization:
             for i in range(self._elm_data_roi_count):
                 mesh_opt.add_view()
                 current_view_index += 1
-                mesh_data_name_to_gmsh_view[
-                    mesh.elmdata[i].field_name
-                ] = mesh_opt.View[-1]
+                mesh_data_name_to_gmsh_view[mesh.elmdata[i].field_name] = mesh_opt.View[
+                    -1
+                ]
                 data_count_sum += 1
 
             # 5. elm data of all input files
@@ -273,8 +313,13 @@ class RoiResultVisualization:
                 node_data_count = self.node_field_count_per_file[i]
                 elm_data_count = self.elm_field_count_per_file[i]
                 opt = gmsh_options[i]
-                for j in range(node_data_count + self._elm_data_roi_count, node_data_count + self._elm_data_roi_count + elm_data_count):
-                    view: gmsh_view.View = deepcopy(opt.View[j - self._elm_data_roi_count])
+                for j in range(
+                    node_data_count + self._elm_data_roi_count,
+                    node_data_count + self._elm_data_roi_count + elm_data_count,
+                ):
+                    view: gmsh_view.View = deepcopy(
+                        opt.View[j - self._elm_data_roi_count]
+                    )
                     view.indx = current_view_index
                     current_view_index += 1
                     mesh_opt.View.append(view)
@@ -293,20 +338,20 @@ class RoiResultVisualization:
         if self.head_mesh is not None:
             for roi_name in self.roi_names:
                 roi_view = self.head_mesh_data_name_to_gmsh_view[roi_name]
-                roi_view.Visible=0
-                roi_view.ShowScale=0
-                roi_view.CustomMin=0.9
-                roi_view.CustomMax=1
-                roi_view.RangeType=2
+                roi_view.Visible = 0
+                roi_view.ShowScale = 0
+                roi_view.CustomMin = 0.9
+                roi_view.CustomMax = 1
+                roi_view.RangeType = 2
 
         if self.surface_mesh is not None:
             for roi_name in self.roi_names:
                 roi_view = self.surface_mesh_data_name_to_gmsh_view[roi_name]
-                roi_view.Visible=0
-                roi_view.ShowScale=0
-                roi_view.CustomMin=0
-                roi_view.CustomMax=1
-                roi_view.RangeType=2
+                roi_view.Visible = 0
+                roi_view.ShowScale = 0
+                roi_view.CustomMin = 0
+                roi_view.CustomMax = 1
+                roi_view.RangeType = 2
 
         geo_filenames = []
         for sim_result_filename in self.sim_result_filenames:
@@ -376,20 +421,24 @@ class RoiResultVisualization:
         """
         file_names = []
         if self.head_mesh is not None:
-            file_names.append(os.path.join(self.folder_path, f"{self.base_file_name}_head_mesh.msh"))
-            self.head_mesh.write(
-                file_names[-1]
+            file_names.append(
+                os.path.join(self.folder_path, f"{self.base_file_name}_head_mesh.msh")
             )
+            self.head_mesh.write(file_names[-1])
 
         if self.surface_mesh is not None:
-            file_names.append(os.path.join(self.folder_path, f"{self.base_file_name}_surface_mesh.msh"))
-            self.surface_mesh.write(
-                file_names[-1]
+            file_names.append(
+                os.path.join(
+                    self.folder_path, f"{self.base_file_name}_surface_mesh.msh"
+                )
             )
-        
+            self.surface_mesh.write(file_names[-1])
+
         self.write_gmsh_options()
 
-        with open(os.path.join(self.folder_path, f"{self.base_file_name}.geo"), "w") as file:
+        with open(
+            os.path.join(self.folder_path, f"{self.base_file_name}.geo"), "w"
+        ) as file:
             file.write(self.geo_content)
 
         return file_names
@@ -402,7 +451,9 @@ class RoiResultVisualization:
 
         if self.surface_mesh is not None:
             self.surface_mesh_opt.write_opt(
-                os.path.join(self.folder_path, f"{self.base_file_name}_surface_mesh.msh")
+                os.path.join(
+                    self.folder_path, f"{self.base_file_name}_surface_mesh.msh"
+                )
             )
 
     @staticmethod
@@ -455,13 +506,18 @@ class RoiResultVisualization:
                 if match is not None:
                     setattr(opt.General, match.group(1), match.group(2))
                 else:
-                    raise IOError()    
+                    raise IOError()
 
             elif line.startswith("Mesh"):
                 pattern = r"Mesh\.([A-Za-z0-9_\.]+) = ([^;]+);"
                 match = re.search(pattern, line)
                 if match is not None:
-                    setattr(opt.Mesh, match.group(1), match.group(2))
+                    if line.startswith('Mesh.Color'):
+                        data_str = match.group(2).strip("{}")
+                        data_list = list(map(int, data_str.split(",")))
+                        setattr(opt.Mesh.Color, match.group(1).removeprefix('Color.'), data_list)
+                    else:
+                        setattr(opt.Mesh, match.group(1), match.group(2))
                 else:
                     raise IOError()
             elif line.startswith("View"):
@@ -476,13 +532,15 @@ class RoiResultVisualization:
                         opt.add_view()
 
                     if name == "ColorTable":
-                        data_str = value.strip("{}")
+                        data_str = value.removeprefix("{")
+                        data_str = data_str.removesuffix("}")
                         matches = re.findall(r"\{([^}]+)\}", data_str)
-                        data_list = [list(map(int, match.split(","))) for match in matches]
+                        data_list = [
+                            list(map(int, match.split(","))) for match in matches
+                        ]
                         value = np.array(data_list)
                     setattr(opt.View[view_index], name, value)
                 else:
                     raise IOError()
 
         return opt
-    

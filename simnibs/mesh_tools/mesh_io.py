@@ -760,11 +760,11 @@ class Msh:
         wheather or not the mesh was in binary format
    """
 
-    def __init__(self, nodes=None, elements=None, fn=None):
+    def __init__(self, nodes:Nodes=None, elements:Elements=None, fn=None):
         self.nodes = Nodes()
         self.elm = Elements()
-        self.nodedata = []
-        self.elmdata = []
+        self.nodedata: list[NodeData] = []
+        self.elmdata: list[ElementData] = []
         self.fn = ''  # file name to save msh
 
         if nodes is not None:
