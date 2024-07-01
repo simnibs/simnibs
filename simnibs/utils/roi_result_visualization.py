@@ -211,8 +211,8 @@ class RoiResultVisualization:
         if found:
             del gmsh_options.View[view_index]
 
-            for i, gmsh_view in enumerate(gmsh_options.View):
-                gmsh_view.indx = i
+            for i, current_gmsh_view in enumerate(gmsh_options.View):
+                current_gmsh_view.indx = i
 
     def create_visualization(self):
         gmsh_options: list[gmsh_view.Visualization] = []
@@ -465,11 +465,12 @@ class RoiResultVisualization:
         for line in data:
             if current_view_name is None:
                 current_view_name = re.findall(r'View"([^"]+)"\{', line)[0]
-                views[current_view_name] = ""
+                views[current_view_name] = []
 
-            views[current_view_name] += line
+            views[current_view_name].append(line)
 
             if line.startswith("};"):
+                views[current_view_name] = ''.join(views[current_view_name])
                 current_view_name = None
 
         return views
