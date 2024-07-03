@@ -10,6 +10,30 @@ from simnibs.utils.region_of_interest import RegionOfInterest
 
 
 class RoiResultVisualization:
+    """
+    Workflow
+    -----------
+    1. Init visualization
+        roi_result_vis = RoiResultVisualization(...)
+    2. (Optional) Add data fields to the meshes
+        if roi_result_vis.has_head_mesh():
+            roi_result_vis.get_head_mesh().add_element_field(...)
+        ...
+        if roi_result_vis.has_surface_mesh():
+            roi_result_vis.get_surface_mesh().add_element_field(...)
+    3. Create visualization
+        roi_result_vis.create_visualization()
+    4. (Optional) Change gmsh views and delete data
+        roi_result_vis.head_mesh_data_name_to_gmsh_view[data_field_name].view_setting = view_setting
+        ...
+        roi_result_vis.remove_field_from_surface_mesh(data_field_name)
+    5. Write visualization
+        roi_result_vis.write_visualization()
+    6. (Optional) Append geo data and views and override opt file
+        x.append_visualization(roi_result_vis.head_mesh_opt, roi_result_vis.geo_file_name, ...)
+        ...
+        roi_result_vis.write_gmsh_options()
+    """
 
     def __init__(
         self,
