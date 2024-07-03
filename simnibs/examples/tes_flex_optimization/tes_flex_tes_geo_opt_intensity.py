@@ -16,19 +16,19 @@ opt.goal = "mean"                                       # maximize the mean of e
 opt.e_postproc = "magn"                                 # postprocessing of e-fields ("magn": magnitude, 
                                                         # "normal": normal component, "tangential": tangential component)
 ''' Define electrodes and array layout '''
-electrode = opt.add_electrode_layout("ElectrodeArrayPair") # Pair of TES electrode arrays (here: 1 electrode per array)
-electrode.length_x_bounds = [50, 70]                    # x-dimension of electrodes [min, max]
-electrode.length_y_bounds = [50, 70]                    # y-dimension of electrodes [min, max]
-electrode.dirichlet_correction_detailed = False         # account for inhomogenous current distribution at electrode-skin interface (slow)
-electrode.current = [0.002, -0.002]                     # electrode currents
+electrode_layout = opt.add_electrode_layout("ElectrodeArrayPair")   # Pair of TES electrode arrays (here: 1 electrode per array)
+electrode_layout.length_x_bounds = [50, 70]                         # x-dimension of electrodes [min, max]
+electrode_layout.length_y_bounds = [50, 70]                         # y-dimension of electrodes [min, max]
+electrode_layout.dirichlet_correction_detailed = False              # account for inhomogenous current distribution at electrode-skin interface (slow)
+electrode_layout.current = [0.002, -0.002]                          # electrode currents
 
 ''' Define ROI '''
 roi = opt.add_roi()
 roi.method = "surface"
-roi.surface_type = "central"                        # define ROI on central GM surfaces
+roi.surface_type = "central"                            # define ROI on central GM surfaces
 roi.roi_sphere_center_space = "subject"
-roi.roi_sphere_center = [-41.0, -13.0,  66.0]       # center of spherical ROI in subject space (in mm)
-roi.roi_sphere_radius = 20                          # radius of spherical ROI (in mm)
+roi.roi_sphere_center = [-41.0, -13.0,  66.0]           # center of spherical ROI in subject space (in mm)
+roi.roi_sphere_radius = 20                              # radius of spherical ROI (in mm)
 # uncomment for visual control of ROI:
 #roi.subpath = opt.subpath
 #roi.write_visualization('','roi.msh')

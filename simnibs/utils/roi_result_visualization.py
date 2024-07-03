@@ -51,24 +51,28 @@ class RoiResultVisualization:
         if base_head_mesh is not None:
             self.head_mesh = base_head_mesh
 
-        self._elm_data_roi_count = 0
-        self._node_data_roi_count = 0
+        self._head_mesh_roi_names = []
+        self._surface_mesh_roi_names = []
+        self._head_mesh_roi_counts = {'ed': 0, 'nd': 0}
+        self._surface_mesh_roi_counts = {'ed': 0, 'nd': 0}
         surface_names_to_surface: dict[str, Msh] = {}
         for i, roi in enumerate(rois):
             if 4 in roi._mesh.elm.elm_type:
+                self._head_mesh_roi_names.append(self.roi_names[i])
                 if self.head_mesh is None:
                     self.head_mesh = roi._mesh
                 match roi._mask_type:
                     case "node":
                         self.head_mesh.add_node_field(roi._mask, self.roi_names[i])
-                        self._node_data_roi_count += 1
+                        self._head_mesh_roi_counts['nd'] += 1
                     case "elm_center":
                         self.head_mesh.add_element_field(roi._mask, self.roi_names[i])
                         self.head_mesh.field[self.roi_names[i]].assign_triangle_values()
-                        self._elm_data_roi_count += 1
+                        self._head_mesh_roi_counts['ed'] += 1
                     case _:
                         raise NotImplementedError()
             else:
+                self._surface_mesh_roi_names.append(self.roi_names[i])
                 match roi.surface_type:
                     case "central":
                         surface_name = "central"
@@ -106,12 +110,12 @@ class RoiResultVisualization:
                         surface_names_to_surface[surface_name].add_node_field(
                             roi._mask, self.roi_names[i]
                         )
-                        self._node_data_roi_count += 1
+                        self._surface_mesh_roi_counts['nd'] += 1
                     case "elm_center":
                         surface_names_to_surface[surface_name].add_element_field(
                             roi._mask, self.roi_names[i]
                         )
-                        self._elm_data_roi_count = 0
+                        self._surface_mesh_roi_counts['ed'] += 1
                     case _:
                         raise NotImplementedError()
 
@@ -147,7 +151,7 @@ class RoiResultVisualization:
                         ),
                         f"{self.result_prefixes[i]}{elm_data.field_name}",
                     )
-
+                
             for node_data in result_mesh.nodedata:
                 if self.head_mesh is not None:
                     self.head_mesh.add_node_field(
@@ -204,7 +208,7 @@ class RoiResultVisualization:
             for elm_data_field in mesh.elmdata:
                 if field_name == elm_data_field.field_name:
                     found = True
-                    mesh.nodedata.remove(elm_data_field)
+                    mesh.elmdata.remove(elm_data_field)
                     break
                 view_index += 1
 
@@ -243,6 +247,7 @@ class RoiResultVisualization:
                     self.head_mesh,
                     self.head_mesh_opt,
                     self.head_mesh_data_name_to_gmsh_view,
+                    self._head_mesh_roi_counts
                 )
             )
 
@@ -258,14 +263,16 @@ class RoiResultVisualization:
                     self.surface_mesh,
                     self.surface_mesh_opt,
                     self.surface_mesh_data_name_to_gmsh_view,
+                    self._surface_mesh_roi_counts
                 )
             )
 
-        for mesh, mesh_opt, mesh_data_name_to_gmsh_view in meshes_and_opt:
+        for mesh, mesh_opt, mesh_data_name_to_gmsh_view, roi_counts in meshes_and_opt:
+            
             # 1. node data of rois
             data_count_sum = 0
             current_view_index = 0
-            for i in range(self._node_data_roi_count):
+            for i in range(roi_counts['nd']):
                 mesh_opt.add_view()
                 current_view_index += 1
                 mesh_data_name_to_gmsh_view[mesh.nodedata[i].field_name] = (
@@ -274,20 +281,22 @@ class RoiResultVisualization:
                 data_count_sum += 1
 
             # 2. node data of all input files
+            offset = 0
             for i, result_filename in enumerate(self.sim_result_filenames):
                 node_data_count = self.node_field_count_per_file[i]
                 opt = gmsh_options[i]
                 for j in range(
-                    self._node_data_roi_count,
-                    node_data_count + self._node_data_roi_count,
+                    roi_counts['nd'],
+                    node_data_count + roi_counts['nd'],
                 ):
                     view: gmsh_view.View = deepcopy(
-                        opt.View[j - self._node_data_roi_count]
+                        opt.View[j - roi_counts['nd']]
                     )
                     view.indx = current_view_index
                     current_view_index += 1
                     mesh_opt.View.append(view)
-                    mesh_data_name_to_gmsh_view[mesh.nodedata[j].field_name] = view
+                    mesh_data_name_to_gmsh_view[mesh.nodedata[j+offset].field_name] = view     
+                offset += node_data_count
                 data_count_sum += node_data_count
 
             # 3. node data added inbetween
@@ -300,7 +309,7 @@ class RoiResultVisualization:
 
             # 4. elm data of rois
             data_count_sum = 0
-            for i in range(self._elm_data_roi_count):
+            for i in range(roi_counts['ed']):
                 mesh_opt.add_view()
                 current_view_index += 1
                 mesh_data_name_to_gmsh_view[mesh.elmdata[i].field_name] = mesh_opt.View[
@@ -309,21 +318,23 @@ class RoiResultVisualization:
                 data_count_sum += 1
 
             # 5. elm data of all input files
+            offset = 0
             for i, result_filename in enumerate(self.sim_result_filenames):
                 node_data_count = self.node_field_count_per_file[i]
                 elm_data_count = self.elm_field_count_per_file[i]
                 opt = gmsh_options[i]
                 for j in range(
-                    node_data_count + self._elm_data_roi_count,
-                    node_data_count + self._elm_data_roi_count + elm_data_count,
+                    node_data_count + roi_counts['ed'],
+                    node_data_count + roi_counts['ed'] + elm_data_count,
                 ):
                     view: gmsh_view.View = deepcopy(
-                        opt.View[j - self._elm_data_roi_count]
+                        opt.View[j - roi_counts['ed']]
                     )
                     view.indx = current_view_index
                     current_view_index += 1
                     mesh_opt.View.append(view)
-                    mesh_data_name_to_gmsh_view[mesh.elmdata[j].field_name] = view
+                    mesh_data_name_to_gmsh_view[mesh.elmdata[j+offset].field_name] = view        
+                offset += elm_data_count
                 data_count_sum += node_data_count + elm_data_count
 
             # 6. elm data added inbetween
@@ -336,7 +347,7 @@ class RoiResultVisualization:
 
         # add roi view settings
         if self.head_mesh is not None:
-            for roi_name in self.roi_names:
+            for roi_name in self._head_mesh_roi_names:
                 roi_view = self.head_mesh_data_name_to_gmsh_view[roi_name]
                 roi_view.Visible = 0
                 roi_view.ShowScale = 0
@@ -345,7 +356,7 @@ class RoiResultVisualization:
                 roi_view.RangeType = 2
 
         if self.surface_mesh is not None:
-            for roi_name in self.roi_names:
+            for roi_name in self._surface_mesh_roi_names:
                 roi_view = self.surface_mesh_data_name_to_gmsh_view[roi_name]
                 roi_view.Visible = 0
                 roi_view.ShowScale = 0
@@ -371,7 +382,6 @@ class RoiResultVisualization:
         added_views = []
         geo_content = []
         added_geo_views_indexes = []
-
         post_geo_content = []
         post_added_geo_views_indexes = []
         for i, geo_filename in enumerate(geo_filenames):
@@ -381,41 +391,33 @@ class RoiResultVisualization:
                     if geo_view_name not in added_views:
                         added_views.append(geo_view_name)
                         post_geo_content.append(geo_views[geo_view_name])
-                        post_added_geo_views_indexes.append(j)
+                        post_added_geo_views_indexes.append([i,j])
                 else:
                     new_geo_view_name = f"{self.result_prefixes[i]}{geo_view_name}"
                     added_views.append(new_geo_view_name)
                     geo_content.append(geo_views[geo_view_name].replace(
                         geo_view_name, new_geo_view_name
                     ))
-                    added_geo_views_indexes.append(j)
+                    added_geo_views_indexes.append([i,j])
         
         self.geo_content = ''.join(geo_content) + ''.join(post_geo_content)
         added_geo_views_indexes.extend(post_added_geo_views_indexes)
-            
-        for i, geo_filename in enumerate(geo_filenames):
+        
+        for idx_fn, idx_v in added_geo_views_indexes:
+            view = gmsh_options[idx_fn].View[
+                self.node_field_count_per_file[idx_fn]
+                + self.elm_field_count_per_file[idx_fn]
+                + idx_v
+            ]
             if self.head_mesh is not None:
-                for added_views_index in added_geo_views_indexes:
-                    view = gmsh_options[i].View[
-                        self.node_field_count_per_file[i]
-                        + self.elm_field_count_per_file[i]
-                        + added_views_index
-                    ]
-                    view: gmsh_view.View = deepcopy(view)
-                    view.indx = self.head_mesh_opt.View[-1].indx + 1
-                    self.head_mesh_opt.View.append(view)
-
+                view2: gmsh_view.View = deepcopy(view)
+                view2.indx = self.head_mesh_opt.View[-1].indx + 1
+                self.head_mesh_opt.View.append(view2)
+                
             if self.surface_mesh is not None:
-                for added_views_index in added_geo_views_indexes:
-                    view = gmsh_options[i].View[
-                        self.node_field_count_per_file[i]
-                        + self.elm_field_count_per_file[i]
-                        + added_views_index
-                    ]
-                    view: gmsh_view.View = deepcopy(view)
-                    view.indx = self.surface_mesh_opt.View[-1].indx + 1
-                    self.surface_mesh_opt.View.append(view)
-
+                view2: gmsh_view.View = deepcopy(view)
+                view2.indx = self.surface_mesh_opt.View[-1].indx + 1
+                self.surface_mesh_opt.View.append(view2)
 
     def write_visualization(self):
         """Writes a visualization of the results and region of interests to a folder

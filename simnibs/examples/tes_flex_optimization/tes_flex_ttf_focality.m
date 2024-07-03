@@ -23,7 +23,7 @@ electrode_layout.center = {[-33,  22], [  0,  22], [ 33,  22], ...    % electrod
                            [-33,   0], [  0,   0], [ 33,   0], ...
                            [-33, -22], [  0, -22], [ 33, -22]};
 electrode_layout.radius = [10, 10, 10, 10, 10, 10, 10, 10, 10];       % radii of electrodes
-electrode_layout.dirichlet_correction = false;                        % set to True when all electrodes of an array are connected to the same channel (slower)
+electrode_layout.dirichlet_correction = true;                         % set to true when all electrodes of an array are connected to the same channel (slower)
 electrode_layout.current = [1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9, ... % electrode currents: 1/9 for each electrode of the first array
                            -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9];    % -1/9 for each electrode of the second array
 opt.electrode{1} = electrode_layout;
@@ -34,7 +34,7 @@ electrode_layout.center = {[-33,  22], [  0,  22], [ 33,  22], ...
                     [-33,   0], [  0,   0], [ 33,   0], ...
                     [-33, -22], [  0, -22], [ 33, -22]};
 electrode_layout.radius = [10, 10, 10, 10, 10, 10, 10, 10, 10]; 
-electrode_layout.dirichlet_correction = false;
+electrode_layout.dirichlet_correction = true;
 electrode_layout.current = [1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9, ...
                            -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9]; 
 opt.electrode{2} = electrode_layout;

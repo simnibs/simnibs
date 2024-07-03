@@ -967,7 +967,7 @@ class ElectrodeArray:
         for i in range(self.n_ele):
             self.electrodes[i].transform(transmat=transmat)
 
-    def plot(self, fn_plot=None, show=True):
+    def plot(self, fn_plot=None, show=True, usesDirichlet=False):
         """
         Plot electrode array
 
@@ -977,6 +977,8 @@ class ElectrodeArray:
             Show plot
         fn_plot : str
             Filename of output.png file
+        usesDirichlet: bool, optional, default: False
+            whether Dirichlet correction is used for the array
         """
         import matplotlib
         import matplotlib.pyplot as plt
@@ -988,17 +990,24 @@ class ElectrodeArray:
 
         prop_cycle = plt.rcParams["axes.prop_cycle"]
         colors = prop_cycle.by_key()["color"]
+            
+        if usesDirichlet:
+            channel_idx = self.channel_id
+        else:
+            channel_idx = self.ele_id
 
-        if len(colors) < np.max(self.channel_id):
-            colors = colors * int(np.ceil(colors / np.max(self.channel_id)))
-
+        if len(colors) < np.max(channel_idx):
+            colors = list(np.tile(colors, 
+                                  int(np.ceil(np.max(channel_idx) / len(colors)))
+                                  )
+                         )
         plt.ioff()
         fig = plt.figure()
         ax = fig.add_subplot(111)
         i_ele = 0
 
         for cen, cha, rad, l_x, l_y in zip(
-            self.center, self.channel_id, self.radius, self.length_x, self.length_y
+            self.center, channel_idx, self.radius, self.length_x, self.length_y
         ):
             if rad != 0:
                 obj = plt.Circle(
@@ -1909,11 +1918,19 @@ def create_tdcs_session_from_array(electrode_array, fnamehead, pathfem, thicknes
         tdcslist.cond[499].value = sigma_saline
 
     # Set currents
-    tdcslist.currents = electrode_array._current_channel
-
+    if electrode_array.dirichlet_correction == True or electrode_array.dirichlet_correction_detailed == True:
+        # this corresponds to several electrodes sharing a common channel
+        tdcslist.currents = electrode_array._current_channel
+    else:
+        # each electrode has its own channel
+        tdcslist.currents = electrode_array.current
+        channel_idx = np.arange(len(electrode_array.current))
+        
     # Initialize the electrodes
+    counter = 0
     for i_array, _electrode_array in enumerate(electrode_array._electrode_arrays):
         for i_ele, _electrode in enumerate(_electrode_array.electrodes):
+                        
             # add new electrode
             electrode = tdcslist.add_electrode()
 
@@ -1952,8 +1969,11 @@ def create_tdcs_session_from_array(electrode_array, fnamehead, pathfem, thicknes
                 if plug_dimensions is not None:
                     plug.dimensions = plug_dimensions
 
-            # Connect electrode to first channel (-1e-3 mA, cathode)
-            electrode.channelnr = _electrode.channel_id
+            # Connect electrode to its channel
+            if electrode_array.dirichlet_correction == True or electrode_array.dirichlet_correction_detailed == True:
+                electrode.channelnr = _electrode.channel_id
+            else:
+                electrode.channelnr = channel_idx[counter]
 
             # electrode thickness
             electrode.thickness = thickness  # 1: gel; 2: gel + conductive rubber; 3: sponge + rubber + sponge
@@ -1963,5 +1983,7 @@ def create_tdcs_session_from_array(electrode_array, fnamehead, pathfem, thicknes
 
             # Electrode direction
             electrode.pos_ydir = electrode.centre + 20*_electrode.posmat[:3, 1]
-
+            
+            counter += 1
+        
     return s

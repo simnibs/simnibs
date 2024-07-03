@@ -18,13 +18,13 @@ opt.threshold = [0.1, 0.2]                                           # define th
 opt.e_postproc = "magn"                                              # postprocessing of e-fields ("magn": magnitude, 
                                                                      # "normal": normal component, "tangential": tangential component)
 ''' Define electrodes and array layout '''
-electrode = opt.add_electrode_layout("CircularArray")                # Nx1 center surround montage
-electrode.radius_inner = 10                                          # radius of inner electrode
-electrode.radius_outer = 10                                          # radius of outer electrodes
-electrode.distance_bounds = [25, 100]                                # distance bounds between inner and outer electrodes
-electrode.n_outer = 4                                                # number of outer electrodes
-electrode.dirichlet_correction = False                               # set to True when all outer electrodes are connected to the same channel (slower)
-electrode.current = [0.002, -0.002/4, -0.002/4, -0.002/4, -0.002/4]  # currents for each electrode
+electrode_layout = opt.add_electrode_layout("CircularArray")                # Nx1 center surround montage
+electrode_layout.radius_inner = 10                                          # radius of inner electrode
+electrode_layout.radius_outer = 10                                          # radius of outer electrodes
+electrode_layout.distance_bounds = [25, 100]                                # distance bounds between inner and outer electrodes
+electrode_layout.n_outer = 4                                                # number of outer electrodes
+electrode_layout.dirichlet_correction = False                               # set to True when all outer electrodes are connected to the same channel (slower)
+electrode_layout.current = [0.002, -0.002/4, -0.002/4, -0.002/4, -0.002/4]  # currents for each electrode
 
 ''' Define ROI '''
 roi = opt.add_roi()
@@ -45,7 +45,7 @@ non_roi.surface_type = "central"
 non_roi.roi_sphere_center_space = "subject"
 non_roi.roi_sphere_center = [-41.0, -13.0,  66.0]
 non_roi.roi_sphere_radius = 25
-non_roi.roi_sphere_operator = ["difference"]                             # take difference between GM surface and the sphere region
+non_roi.roi_sphere_operator = ["difference"]                         # take difference between GM surface and the sphere region
 # uncomment for visual control of non-ROI:
 #non_roi.subpath = opt.subpath
 #non_roi.write_visualization('','non-roi.msh')

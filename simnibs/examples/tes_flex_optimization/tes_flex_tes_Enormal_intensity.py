@@ -9,7 +9,7 @@ from simnibs import opt_struct
 
 ''' Initialize structure '''
 opt = opt_struct.TesFlexOptimization()
-opt.subpath = 'm2m_ernie'                                # path of m2m folder containing the headmodel
+opt.subpath = 'm2m_ernie'                               # path of m2m folder containing the headmodel
 opt.output_folder = "tes_optimize_tes_Enormal_intensity"
 
 ''' Set up goal function '''
@@ -17,11 +17,11 @@ opt.goal = "mean"                                       # maximize the mean of "
 opt.e_postproc = "normal"                               # postprocessing of e-fields ("magn": magnitude,
                                                         # "normal": normal component, "tangential": tangential component)
 ''' Define electrodes and array layout '''
-electrode = opt.add_electrode_layout("ElectrodeArrayPair") # Pair of TES electrode arrays (here: 1 electrode per array)
-electrode.length_x = [70]                               # x-dimension of electrodes
-electrode.length_y = [50]                               # y-dimension of electrodes
-electrode.dirichlet_correction_detailed = False         # account for inhomogenous current distribution at electrode-skin interface (slow)
-electrode.current = [0.002, -0.002]                     # electrode currents
+electrode_layout = opt.add_electrode_layout("ElectrodeArrayPair")   # Pair of TES electrode arrays (here: 1 electrode per array)
+electrode_layout.length_x = [70]                                    # x-dimension of electrodes
+electrode_layout.length_y = [50]                                    # y-dimension of electrodes
+electrode_layout.dirichlet_correction_detailed = False              # account for inhomogenous current distribution at electrode-skin interface (slow)
+electrode_layout.current = [0.002, -0.002]                          # electrode currents
 
 ''' Define ROI '''
 roi = opt.add_roi()

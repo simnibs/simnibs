@@ -17,13 +17,13 @@ opt.goal = "mean"                                                    # maximize 
 opt.e_postproc = "magn"                                              # postprocessing of e-fields ("magn": magnitude, 
                                                                      # "normal": normal component, "tangential": tangential component)
 ''' Define electrodes and array layout '''
-electrode = opt.add_electrode_layout("CircularArray")                # Nx1 center surround montage
-electrode.radius_inner = 10                                          # radius of inner electrode
-electrode.radius_outer = 10                                          # radius of outer electrodes
-electrode.distance_bounds = [25, 100]                                # distance bounds between inner and outer electrodes
-electrode.n_outer = 4                                                # number of outer electrodes
-electrode.dirichlet_correction = False                               # set to True when all outer electrodes are connected to the same channel (slower)
-electrode.current = [0.002, -0.002/4, -0.002/4, -0.002/4, -0.002/4]  # initial currents
+electrode_layout = opt.add_electrode_layout("CircularArray")                # Nx1 center surround montage
+electrode_layout.radius_inner = 10                                          # radius of inner electrode
+electrode_layout.radius_outer = 10                                          # radius of outer electrodes
+electrode_layout.distance_bounds = [25, 100]                                # distance bounds between inner and outer electrodes
+electrode_layout.n_outer = 4                                                # number of outer electrodes
+electrode_layout.dirichlet_correction = False                               # set to True when all outer electrodes are connected to the same channel (slower)
+electrode_layout.current = [0.002, -0.002/4, -0.002/4, -0.002/4, -0.002/4]  # initial currents
 
 ''' Define ROI '''
 roi = opt.add_roi()

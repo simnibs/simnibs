@@ -10,34 +10,34 @@ from simnibs import opt_struct, ElementTags
 
 ''' Initialize structure '''
 opt = opt_struct.TesFlexOptimization() 
-opt.subpath = 'm2m_ernie'                                       # path of m2m folder containing the headmodel
+opt.subpath = 'm2m_ernie'                                          # path of m2m folder containing the headmodel
 opt.output_folder = "tes_optimize_ttf_focality"
 
 ''' Set up goal function '''
-opt.goal = "focality_inv"                                       # optimize intensity - non-focality tradeoff of "magn" ("magn" defined by e_postproc)
-opt.threshold = [100, 100]                                      # define threshold(s)
-opt.e_postproc = "magn"                                         # postprocessing of e-fields ("magn": magnitude, "normal": normal component, "tangential": tangential component)
-opt.constrain_electrode_locations = True                        # WHAT IS THIS?
+opt.goal = "focality_inv"                                          # optimize intensity - non-focality tradeoff of "magn" ("magn" defined by e_postproc)
+opt.threshold = [100, 100]                                         # define threshold(s)
+opt.e_postproc = "magn"                                            # postprocessing of e-fields ("magn": magnitude, "normal": normal component, "tangential": tangential component)
+opt.constrain_electrode_locations = True                           # WHAT IS THIS?
 
 ''' Define first pair of electrode arrays '''
-electrode = opt.add_electrode_layout("ElectrodeArrayPair")      # Pair of TES electrode arrays
-electrode.center = [[-33,  22], [  0,  22], [ 33,  22],         # electrode center(s) in reference electrode space (x-y plane)
-                    [-33,   0], [  0,   0], [ 33,   0],
-                    [-33, -22], [  0, -22], [ 33, -22]]
-electrode.radius = [10, 10, 10, 10, 10, 10, 10, 10, 10]         # radii of electrodes
-electrode.dirichlet_correction = False                        # set to True when all electrodes of an array are connected to the same channel (slower)
-electrode.current = [1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  # electrode currents: 1/9 for each electrode of the first array
-                    -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9]  # -1/9 for each electrode of the second array
+electrode_layout = opt.add_electrode_layout("ElectrodeArrayPair")  # Pair of TES electrode arrays
+electrode_layout.center = [[-33,  22], [  0,  22], [ 33,  22],     # electrode center(s) in reference electrode space (x-y plane)
+                           [-33,   0], [  0,   0], [ 33,   0],
+                           [-33, -22], [  0, -22], [ 33, -22]]
+electrode_layout.radius = [10, 10, 10, 10, 10, 10, 10, 10, 10]     # radii of electrodes
+electrode_layout.dirichlet_correction = True                       # set to True when all electrodes of an array are connected to the same channel (slower)
+electrode_layout.current = [1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9,   # electrode currents: 1/9 for each electrode of the first array
+                            -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9]  # -1/9 for each electrode of the second array
 
 ''' Define second pair of electrode arrays '''
-electrode = opt.add_electrode_layout("ElectrodeArrayPair")
-electrode.center = [[-33,  22], [  0,  22], [ 33,  22],
-                    [-33,   0], [  0,   0], [ 33,   0],
-                    [-33, -22], [  0, -22], [ 33, -22]]
-electrode.radius = [10, 10, 10, 10, 10, 10, 10, 10, 10] 
-electrode.dirichlet_correction = False
-electrode.current = [1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9, 
-                    -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9] 
+electrode_layout = opt.add_electrode_layout("ElectrodeArrayPair")
+electrode_layout.center = [[-33,  22], [  0,  22], [ 33,  22],
+                           [-33,   0], [  0,   0], [ 33,   0],
+                           [-33, -22], [  0, -22], [ 33, -22]]
+electrode_layout.radius = [10, 10, 10, 10, 10, 10, 10, 10, 10] 
+electrode_layout.dirichlet_correction = True
+electrode_layout.current = [1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9,  1./9, 
+                            -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9, -1./9] 
 
 ''' Define ROI '''
 roi = opt.add_roi()

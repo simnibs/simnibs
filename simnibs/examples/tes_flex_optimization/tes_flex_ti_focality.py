@@ -9,7 +9,7 @@ from simnibs import opt_struct
 
 ''' Initialize structure '''
 opt = opt_struct.TesFlexOptimization()
-opt.subpath = 'm2m_ernie' # path of m2m folder containing the headmodel
+opt.subpath = 'm2m_ernie'                               # path of m2m folder containing the headmodel
 opt.output_folder = "tes_optimize_ti_focality"
 
 ''' Set up goal function '''
@@ -20,14 +20,14 @@ opt.e_postproc = "max_TI"                               # postprocessing of e-fi
                                                         # "dir_TI_normal": envelope of normal component
                                                         # "dir_TI_tangential": envelope of tangential component
 ''' Define first electrode pair '''
-electrode = opt.add_electrode_layout("ElectrodeArrayPair") # Pair of TES electrode arrays (here: 1 electrode per array)
-electrode.radius = [10]                                 # radii of electrodes
-electrode.current = [0.002, -0.002]                     # electrode currents
+electrode_layout = opt.add_electrode_layout("ElectrodeArrayPair")   # Pair of TES electrode arrays (here: 1 electrode per array)
+electrode_layout.radius = [10]                                      # radii of electrodes
+electrode_layout.current = [0.002, -0.002]                          # electrode currents
 
 ''' Define second electrode pair '''
-electrode = opt.add_electrode_layout("ElectrodeArrayPair")
-electrode.radius = [10]
-electrode.current = [0.002, -0.002]
+electrode_layout = opt.add_electrode_layout("ElectrodeArrayPair")
+electrode_layout.radius = [10]
+electrode_layout.current = [0.002, -0.002]
 
 ''' Define ROI '''
 roi = opt.add_roi()
