@@ -164,8 +164,8 @@
     ],
     "stimulatorList": [
         {
-            "name": "Example Stimulator",
-            "brand": "Example Stimulator Brand",
+            "name": "Rapid",
+            "brand": "Magstim",
             "maxdIdt": 122220000.0
         }
     ],
