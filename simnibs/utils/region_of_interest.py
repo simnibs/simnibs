@@ -512,6 +512,8 @@ class RegionOfInterest:
         self._mask_type = "node"
         #self._mask = np.zeros((self._mesh.nodes.nr), dtype=np.bool_)
         self._mask = np.ones((self._mesh.nodes.nr), dtype=np.bool_)
+        if self.surface_type is None:
+            self.surface_type = surface_type
 
     def load_mesh(self, mesh: str | Msh | None = None, subpath: str | None = None):
         """Initializes the Region of Interest with a mesh either with a .msh file or a m2m folder.

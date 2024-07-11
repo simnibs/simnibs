@@ -2504,24 +2504,19 @@ def write_visualization(folder_path, base_file_name, roi_list, results_list, e_p
     surfacemesh_newdata = []
     m_surf = None
     if roi_result_vis.has_surface_mesh():
-        # NOTE: RoiResultVisualization interpolates results that are elmdata in the 
-        # FEM simulations to elmdata on the surfaces --> using elmdata
-        # in the following
         m_surf = roi_result_vis.get_surface_mesh()
-        
-        # TODO Torge: update the following to nodes and nodedata
-        dirvec = m_surf.triangle_normals().value
+        dirvec = m_surf.nodes_normals().value
         
         if 'magn' in e_postproc and n_results > 1:
             # append magnE averaged across channels
             fieldnames = [results_txt[i]+'__magnE' for i in range(len(results_txt))]
-            idx = [i for i, data in enumerate(m_surf.elmdata) if data.field_name in fieldnames]
+            idx = [i for i, data in enumerate(m_surf.nodedata) if data.field_name in fieldnames]
     
-            data = np.zeros_like(m_surf.elmdata[idx[0]].value)
+            data = np.zeros_like(m_surf.nodedata[idx[0]].value)
             for i in idx:
-                data += m_surf.elmdata[i].value
+                data += m_surf.nodedata[i].value
             data /= n_results
-            surfacemesh_newdata.append(m_surf.add_element_field(data, 'average__magnE'))
+            surfacemesh_newdata.append(m_surf.add_node_field(data, 'average__magnE'))
         
         for metric in ["normal", "tangential"]:
             if metric in e_postproc:
@@ -2530,15 +2525,15 @@ def write_visualization(folder_path, base_file_name, roi_list, results_list, e_p
                     fieldnames = ['E']
                 else:
                     fieldnames = [results_txt[i]+'__E' for i in range(len(results_txt))]
-                idx = [i for i, data in enumerate(m_surf.elmdata) if data.field_name in fieldnames]
+                idx = [i for i, data in enumerate(m_surf.nodedata) if data.field_name in fieldnames]
                 
-                for idx_txt, i_elmdata in enumerate(idx):
-                    data = postprocess_e(m_surf.elmdata[i_elmdata].value, 
+                for idx_txt, i_nodedata in enumerate(idx):
+                    data = postprocess_e(m_surf.nodedata[i_nodedata].value, 
                                          e2=None, 
                                          dirvec=dirvec, 
                                          type=metric
                                          )
-                    surfacemesh_newdata.append(m_surf.add_element_field(data, results_txt[idx_txt]+'__'+metric)) 
+                    surfacemesh_newdata.append(m_surf.add_node_field(data, results_txt[idx_txt]+'__'+metric)) 
                     if idx_txt == 0:
                         d_avg = np.copy(data)
                     else:
@@ -2546,22 +2541,22 @@ def write_visualization(folder_path, base_file_name, roi_list, results_list, e_p
         
                 if len(idx) > 1:
                     d_avg /= len(idx)
-                    surfacemesh_newdata.append(m_surf.add_element_field(d_avg, 'average__'+metric))
+                    surfacemesh_newdata.append(m_surf.add_node_field(d_avg, 'average__'+metric))
                     
         for metric in ['max_TI', 'dir_TI']:
             if metric in e_postproc and n_results == 2:
                 # append maxTI and dirTI
                 fieldnames = [results_txt[i]+'__E' for i in range(len(results_txt))]
-                idx = [i for i, data in enumerate(m_surf.elmdata) if data.field_name in fieldnames]
+                idx = [i for i, data in enumerate(m_surf.nodedata) if data.field_name in fieldnames]
                 if len(idx) != 2:
                     raise ValueError('Exact two E fields needed to calculate maxTI and dirTI')
         
-                data = postprocess_e(m_surf.elmdata[idx[0]].value, 
-                                     e2=m_surf.elmdata[idx[1]].value, 
+                data = postprocess_e(m_surf.nodedata[idx[0]].value, 
+                                     e2=m_surf.nodedata[idx[1]].value, 
                                      dirvec=dirvec, 
                                      type=metric
                                      )
-                surfacemesh_newdata.append(m_surf.add_element_field(data, metric))   
+                surfacemesh_newdata.append(m_surf.add_node_field(data, metric))   
             
     
     # 3) create new meshes including geo and opt file data
