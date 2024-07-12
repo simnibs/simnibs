@@ -2625,7 +2625,7 @@ def write_visualization(folder_path, base_file_name, roi_list, results_list, e_p
             view.ColorTable = view2.ColorTable
             
         if len(surfacemesh_newdata) == 0:
-            view = roi_result_vis.surface_mesh_data_name_to_gmsh_view[m_surf.elmdata[-1].field_name]
+            view = roi_result_vis.surface_mesh_data_name_to_gmsh_view[m_surf.nodedata[-1].field_name]
             view.Visible = 1
                             
     # 6) write out visualization meshes together with their geo and opt files
