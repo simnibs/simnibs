@@ -551,7 +551,7 @@ def run(
             skin_facet_size = None
         facet_distances = mesh_settings["facet_distances"]
         optimize = mesh_settings["optimize"]
-        apply_cream = mesh_settings["remove_spikes"]
+        apply_cream = mesh_settings["apply_cream"]
         remove_spikes = mesh_settings["remove_spikes"]
         skin_tag = mesh_settings["skin_tag"]
         if not skin_tag:
