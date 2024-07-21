@@ -15,8 +15,6 @@ from scipy.optimize import (
     Bounds,
     minimize,
     differential_evolution,
-    shgo,
-    basinhopping,
 )
 
 from simnibs import __version__
@@ -83,7 +81,7 @@ class TesFlexOptimization:
     constrain_electrode_locations : bool, optional, default: False
         Constrains the possible locations of freely movable electrode arrays. Recommended for TTF optimizations,
         where two pairs of large electrode arrays are optimized. If True, parameter bounds for the optimization
-        will be specified restricting the array locations to be frontal, parietal or occipital.
+        will be specified restricting the array locations to be frontal, parietal and occipital.
         
     overlap_factor : float, optional, default: 1
         Factor of overlap of allowed lambda regions to place electrodes. (1 corresponds to neatless regions,
@@ -185,6 +183,7 @@ class TesFlexOptimization:
         self.integral_focality = None
 
         # set default options for optimizer
+        self.seed = None
         self.optimizer_options = None  # passed by user
         self._optimizer_options_std = {
             "len_tol": 1.0 / 3600000000.0,
@@ -197,6 +196,7 @@ class TesFlexOptimization:
             "popsize": 13,  # differential evolution
             "tol": 0.1,  # differential evolution
             "locally_biased": False,
+            "seed": self.seed
         }
 
         # FEM
@@ -459,6 +459,7 @@ class TesFlexOptimization:
                     min_idx = max_idx
 
         # set default options for optimizer
+        self._optimizer_options_std["seed"] = self.seed
         self._optimizer_options_std["bounds"] = self._bounds
         self._optimizer_options_std["init_vals"] = self.x0
         self._optimizer_options_std["vol_tol"] = (
@@ -485,7 +486,7 @@ class TesFlexOptimization:
             solver_options=self.solver_options,
             fn_logger=False, # set to True to get more FEM details in log file
             useElements=True,
-            dataType= [1] * len(self._roi),
+            dataType=[1] * len(self._roi),
             dirichlet_node=self.dirichlet_node,
         )
         self._prepared = True
@@ -1134,15 +1135,6 @@ class TesFlexOptimization:
                 locally_biased=self._optimizer_options_std["locally_biased"],
             )
 
-        elif self.optimizer == "Nelder-Mead":
-            result = minimize(
-                self.goal_fun,
-                self._optimizer_options_std["init_vals"],
-                method="Nelder-Mead",
-                bounds=self._optimizer_options_std["bounds"],
-                options={"disp": self._optimizer_options_std["disp"]},
-            )
-
         elif self.optimizer == "differential_evolution":
             result = differential_evolution(
                 self.goal_fun,
@@ -1156,21 +1148,9 @@ class TesFlexOptimization:
                 bounds=self._optimizer_options_std["bounds"],
                 disp=self._optimizer_options_std["disp"],
                 polish=False,
+                seed = self.seed
             )  # we will decide if to polish afterwards
 
-        elif self.optimizer == "shgo":
-            result = shgo(
-                self.goal_fun,
-                bounds=self._optimizer_options_std["bounds"],
-                options={"disp": self._optimizer_options_std["disp"]},
-            )
-
-        elif self.optimizer == "basinhopping":
-            result = basinhopping(
-                self.goal_fun,
-                x0=self._optimizer_options_std["init_vals"],
-                disp=self._optimizer_options_std["disp"],
-            )
         else:
             raise NotImplementedError(
                 f"Specified optimization method: '{self.optimizer}' not implemented."
@@ -1321,7 +1301,6 @@ class TesFlexOptimization:
 
         return goal_fun_value
 
-
     def compute_goal(self, e):
         """
         Computes goal function value from postprocessed electric field
@@ -1344,14 +1323,14 @@ class TesFlexOptimization:
         # focality based goal functions
         if "focality" in self.goal or "focality_inv" in self.goal:
             
-            y = np.zeros((n_effective_channels)) # one function value per channel
+            y = np.zeros((n_effective_channels))  # one function value per channel
 
             for i_channel_stim in range(n_effective_channels):
                 ROCval = ROC(
                     e1=e[i_channel_stim][0],  # e-field in ROI
                     e2=e[i_channel_stim][1],  # e-field in non-ROI
                     threshold=self.threshold,
-                    focal= "focality" in self.goal, # True for "focality", False for "focality_inv"
+                    focal="focality" in self.goal,  # True for "focality", False for "focality_inv"
                 )
                 if "focality" in self.goal:
                     y[i_channel_stim] = -100 * ( np.sqrt(2) - ROCval )
@@ -1621,6 +1600,10 @@ class TesFlexOptimization:
         x0 : ndarray of float [n_para]
             Initial values
         """
+
+        if self.seed is not None:
+            np.random.seed(self.seed)
+
         logger.info(
             "Finding valid initial values for electrode position for optimization.",
         )
@@ -1679,10 +1662,8 @@ class TesFlexOptimization:
                 return para_test_grid[i, :]
             
             logger.info( f"> electrode_pos_valid: {node_idx_dict[1]}")
-            
 
         raise RuntimeError("failed to find valid electrode position.")
-                
 
     def get_nodes_electrode(self, electrode_pos, plot=False):
         """
