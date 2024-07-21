@@ -1131,14 +1131,32 @@ class ElectrodeArrayPair(ElectrodeLayout):
         self.length_x_bounds = None
         self.length_y_bounds = None
         self.current_estimator_method = None
-        self.dirichlet_correction = False
-        self.dirichlet_correction_detailed = False
+        self._dirichlet_correction = False
+        self._dirichlet_correction_detailed = False
         self.current_outlier_correction = False
 
         self._prepared = False
 
         if settings_dict:
            self.from_dict(settings_dict)
+
+    @property
+    def dirichlet_correction(self):
+        return self._dirichlet_correction
+
+    @dirichlet_correction.setter
+    def dirichlet_correction(self, value):
+        self._dirichlet_correction = value
+
+    @property
+    def dirichlet_correction_detailed(self):
+        return self._dirichlet_correction_detailed
+
+    @dirichlet_correction_detailed.setter
+    def dirichlet_correction_detailed(self, value):
+        self._dirichlet_correction_detailed = value
+        if value:
+            self._dirichlet_correction = True
 
     def _prepare(self):
 
@@ -1170,7 +1188,7 @@ class ElectrodeArrayPair(ElectrodeLayout):
             self.length_y = np.zeros(self.center.shape[0])
 
         # check free and fixed parameters
-        if self.radius_bounds is not None:
+        if self.radius_bounds is not None and np.sum(self.radius_bounds) != 0:
             assert len(self.radius_bounds) == 2, (
                 "Dimension mismatch! "
                 "Please provide [min, max] values for radius_bounds."
@@ -1183,7 +1201,7 @@ class ElectrodeArrayPair(ElectrodeLayout):
             self.radius_bounds = [0, 0]
             self.radius = self.radius
 
-        if self.length_x_bounds is not None:
+        if self.length_x_bounds is not None and np.sum(self.length_x_bounds) != 0:
             assert len(self.length_x_bounds) == 2, (
                 "Dimension mismatch! " "Please provide [min, max] values for length_x."
             )
@@ -1197,7 +1215,7 @@ class ElectrodeArrayPair(ElectrodeLayout):
             self.length_x_bounds = [0, 0]
             self.length_x = self.length_x
 
-        if self.length_y_bounds is not None:
+        if self.length_y_bounds is not None and np.sum(self.length_y_bounds) != 0:
             assert len(self.length_y_bounds) == 2, (
                 "Dimension mismatch! " "Please provide [min, max] values for length_y."
             )
@@ -1500,14 +1518,32 @@ class CircularArray(ElectrodeLayout):
         self.radius_outer_bounds = None
         self.current = None
         self.current_estimator_method = None
-        self.dirichlet_correction = False
-        self.dirichlet_correction_detailed = False
+        self._dirichlet_correction = False
+        self._dirichlet_correction_detailed = False
         self.current_outlier_correction = False
 
         self._prepared = False
 
         if settings_dict:
            self.from_dict(settings_dict)
+
+    @property
+    def dirichlet_correction(self):
+        return self._dirichlet_correction
+
+    @dirichlet_correction.setter
+    def dirichlet_correction(self, value):
+        self._dirichlet_correction = value
+
+    @property
+    def dirichlet_correction_detailed(self):
+        return self._dirichlet_correction_detailed
+
+    @dirichlet_correction_detailed.setter
+    def dirichlet_correction_detailed(self, value):
+        self._dirichlet_correction_detailed = value
+        if value:
+            self._dirichlet_correction = True
 
     def _prepare(self):
         if type(self.current) is int or type(self.current) is float:
