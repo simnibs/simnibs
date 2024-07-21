@@ -3,7 +3,7 @@
 % maximize the field in the ROI while at the same time making
 % the field as unfocal as possible to cover most of the brain
 %
-% © SimNIBS developers 2024 under the GPL v3 license
+% ï¿½ SimNIBS developers 2024 under the GPL v3 license
 %
 
 % Initialize structure %
@@ -13,9 +13,12 @@ opt.output_folder = 'tes_optimize_ttf_focality';
 
 % Set up goal function %
 opt.goal = 'focality_inv';                                            % optimize intensity - non-focality tradeoff of 'magn' ('magn' defined by e_postproc)
-opt.threshold = [100, 100];                                           % define threshold(s)
+opt.threshold = [100, 100];                                           % define threshold(s) of the electric field in V/m in the non-ROI and the ROI:
+                                                                      % if one threshold is defined, it is the goal that the e-field in the non-ROI is lower than this value and higher than this value in the ROI
+                                                                      % if two thresholds are defined, the first one is the threshold of the non-ROI and the second one is for the ROI
 opt.e_postproc = 'magn';                                              % postprocessing of e-fields ('magn': magnitude, 'normal': normal component, 'tangential': tangential component)
-opt.constrain_electrode_locations = true;                             % WHAT IS THIS?
+opt.constrain_electrode_locations = true;                             % electrode array locations are restricted to be frontal, parietal and occipital
+                                                                      % to reduce possibility of overlapping configurations, which will be sorted out anyway
 
 % Define first pair of electrode arrays %
 electrode_layout = opt_struct('ElectrodeArrayPair');                  % Pair of TES electrode arrays

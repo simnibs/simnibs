@@ -16,7 +16,8 @@ opt.output_folder = "tes_optimize_ttf_intensity"
 opt.goal = "mean"                                             # maximize the mean of field magnitude in the ROI
 opt.e_postproc = "magn"                                       # postprocessing of e-fields ("magn": magnitude, 
                                                               # "normal": normal component, "tangential": tangential component)
-opt.constrain_electrode_locations = True                      # WHAT IS THIS?
+opt.constrain_electrode_locations = True                      # electrode array locations are restricted to be frontal, parietal and occipital
+                                                              # to reduce possibility of overlapping configurations, which will be sorted out anyway
 
 ''' Define first pair of electrode arrays '''
 electrode_layout = opt.add_electrode_layout("ElectrodeArrayPair")    # Pair of TES electrode arrays (each with 9 electrodes)

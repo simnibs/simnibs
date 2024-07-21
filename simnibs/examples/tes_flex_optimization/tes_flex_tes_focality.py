@@ -13,7 +13,9 @@ opt.output_folder = "tes_optimize_tes_focality"
 
 ''' Set up goal function '''
 opt.goal = "focality"                                   # optimize intensity-focality tradeoff of "magn" ("magn" defined by e_postproc)
-opt.threshold = [0.1, 0.2]                              # define threshold(s) ??OF WHAT??
+opt.threshold = [0.1, 0.2]                              # define threshold(s) of the electric field in V/m in the non-ROI and the ROI:
+                                                        # if one threshold is defined, it is the goal that the e-field in the non-ROI is lower than this value and higher than this value in the ROI
+                                                        # if two thresholds are defined, the first one is the threshold of the non-ROI and the second one is for the ROI
 opt.e_postproc = "magn"                                 # postprocessing of e-fields ("magn": magnitude, 
                                                         # "normal": normal component, "tangential": tangential component)
 

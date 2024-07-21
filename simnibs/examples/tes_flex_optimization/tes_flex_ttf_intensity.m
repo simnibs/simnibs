@@ -2,7 +2,7 @@
 % Example to run TESoptimize for Tumor Treating Fields (TTF) to optimize 
 % the field intensity in the ROI
 %
-% © SimNIBS developers 2024 under the GPL v3 license
+% ï¿½ SimNIBS developers 2024 under the GPL v3 license
 %
 
 % Initialize structure %
@@ -13,8 +13,9 @@ opt.output_folder = 'tes_optimize_ttf_intensity';
 % Set up goal function %
 opt.goal = 'mean';                                             % maximize the mean of field magnitude in the ROI
 opt.e_postproc = 'magn';                                       % postprocessing of e-fields ('magn': magnitude, 
-                                                              % 'normal': normal component, 'tangential': tangential component)
-opt.constrain_electrode_locations = true;                      % WHAT IS THIS?
+                                                               % 'normal': normal component, 'tangential': tangential component)
+opt.constrain_electrode_locations = true;                      % electrode array locations are restricted to be frontal, parietal and occipital
+                                                               % to reduce possibility of overlapping configurations, which will be sorted out anyway
 
 % Define first pair of electrode arrays %
 electrode_layout = opt_struct('ElectrodeArrayPair');                  % Pair of TES electrode arrays
