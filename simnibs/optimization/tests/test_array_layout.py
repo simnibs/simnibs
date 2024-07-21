@@ -10,18 +10,18 @@ from simnibs.utils.matlab_read import dict_from_matlab
 
 class TestElectrode:
     def test_electrode_array_pair(self):
-        # create 3 x 3 circular electrode array pair
+        # create 3 x 3 mixed circular and rectangular electrode array pair
         electrode_array_pair = ElectrodeArrayPair()
 
         electrode_array_pair.center = np.array([[-20,  20],
-                           [  0,  20],
-                           [ 20,  20],
-                           [-20,   0],
-                           [  0,   0],
-                           [ 20,   0],
-                           [-20, -20],
-                           [  0, -20],
-                           [ 20, -20]])
+                                                [  0,  20],
+                                                [ 20,  20],
+                                                [-20,   0],
+                                                [  0,   0],
+                                                [ 20,   0],
+                                                [-20, -20],
+                                                [  0, -20],
+                                                [ 20, -20]])
         electrode_array_pair.radius   = np.array([ 0,  5,  0,  5,  5,  5,  0,  5,  0])
         electrode_array_pair.length_x = np.array([10,  0, 10,  0,  0,  0, 10,  0, 10])
         electrode_array_pair.length_y = np.array([10,  0, 10,  0,  0,  0, 10,  0, 10])
