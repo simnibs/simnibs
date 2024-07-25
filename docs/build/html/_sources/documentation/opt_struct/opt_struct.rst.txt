@@ -16,4 +16,6 @@ Structures used to define optimization problems
    tmsoptimize
    tes_flex_opt_doc
    tms_flex_opt_doc
+   regionofinterest_doc
+   electrode_layouts
 

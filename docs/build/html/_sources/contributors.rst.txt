@@ -65,6 +65,18 @@ Current Contributors
 * Merle Diedrichsen
    * Update of electrode meshing to improve tetrahedral quality at the electrode edges (4.1)
 
+*  Sybren Van Hoornweder
+   * Main contributor to the Ernie Extended dataset
+
+*  Kathleen E. Mantell
+	* Main contributor to the NHP dataset
+	
+* Alex Opitz
+   * Implementation of first diffusion-to-conductivity mapping approach
+   * Co-contributor to many other parts in SimNIBS 1.0
+   * Testing and validation of the new FEM calculations for tDCS in SimNIBS 2.0
+   * Contribution to the NHP dataset
+
 
 Former Contributors
 ---------------------

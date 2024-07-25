@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Coil Models Included in SimNIBS &#8212; SimNIBS dev&#39;) documentation</title>
+    <title>Coil Models Included in SimNIBS &#8212; SimNIBS 0) documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
-    <script src="../_static/documentation_options.js?v=bcc8d217"></script>
-    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/documentation_options.js?v=e6165c10"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -58,11 +58,20 @@
 <p><a class="reference external" href="https://doi.org/10.1016/j.brs.2022.04.017">Drakaki M, Mathiesen C, Siebner HR, Madsen KH, Thielscher A. (2022). Database of 25 validated coil models for electric field simulations for TMS. Brain Stimulation.</a></p>
 </section>
 </section>
+<section id="flexible-coil-files">
+<h2>Flexible Coil Files<a class="headerlink" href="#flexible-coil-files" title="Link to this heading">¶</a></h2>
+<p>Models of the flexible H1, H4 and H7 coils from Brainsway and the MST-Twin coil with movable parts from MagVenture can be found in subfolder <em>flexible_coils</em>. The Brainsway coils were constructed based on X-ray images.
+A description of the TMS coil definition file format (.tcd) can be found in <a class="reference internal" href="file_formats.html#file-formats"><span class="std std-ref">File Formats in SimNIBS</span></a>.</p>
+<section id="id1">
+<h3>Reference<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<p>TODO</p>
+</section>
+</section>
 <section id="previous-coil-files">
 <h2>Previous Coil Files<a class="headerlink" href="#previous-coil-files" title="Link to this heading">¶</a></h2>
 <p>The two previously included models of the Magstim 70mm and MagVenture MC-B70 Figure-of-Eight coils can be found in subfolder <em>legacy_and_other</em>. They were constructed based on X-ray images.</p>
-<section id="id1">
-<h3>Reference<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<section id="id2">
+<h3>Reference<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
 <p><a class="reference external" href="https://doi.org/10.1016/j.clinph.2004.02.019">Thielscher, Axel, and Thomas Kammer. “Electric field properties of two commercial figure-8 coils in TMS: calculation of focality and efficiency.” Clinical neurophysiology 115.7 (2004): 1697-1708.</a></p>
 </section>
 </section>
@@ -81,8 +90,8 @@ i.e. corresponding to parts of the coil being inside the head, and are only mean
 <h3>Note (29.8.22)<a class="headerlink" href="#note-29-8-22" title="Link to this heading">¶</a></h3>
 <p>The coil model “No9_H1.nii.gz” is inaccurate, mainly (but not only) because it is left-right mirrored. We are looking into ways to provide a more accurate model of that coil.</p>
 </section>
-<section id="id2">
-<h3>Reference<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<section id="id3">
+<h3>Reference<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
 <p><a class="reference external" href="https://doi.org/10.1016/j.brs.2012.02.005">Deng, Zhi-De, Sarah H. Lisanby, and Angel V. Peterchev. “Electric field depth–focality tradeoff in transcranial magnetic stimulation: simulation comparison of 50 coil designs.” Brain stimulation 6.1 (2013): 1-13.</a></p>
 </section>
 </section>
@@ -127,7 +136,7 @@ i.e. corresponding to parts of the coil being inside the head, and are only mean
 <h3>Navigation</h3>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../installation/installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../dataset.html">Example Dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorial/tutorial.html">Tutorial</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="documentation.html">Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="gui.html">Graphical User Interface Documentation</a></li>
@@ -162,7 +171,7 @@ i.e. corresponding to parts of the coil being inside the head, and are only mean
   </ul></li>
 </ul>
 </div>
-<search id="searchbox" style="display: none" role="search">
+<div id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
@@ -170,7 +179,7 @@ i.e. corresponding to parts of the coil being inside the head, and are only mean
       <input type="submit" value="Go" />
     </form>
     </div>
-</search>
+</div>
 <script>document.getElementById('searchbox').style.display = "block"</script>
 
 
@@ -188,7 +197,7 @@ i.e. corresponding to parts of the coil being inside the head, and are only mean
       &#169;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
       |
