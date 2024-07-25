@@ -1,6 +1,7 @@
 {
     "name": "H1",
     "brand": "Brainsway",
+	"version": "1.0.o",
     "limits": [
         [
             -150.0,
@@ -221,7 +222,7 @@
         {
             "name": "Rapid",
             "brand": "Magstim",
-            "maxdIdt": 122220000.0
+            "maxdIdt": 114700000.0
         }
     ],
     "deformList": [

@@ -502,7 +502,7 @@ class SubjectFiles:
 
         self.hemispheres = HEMISPHERES
 
-        self._standard_surfaces = ("central", "pial", "sphere", "sphere.reg")
+        self._standard_surfaces = ("central", "pial", "white", "sphere", "sphere.reg")
         self.surfaces = {s: {h: self.get_surface(h, s) for h in self.hemispheres} for s in self._standard_surfaces}
 
         self._standard_morph_data = tuple() # e.g., "thickness",

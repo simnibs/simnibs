@@ -10,6 +10,7 @@ Changelog
   * New optimization method for TES, including montages with rectangular electrodes, center-surround montages, temporal interference stimulation and electrode arrays for tumor treating field therapies.
   * New class to support the convenient definition of regions-of-interest.
   * New dataset Ernie Extended.
+  * New non-human primate dataset.
   * Update to python 3.11 and corresponding updates of most of the included packages.
 
 NOTES & Known issues: see 4.0.0

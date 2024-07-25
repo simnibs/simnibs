@@ -1068,18 +1068,21 @@ class ElectrodeArray:
 class ElectrodeArrayPair(ElectrodeLayout):
     """
     Symmetric pair of electrode arrays with n_x * n_y electrodes each.
+
+    Notes:
+    -----------------
     Contains 2 ElectrodeArray instances with n_x * n_y Electrode instances each.
     Circular and rectangular electrodes can be mixed.
 
-    Example: Array with 2 circular electrode of radius 1 and 2 and one rectangular electrode of size 2x2
-    radius   = [1,    None, 2   ]
-    length_x = [None, 2,    None]
-    length_y = [None, 2,    None]
+    Example: Array with 2 circular electrode of radius 1 and 2 and one rectangular electrode of size 2x2:
+    radius   = [1,    None, 2   ];
+    length_x = [None, 2,    None];
+    length_y = [None, 2,    None];
 
-    Parameters
-    ----------
+    Parameters:
+    --------------
     center : np.ndarray of float [n_ele/2 x 2]
-        Center positions of electrodes in normalized x/y plane (z=0). Values will be copied for second array.
+        Center2 positions of electrodes in normalized x/y plane (z=0). Values will be copied for second array.
     radius : np.ndarray of float [n_ele/2] or None
         Radii of circular electrodes in array (in mm). Array will be copied for second electrode array.
     length_x : np.ndarray of float [n_ele/2] or None
@@ -1096,6 +1099,7 @@ class ElectrodeArrayPair(ElectrodeLayout):
         Current through electrodes. Has to sum up to zero net current.
     current_estimator_method : str, optional, default: "linear"
         Method to estimate the electrode currents:
+
         - "linear": linear regression
         - "gpc": generalized polynomial chaos
     dirichlet_correction : bool, optional, default: True
@@ -1105,10 +1109,10 @@ class ElectrodeArrayPair(ElectrodeLayout):
         Apply detailed Dirichlet correction such that every node current is optimized separately to match the equal
         voltage constraint of an electrode (recommended for large electrodes as in regular TES applications)
     current_outlier_correction : bool, optional, default: False
-        Apply current outlier correction after node-wise dirichlet approximation (dirichlet_correction_detailed=True).
+        Apply current outlier correction after node-wise dirichlet approximation (only for dirichlet_correction_detailed=True).
 
-    Attributes
-    ----------
+    Attributes:
+    -----------
     n_ele : int
         Total number of electrodes including all channels and arrays
     center : np.ndarray of float [n_ele/2, 3]
@@ -1117,6 +1121,7 @@ class ElectrodeArrayPair(ElectrodeLayout):
         Radii of electrodes (in mm). Same for second array, so we save it only once.
     electrode_arrays : list of ElectrodeArray instances [2]
         Two ElectrodeArray instances
+
     """
 
     def __init__(self, settings_dict=None):
@@ -1459,8 +1464,8 @@ class CircularArray(ElectrodeLayout):
     Generates a circular electrode array with one center electrode and n_outer equally spaced electrodes.
     Generates one ElectrodeArray instance because it can only be moved together.
 
-    Parameters
-    ----------
+    Parameters:
+    ---------------
     radius_inner : float
         Radius of inner electrodes or (min, max) values for optimization.
     distance : float
@@ -1482,6 +1487,7 @@ class CircularArray(ElectrodeLayout):
         Has to sum up to zero net current.
     current_estimator_method : str, optional, default: "linear"
         Method to estimate the electrode currents:
+        
         - "linear": linear regression
         - "gpc": generalized polynomial chaos
     dirichlet_correction : bool, optional, default: True
@@ -1493,8 +1499,8 @@ class CircularArray(ElectrodeLayout):
     current_outlier_correction : bool, optional, default: False
         Apply current outlier correction after node-wise dirichlet approximation (dirichlet_correction_detailed=True).
 
-    Attributes
-    ----------
+    Attributes:
+    ------------
     n_ele : int
         Number of electrodes
     center : np.ndarray of float [n_ele, 3]

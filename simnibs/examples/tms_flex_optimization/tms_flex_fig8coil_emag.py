@@ -20,11 +20,10 @@ tms_opt.fnamecoil = os.path.join('Drakaki_BrainStim_2022', 'MagVenture_MCF-B65.c
 # (standard: 4 mm, as rough estimate of the hair thickness)
 tms_opt.distance = 0
 
-# Select an initial coil position
-pos = tms_opt.add_position()
-pos.centre = 'C1'
-# Pointing towards Cz
-pos.pos_ydir = 'Cz'
+# Select an initial coil position (optional, otherwise the starting position is automatically determined)
+#pos = tms_opt.add_position()
+#pos.centre = 'C1'
+#pos.pos_ydir = 'Cz' # Pointing towards Cz
 
 # Select ROI in which electric field will be evaluated
 roi = tms_opt.add_region_of_interest()

@@ -42,10 +42,66 @@ from .. import __version__
 class TmsFlexOptimization:
     """Class that defines a flexible TMS optimization
 
-    Parameters
+    Parameters:
     ------------------------
     settings_dict: (optional) dict
         Dictionary containing parameter as key value pairs
+        
+    date: str | None
+        Date when the optimization struct was initiated
+    time_str: str | None
+        Time when the optimization struct was initiated
+
+    fnamecoil: str | None
+        Path to the coil file (example: "path/to/coil")
+    pos: POSITION | None
+        The initial coil position from where the optimization is started
+
+    fnamehead: str | None
+        Path to the head mesh (example: "path/to/msh")
+    subpath: str | None
+        Path to the m2m folder of the subject (example: "path/to/m2m")
+    path_optimization: str | None
+        Path to the output folder where the result of the optimization is saved (example: "path/to/output")
+    eeg_cap: str | None
+        Path to a eeg cap file (example: "path/to/csv")
+    run_simulation: bool | None
+        Weather to run a full simulation at the optimized position after the optimization
+    run_simulation: bool | None
+        Weather to run a full simulation at the optimized position after the optimization
+    open_in_gmsh: bool
+        Weather to open the optimization result in gmsh
+
+    method: str | None
+        The method of optimization {"distance", "emag"}
+    roi: RegionOfInterest | None
+        The region of interest in which the e field is simulated, method = "emag" 
+    disable_SPR_for_volume_roi: bool
+        Weather to use SPR interpolation for volume rois, default True
+    distance: float
+        The distance at which the coil is supposed to be placed relative to the head
+    global_translation_ranges: list | None
+        Ranges that describe how far the coil is allowed to move in x,y,z direction [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] (example: [[-1, 1], [-2, 2], [-10, 10]] | [-1, 1] [0, 0], [0, 0]])
+    global_rotation_ranges: list | None
+        Ranges that describe how far the coil is allowed to rotate around the x,y,z axis [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] (example: [[-1, 1], [-2, 2], [-10, 10]] | [-1, 1] [0, 0], [0, 0]])
+
+    dither_skip: int
+        How many voxel positions should be skipped when creating the coil volume representation.
+        Used to speed up the optimization. When set to 0, no dithering will be applied. (example: 2 | 0), default 6
+    fem_evaluation_cutoff: float
+        If the penalty from the intersection and self intersection is greater than this cutoff value, the fem will not be evaluated to save time.
+        Set to np.inf to always evaluate the fem (example: 500 | np.inf), default 1000
+
+    run_global_optimization: bool
+        Weather to run the global optimization, the global optimization will always run first
+    run_local_optimization: bool
+        Weather to run the local optimization, the local optimization will always run second
+
+    direct_args: dict
+        Settings for the scipy direct global optimization
+    l_bfgs_b_args: dict
+        Settings for the scipy L-BFGS-B local optimization
+        
     """
 
     date: str | None

@@ -18,10 +18,57 @@ from .transformations import mni2subject_coords
 class RegionOfInterest:
     """A class describing a region of Interest in a volume mesh or a surface mesh.
     
-    Parameters
+    Parameters:
     ------------------------
     settings_dict: (optional) dict
         Dictionary containing parameter as key value pairs
+            
+    method: str
+        The method to create the ROI {"manual", "custom", "surface", "volume", "volume_from_surface", "mesh+mask"}
+
+    subpath: str | None
+        Path to the m2m folder of the subject (example: "path/to/m2m")
+    mesh: str | Msh | None
+        Path to a mesh or a mesh instance (example: "path/to/msh" | mesh_instance)
+
+    mask_space: str | list[str] | None
+        The space the mask is defined in, method = "surface" : {"subject", "subject_lh", "fs_avg_lh", "subject_rh", "fs_avg_rh", "mni"} | method = "volume" : {"subject", "mni"}
+    mask_path: str | list[str] | None
+        The path to the mask, method = "surface" : (label, annot, curv, nifti) | method = "volume" : (nifti) (example: "path/to/file")
+    mask_value: int | list[int] | None
+        The values that are considered as the mask in the mask files, default 1 (example: 1 | [1, 2])
+    mask_operator: str | list[str] | None
+        The operator to combine the mask with the ROI {"union", "intersection", "difference"}, default "union"
+
+    roi_sphere_center: list[float] | list[list[float]] | None
+        Sphere center coordinates for spherical masks in mm (example: [0,0,0] | [[1,2,3], [4,5,6]])
+    roi_sphere_radius: float | list[float] | None
+        The radius of the spherical masks in mm (example: 5 | [3, 45])
+    roi_sphere_center_space: str | list[str] | None
+        The space the center coordinates of the spheres are defined in {"subject", "mni"}
+
+    roi_sphere_operator: str | list[str] | None
+        The operator to combine the mask with the ROI {"union", "intersection", "difference"}, default "union"
+
+    nodes: list[list[float]] | None
+        Only for method = "custom" -> a custom list of node coordinates (example: [[1.1, 2.2, 3.3], [4.4, 5.5, 6.6]])
+
+    surface_type: str | None
+        Only for method = "surface" -> Weather the surface is the subject specific central gm surface or a custom surface {"central", "custom"}
+    surface_path: str | None
+        Only for method = "surface" -> Only for surface_type = "custom" -> The path to a custom surface (msh, freesurfer, gifti)
+
+    tissues: int | list[int] | ElementTags | list[ElementTags] | None
+        Only for method = "volume" -> a number of volume tissue tags, default 2 (example: ElementTags.GM | [ElementTags.WM, ElementTags.GM])
+
+    surface_inclusion_radius: float | None
+        Only for method = "volume_from_surface" -> The radius from the surface nodes at which the volume elements should be included in mm (example: 5)
+
+    node_mask: list[bool] | None  
+        Only for method = "mesh+mask" -> a boolean node mask (exclusive with elm_mask) (example: [True, ..., False])
+    elm_mask: list[bool] | None  
+        Only for method = "mesh+mask" -> a boolean node mask (exclusive with node_mask) (example: [True, ..., False])
+   
     """
 
     method: str

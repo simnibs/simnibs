@@ -2,11 +2,11 @@
    sphinx-quickstart on Wed Aug 22 14:44:31 2018.
 
 ==========
- SimNIBS 4
+ SimNIBS 4.5
 ==========
 
 
-**SimNIBS 4** is a free and open source software package for the Simulation of Non-invasive Brain Stimulation. It allows for realistic calculations of the electric field induced by transcranial magnetic stimulation (TMS) and transcranial electric stimulation (TES).
+**SimNIBS v4.5** is a free and open source software package for the Simulation of Non-invasive Brain Stimulation. It allows for realistic calculations of the electric field induced by transcranial magnetic stimulation (TMS) and transcranial electric stimulation (TES).
 
 A basic SimNIBS workflow consists of three main parts:
 

@@ -45,7 +45,7 @@ from .electrode_layout import (
 class TesFlexOptimization:
     """
     Defines a TES optimization problem using node-wise current sources.
-
+    
     Parameters (general)
     --------------------
     electrode : Electrode Object
@@ -57,18 +57,16 @@ class TesFlexOptimization:
     
     goal : list of str [n_roi], or FunctionType, optional, default: ["mean"]
         Implemented or user provided goal functions:
+        
         - "mean": maximize mean e-field in ROI
         - "max": maximize 99.9 percentile of electric field in ROI
-        - "focality": Maximize focality  (goal: sensitivity = specificity = 1)
-            NOTE: "focality" needs excatly two ROIs: The first will be treated as ROI,
-                  the second as non-ROI.
-        - "focality_inv": Maximize inverse focality (goal: sensitivity(ROI) = 1, sensitivity(nonROI) = 1)
-            NOTE: "focality" needs excatly two ROIs: The first will be treated as ROI,
-                  the second as non-ROI.
+        - "focality": Maximize focality  (goal: sensitivity = specificity = 1). NOTE: "focality" needs excatly two ROIs: The first will be treated as ROI, the second as non-ROI.
+        - "focality_inv": Maximize inverse focality (goal: sensitivity(ROI) = 1, sensitivity(nonROI) = 1). NOTE: "focality" needs excatly two ROIs: The first will be treated as ROI, the second as non-ROI.
         - user provided function taking e-field as an input which is  a list of list of np.ndarrays of float [n_channel_stim][n_roi] containing np.array with e-field
     
     e_postproc : str, optional, default: "norm"
-        Specifies how the raw e-field in the ROI (Ex, Ey, Ez) is post-processed.
+        Specifies how the raw e-field in the ROI (Ex, Ey, Ez) is post-processed:
+        
         - "norm": electric field magnitude (default)
         - "normal": determine normal component (requires surface ROIS)
         - "tangential": determine tangential component (requires surface ROIS)
