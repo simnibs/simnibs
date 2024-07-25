@@ -1411,7 +1411,7 @@ class POSITION(object):
                 raise ValueError('Coil centre not set!')
             if not isinstance(self.pos_ydir, np.ndarray) and not self.pos_ydir:
                 raise ValueError('Coil pos_ydir not set!')
-            if not self.distance:
+            if self.distance is None:
                 raise ValueError('Coil distance not set!')
             self.substitute_positions_from_cap(cap=cap)
             if len(self.centre) != 3:

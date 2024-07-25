@@ -136,7 +136,7 @@ class TmsFlexOptimization:
     disable_SPR_for_volume_roi: bool
     """ Weather to use SPR interpolation for volume rois, defaul True"""
     distance: float
-    """The distance at which the coil is supposed to be placed relative to the head"""
+    """The distance in [mm] at which the coil is supposed to be placed relative to the head. default 4.0"""
     global_translation_ranges: list | None
     """Ranges that describe how far the coil is allowed to move in x,y,z direction [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] (example: [[-1, 1], [-2, 2], [-10, 10]] | [-1, 1] [0, 0], [0, 0]])"""
     global_rotation_ranges: list | None
@@ -269,14 +269,6 @@ class TmsFlexOptimization:
         )
         logger.info(f"Optimization Folder: {self.path_optimization}")
 
-        if self.pos is None:
-            if self.roi is None:
-                raise ValueError("No initial position or ROI specified")
-            self.pos = auto_init_position_from_roi(self.roi, self.distance)
-
-        self.pos.eeg_cap = self.eeg_cap
-        self.pos._prepare()
-
         try:
             fnamecoil = os.path.expanduser(self.fnamecoil)
         except TypeError:
@@ -320,6 +312,16 @@ class TmsFlexOptimization:
                 )
             else:
                 raise ValueError("No ROI specified")
+
+        if self.pos is None:
+            if self.roi is None:
+                raise ValueError("No initial position or ROI specified")
+            self.pos = auto_init_position_from_roi(self.roi, self.distance)
+
+        print(self.distance)
+        print(self.pos.distance)
+        self.pos.eeg_cap = self.eeg_cap
+        self.pos._prepare()
 
         if self.global_translation_ranges is not None:
             self._global_translation_ranges = np.array(self.global_translation_ranges)

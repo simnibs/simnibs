@@ -16,12 +16,9 @@ tms_opt.path_optimization = 'tms_optimization/';
 tms_opt.fnamecoil = fullfile('Drakaki_BrainStim_2022', 'MagVenture_MCF-B65.ccd');
 % Desired distance from the coil to the head in [mm] 
 % (standard: 4 mm, as rough estimate of the hair thickness)
-tms_opt.distance = 0;
-
-% Select an initial coil position (optional, otherwise the starting position is automatically determined)
-%tms_opt.pos = sim_struct('POSITION');
-%tms_opt.pos.centre = 'C1';
-%tms_opt.pos.pos_ydir = 'Cz'; % Pointing towards Cz
+tms_opt.distance = 0.0;
+% only perform local search (faster, usually sufficient for non-flexible coils)
+tms_opt.run_global_optimization = false;
 
 % Select ROI in which electric field will be evaluated
 tms_opt.roi = opt_struct('RegionOfInterest');

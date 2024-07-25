@@ -1,7 +1,7 @@
 .. _regionofinterest_doc:
 
 RegionOfInterest 
-==============
+=================
 
 Used for the definition of regions of interests on surfaces and in volumes
 

@@ -62,7 +62,6 @@ Utilities
     file_finder.templates
     file_finder.get_atlas
     file_finder.SubjectFiles
-	region_of_interest.RegionOfInterest
     
 Simulations
 ------------

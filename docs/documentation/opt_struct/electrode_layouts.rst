@@ -1,7 +1,7 @@
 .. _electrode_layouts:
 
 Electrode and array layouts for TesFlexOptimization
-================================================
+====================================================
 
 TesFlexOptimization supports two layout types: *ElectrodeArrayPair* and *CircularArray*
 
