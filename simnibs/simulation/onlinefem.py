@@ -1,3 +1,4 @@
+import os
 import time
 import copy
 import logging
@@ -51,7 +52,7 @@ class OnlineFEM:
     """
     def __init__(self, mesh, method, roi, anisotropy_type="scalar", solver_options="pardiso", fn_logger=None,
                  useElements=True, fn_coil=None, dataType=0, coil=None, electrode=None, dirichlet_node=None,
-                 solver_loglevel=logging.DEBUG):
+                 solver_loglevel=logging.DEBUG, cpus=None):
         """
         Constructor of the OnlineFEM class
         """
@@ -98,6 +99,19 @@ class OnlineFEM:
             self._logging = False
             
         self.solver_loglevel = solver_loglevel
+
+        if not cpus is None:
+            logger.info(f"Attempting to limit number of threads to {cpus}")
+            os.environ["MKL_DOMAIN_NUM_THREADS"] = (
+                f"MKL_DOMAIN_PARDISO={str(int(cpus))}"
+            )
+            # Note: Using MKL_DOMAIN_PARDISO means that only PARDISO is affected, VML, BLAS, LAPACK is potentially still more threads otherwise change to MKL_NUM_THREADS OR MKL_DOMAIN_ALL
+            from numba import set_num_threads
+
+            set_num_threads(int(cpus))
+            from numba import get_num_threads
+
+            logger.info(f"Numba reports {get_num_threads()} threads available")
         
         # read mesh or store in self
         if type(mesh) is str:
