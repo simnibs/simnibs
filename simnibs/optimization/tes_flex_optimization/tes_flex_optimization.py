@@ -491,7 +491,7 @@ class TesFlexOptimization:
         
     def _set_logger(self, fname_prefix='simnibs_simulation', summary=True):
         """
-        Set-up loggger to write to a file
+        Set-up logger to write to a file
 
         Parameters
         ----------
@@ -1097,6 +1097,19 @@ class TesFlexOptimization:
         start = time.time()
         self._set_logger()
         self._n_cpu = cpus
+
+        if not cpus is None:
+            logger.info(f"Attempting to limit number of threads to {cpus}")
+            os.environ["MKL_DOMAIN_NUM_THREADS"] = (
+                f"MKL_DOMAIN_PARDISO={str(int(cpus))}"
+            )
+            # Note: Using MKL_DOMAIN_PARDISO means that only PARDISO is affected, VML, BLAS, LAPACK is potentially still more threads otherwise change to MKL_NUM_THREADS OR MKL_DOMAIN_ALL
+            from numba import set_num_threads
+
+            set_num_threads(int(cpus))
+            from numba import get_num_threads
+
+            logger.info(f"Numba reports {get_num_threads()} threads available")
         
         # prepare optimization
         if not self._prepared:

@@ -318,8 +318,6 @@ class TmsFlexOptimization:
                 raise ValueError("No initial position or ROI specified")
             self.pos = auto_init_position_from_roi(self.roi, self.distance)
 
-        print(self.distance)
-        print(self.pos.distance)
         self.pos.eeg_cap = self.eeg_cap
         self.pos._prepare()
 
