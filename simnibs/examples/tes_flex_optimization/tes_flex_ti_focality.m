@@ -2,7 +2,7 @@
 % Example to run TESoptimize for Temporal Interference (TI) to optimize the 
 % focality in the ROI vs non-ROI
 %
-% � SimNIBS developers 2024 under the GPL v3 license
+% (C) SimNIBS developers 2024 under the GPL v3 license
 %
 
 % Initialize structure
