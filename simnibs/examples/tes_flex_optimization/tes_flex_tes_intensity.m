@@ -2,7 +2,7 @@
 % Example to run TESoptimize with a standard TES montage to optimize the 
 % field intensity in the ROI
 %
-% © SimNIBS developers 2024 under the GPL v3 license
+% (C) SimNIBS developers 2024 under the GPL v3 license
 %
 
 % Initialize structure
