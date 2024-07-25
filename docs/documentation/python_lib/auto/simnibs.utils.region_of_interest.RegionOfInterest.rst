@@ -14,6 +14,7 @@
    .. autosummary::
    
       ~RegionOfInterest.__init__
+      ~RegionOfInterest.apply_element_type_mask
       ~RegionOfInterest.apply_sphere_mask
       ~RegionOfInterest.apply_surface_mask
       ~RegionOfInterest.apply_tissue_mask
@@ -21,6 +22,7 @@
       ~RegionOfInterest.apply_volume_mask_from_surface_roi
       ~RegionOfInterest.from_dict
       ~RegionOfInterest.get_nodes
+      ~RegionOfInterest.get_roi_element_types
       ~RegionOfInterest.get_roi_mesh
       ~RegionOfInterest.invert
       ~RegionOfInterest.load_mesh
