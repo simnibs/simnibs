@@ -337,14 +337,17 @@ class TestEMagOptimization:
         np.testing.assert_allclose(coil_affine, affine_after)
 
 
+
 class TestAutoInit:
-    def test_auto_init(self, sphere3_msh):
+    def test_auto_init(self, sphere3_msh: Msh):
         roi = RegionOfInterest()
-        roi._mesh = sphere3_msh
+        roi.mesh = sphere3_msh
         roi.method = "volume"
         roi.roi_sphere_center_space = "subject"
         roi.roi_sphere_center = [85, 0, 0]
         roi.roi_sphere_radius = 10
+        roi.roi_sphere_operator = ["union"]
+        roi._prepare()
 
         pos = auto_init_position_from_roi(roi, distance=5)
 
