@@ -563,10 +563,11 @@ class TmsCoil(TcdElement):
             index_offset = 0 if self.casing is not None else 1
             for i, tag in enumerate(np.unique(casings.elm.tag1)):
                 casing = casings.crop_mesh(tags=[tag])
+                casing.elm.tag1[:] = 0
                 if i == 0:
                     casing = TmsCoil._add_logo(casing,coil_matrix)
+                    
                 idx_inside = msh_skin.pts_inside_surface(casing.nodes[:])
-                casing.elm.tag1[:] = 0
                 if len(idx_inside):
                     idx_hlp = np.zeros((casing.nodes.nr, 1), dtype=bool)
                     idx_hlp[idx_inside] = True
@@ -697,9 +698,11 @@ class TmsCoil(TcdElement):
         msh_logo.elm.tag1[msh_logo.elm.tag1 == 1] = 2  # 'simnibs' in light blue
 
         # apply inverse of matsimnibs to node coordinates of coil mesh
+        node_pos = np.hstack( (mesh.nodes[:], np.ones((mesh.nodes.nr,1))) )        
+        nodes_transf = (np.linalg.inv(coil_matrix) @ node_pos.T).T[:,:3]
         
         # center logo in xy-plane, mirror at yz-plane and scale
-        bbox_coil = np.vstack([np.min(mesh.nodes[:], 0), np.max(mesh.nodes[:], 0)])
+        bbox_coil = np.vstack([np.min(nodes_transf, 0), np.max(nodes_transf, 0)])
         bbox_logo = np.vstack(
             [np.min(msh_logo.nodes[:], 0), np.max(msh_logo.nodes[:], 0)]
         )
@@ -709,11 +712,21 @@ class TmsCoil(TcdElement):
         msh_logo.nodes.node_coord[:, 0:2] -= np.mean(bbox_logo[:, 0:2], axis=0)
         msh_logo.nodes.node_coord[:, 0] = -msh_logo.nodes.node_coord[:, 0]
         msh_logo.nodes.node_coord[:, 0:2] *= 1 / (4 * bbox_ratio)
-
+        
+        # get extent of coil casing in z-direction above origin
+        idx = np.sum((nodes_transf ** 2)[:,:2],axis=1) < 400
+        if np.any(idx):
+            z_pos_coil = np.min(nodes_transf[idx,2])
+            print('I am here')
+        else:
+            z_pos_coil = bbox_coil[0, 2]
+            
         # shift logo along negative z to the top side of coil
-        msh_logo.nodes.node_coord[:, 2] += bbox_coil[0, 2] - bbox_logo[0, 2] - 5
+        msh_logo.nodes.node_coord[:, 2] += z_pos_coil - bbox_logo[0, 2] - 5
 
         # apply matsimnibs to node coordinates of logo
+        node_pos = np.hstack( (msh_logo.nodes[:], np.ones((msh_logo.nodes.nr,1))) )        
+        msh_logo.nodes.node_coord = (coil_matrix @ node_pos.T).T[:,:3]
         
         mesh = mesh.join_mesh(msh_logo)
         return mesh
