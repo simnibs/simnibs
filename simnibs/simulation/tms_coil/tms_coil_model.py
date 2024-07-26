@@ -1,6 +1,7 @@
 import base64
 from copy import deepcopy
 from typing import Optional
+import zlib
 
 import numpy as np
 import numpy.typing as npt
@@ -215,14 +216,14 @@ class TmsCoilModel(TcdElement):
                 tcd_coil_model["minDistancePoints"] = self.min_distance_points.tolist()
         else:
             tcd_coil_model["points"] = base64.b64encode(
-                self.mesh.nodes.node_coord.tobytes()
+                zlib.compress(self.mesh.nodes.node_coord.tobytes())
             ).decode("ascii")
             tcd_coil_model["faces"] = base64.b64encode(
-                (self.mesh.elm.node_number_list[:, :3] - 1).tobytes()
+                zlib.compress((self.mesh.elm.node_number_list[:, :3] - 1).tobytes())
             ).decode("ascii")
             if len(self.min_distance_points) > 0:
                 tcd_coil_model["minDistancePoints"] = base64.b64encode(
-                    self.min_distance_points.tobytes()
+                    zlib.compress(self.min_distance_points.tobytes())
                 ).decode("ascii")
 
         return tcd_coil_model
@@ -290,7 +291,7 @@ class TmsCoilModel(TcdElement):
     def from_tcd_dict(cls, tcd_coil_model: dict):
         if isinstance(tcd_coil_model["points"], str):
             points = np.frombuffer(
-                base64.b64decode(tcd_coil_model["points"]), dtype=np.float64
+                zlib.decompress(base64.b64decode(tcd_coil_model["points"])), dtype=np.float64
             ).reshape(-1, 3)
         else:
             points = np.array(tcd_coil_model["points"])
@@ -298,7 +299,7 @@ class TmsCoilModel(TcdElement):
         if isinstance(tcd_coil_model["faces"], str):
             faces = (
                 np.frombuffer(
-                    base64.b64decode(tcd_coil_model["faces"]), dtype=np.int64
+                    zlib.decompress(base64.b64decode(tcd_coil_model["faces"])), dtype=np.int64
                 ).reshape(-1, 3)
                 + 1
             )
@@ -309,7 +310,7 @@ class TmsCoilModel(TcdElement):
             min_distance_points = None
         elif isinstance(tcd_coil_model["minDistancePoints"], str):
             min_distance_points = np.frombuffer(
-                base64.b64decode(tcd_coil_model["minDistancePoints"]), dtype=np.float64
+                zlib.decompress(base64.b64decode(tcd_coil_model["minDistancePoints"])), dtype=np.float64
             ).reshape(-1, 3)
         else:
             min_distance_points = np.array(tcd_coil_model["minDistancePoints"])
