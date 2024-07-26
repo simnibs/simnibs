@@ -1,7 +1,7 @@
 ''' Example on how to run a SimNIBS TMS simulation using a coil with multiple stimulators in Python
 '''
 import os
-from simnibs import sim_struct, run_simnibs
+from simnibs import sim_struct, run_simnibs, SIMNIBSDIR
 
 ### General Information
 S = sim_struct.SESSION()
@@ -10,7 +10,7 @@ S.pathfem = 'tms_simu'  # Directory for the simulation
 
 ## Define the TMS simulation
 tms = S.add_tmslist()
-tms.fnamecoil = 'two_stimulator_example_coil.tcd'  # Choose a coil model
+tms.fnamecoil = os.path.join(SIMNIBSDIR, 'examples','coils','two_stimulator_example_coil.tcd')
 
 # Define the coil position
 pos = tms.add_position()

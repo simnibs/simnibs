@@ -4,6 +4,7 @@ The TMS coil is than saved in the tcd format.
 The coil is constructed using line segments which reconstruct the windings of the coil.
 """
 
+import os
 import numpy as np
 from simnibs.simulation.tms_coil.tms_coil import TmsCoil
 
@@ -180,4 +181,6 @@ tms_coil.generate_element_casings(
 )
 
 # Write the coil to a tcd file
-tms_coil.write("two_stimulator_example_coil.tcd")
+os.mkdir("coil_example")
+tms_coil.write(os.path.join("coil_example", "two_stimulator_example_coil.tcd"))
+

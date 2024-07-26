@@ -481,3 +481,35 @@ class TestMatlabTESflexoptimize:
         ret = self.run_script('tes_flex_optimization', 'tes_flex_tes_geo_opt_intensity.m', 'tes_optimize_tes_geo_opt_intensity')
         assert ret.returncode == 0   
         
+class TestCoils:
+    def run_script(self, script_folder, script_name, clean=None):
+        if clean is not None and os.path.exists(clean):
+            shutil.rmtree(clean)
+        fn = os.path.join(EXAMPLES_DIR, script_folder, script_name)
+        print(fn)
+        return subprocess.run([sys.executable, fn])
+    
+    def test_create_deformable_figure_of_8_coil(self, replace_gmsh):
+        ret = self.run_script('coils', 'create_deformable_figure_of_8_coil.py', 'coil_example')
+        shutil.rmtree('coil_example')
+        assert ret.returncode == 0
+
+    def test_create_simple_circular_coil(self, replace_gmsh):
+        ret = self.run_script('coils', 'create_simple_circular_coil.py', 'coil_example')
+        shutil.rmtree('coil_example')
+        assert ret.returncode == 0
+
+    def test_create_simple_figure_of_8_coil(self, replace_gmsh):
+        ret = self.run_script('coils', 'create_simple_figure_of_8_coil.py', 'coil_example')
+        shutil.rmtree('coil_example')
+        assert ret.returncode == 0
+
+    def test_create_two_stimulator_coil(self, replace_gmsh):
+        ret = self.run_script('coils', 'create_two_stimulator_coil.py', 'coil_example')
+        shutil.rmtree('coil_example')
+        assert ret.returncode == 0
+
+    def test_roi_definition(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('coils', 'tms_multi_stimulator_simulation.py', 'tms_simu')
+        assert ret.returncode == 0
