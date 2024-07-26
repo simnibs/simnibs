@@ -359,6 +359,7 @@ class TmsCoil(TcdElement):
                 include_casing=False,
                 apply_deformation=apply_deformations,
                 include_optimization_points=False,
+                include_coil_elements=not(self.version is not None and self.version.endswith('.o'))
             )
         )
         casings = self.get_mesh(
@@ -412,9 +413,15 @@ class TmsCoil(TcdElement):
 
         coords = visualization.mesh.nodes.node_coord
         if casings.elm.nr > 0:
-            coords = np.concatenate((coords, casings.nodes.node_coord))
+            if len(coords) == 0:
+                coords = np.copy(casings.nodes.node_coord)
+            else:
+                coords = np.concatenate((coords, casings.nodes.node_coord))
         if optimization_points.elm.nr > 0:
-            coords = np.concatenate((coords, optimization_points.nodes.node_coord))
+            if len(coords) == 0:
+                coords = np.copy(optimization_points.nodes.node_coord)
+            else:
+                coords = np.concatenate((coords, optimization_points.nodes.node_coord))
         min_coords = np.min(coords, axis=0)
         max_coords = np.max(coords, axis=0)
         bounding = Msh(
@@ -439,6 +446,9 @@ class TmsCoil(TcdElement):
             os.remove(geo_file_name)
 
         for tag in np.unique(optimization_points.elm.tag1):
+            #What is this for? O.O
+            if self.version is not None and self.version.endswith('.o'):
+                continue
             element_optimization_points = optimization_points.crop_mesh(tags=[tag])
             index = str(tag)[:-2]
             identifier, color = ("min_distance_points", 2)

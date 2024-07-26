@@ -161,7 +161,7 @@ class Visualization:
             f.write(self._visibility_str())
 
     def _visibility_str(self):
-        if self.visibility is None:
+        if self.visibility is None or len(self.visibility) == 0:
             return ""
         vis_str = "{" + ",".join([f"{v}" for v in self.visibility]) + "}"
         view = "\n".join(
