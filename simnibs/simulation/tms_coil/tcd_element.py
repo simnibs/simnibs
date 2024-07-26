@@ -1,16 +1,14 @@
 class TcdElement:
     """Represents a part of a tcd file"""
 
-    def to_tcd(self, ascii_mode: bool = False, compressed: bool = True) -> dict:
+    def to_tcd(self, ascii_mode: bool = False) -> dict:
         """Turns the element into a tcd like dictionary
 
         Parameters
         ----------
         ascii_mode : bool, optional
             Whether or not to write arrays in an ascii format, by default False
-        compressed : bool, optional 
-            Weather to compress the data if in binary mode
-            
+
         Returns
         -------
         dict
