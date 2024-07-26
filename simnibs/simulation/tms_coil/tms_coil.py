@@ -717,7 +717,6 @@ class TmsCoil(TcdElement):
         idx = np.sum((nodes_transf ** 2)[:,:2],axis=1) < 400
         if np.any(idx):
             z_pos_coil = np.min(nodes_transf[idx,2])
-            print('I am here')
         else:
             z_pos_coil = bbox_coil[0, 2]
             
