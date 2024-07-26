@@ -9,4 +9,5 @@ Advanced Features
    uq
    custom_meshing
    fix_headmodel
+   fix_affine_registration
    eeg_leadfields

@@ -31,7 +31,7 @@ Definitions of TMS coils can be stored in a number of different file formats:
 
 TMS Coil Definition File Format (.tcd)
 ''''''''''''''''''''''''''''''''''''''
-The TMS Coil Definition File Format (.tcd) is a JSON-based format that defines a singular TMS coil. The coil file can be loaded into SimNIBS and used to calculate the magnetic vector potential (A-field) and the magnetic induction (B-field) in space resulting from a time-varying current in the coil.
+The TMS Coil Definition File Format (.tcd) is a JSON-based format that defines a singular TMS coil. The coil file can be loaded into SimNIBS and used to calculate the magnetic vector potential (A-field) and the magnetic field (B-field) in space resulting from a time-varying current in the coil.
 
 The file format holds basic information about the coil, the name, the brand and the version of the coil file. 
 

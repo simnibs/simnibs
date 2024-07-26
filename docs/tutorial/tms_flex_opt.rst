@@ -10,7 +10,12 @@ General-purpose TMS Optimization
 
 Introduction
 --------------
-For setting up a general-purpose, flexible TMS optimization, you need to select the head model and the coil. In addition, you have to indicate whether your aim is to place a coil as close as possible to a target position on the head surface, or whether you want to optimize its placement to maximize the electric field magnitude in a region-of-interest (ROI) in the brain. For the first case, you will have to provide a target position *on the head surface* to which the coil center will be put as close as possible. For the second case, you need to provide a target region-of-interest (ROI) *in the brain*. In both cases, the coil position (and shape in case of flexible coils) will be chosen to prevent intersections of the coil casing with the head.
+For setting up a general-purpose, flexible TMS optimization, you need to select the head model and the coil. In addition, you have to indicate whether your aim is to place a coil smoothly on the head surface, or whether you want to optimize its placement to maximize the electric field magnitude in a region-of-interest (ROI) in the brain:
+
+* For the first case, you will have to provide a starting position *on the head surface*. The algorithm then adjusts this position and deforms the coil to smoothly fit the coil casing on the head surface, thereby ensuring a minimal distance to the head surface at all positions.
+* For the second case, you need to provide a target region-of-interest (ROI) *in the brain*.
+
+In both cases, the coil position (and shape in case of flexible coils) will be chosen to prevent intersections of the coil casing with the head. The extent of position changes can be controlled by the user by the means of (pre-)defined translation and rotation ranges.
 
 Example 1: Optimizing the electric field magnitude in a ROI
 -----------------------------------------------------------
@@ -38,7 +43,7 @@ The optimization will create the Gmsh output file :file:`ernie_MagVenture_MCF-B6
 
 Example 2: Optimizing the position and shape of a flexible coil
 ---------------------------------------------------------------
-The following example optimizes the postion of a Brainsway H1 coil so that its center (as defined by the company) is as close as possible to a scalp position above the left DLPFC. In this case, the target coil position is *not* orthogonal to the local skin orientation underneath the coil center (i.e. the coil position cannot be defined by a target position and a second position indicating the y-direction). Therefore, the coil position has been here defined as 4x4 matrix in MNI space.
+The following example optimizes the postion of a Brainsway H1 coil so that it fits smoothly on the head. The starting position of the coil center (as defined by the company) is a scalp position above the left DLPFC. In this specific case, the starting coil position is *not* orthogonal to the local skin orientation underneath the coil center, but is tilted. Thus, the coil position cannot be defined by a center position and a second position indicating the y-direction. Therefore, the coil position has been defined as 4x4 matrix in MNI space. In addition, the translation and rotation ranges that control the extent of position changes to "sensible" ranges for this situation, instead of using the predefined standard ranges. This is recommended for flexible large coils to ensure good results.
 
 * *Python*
 

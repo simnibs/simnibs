@@ -16,7 +16,7 @@ A basic SimNIBS workflow consists of three main parts:
 
    * :ref:`Visualize simulation results <visualization_tutorial>`, and easily transform them to *FsAverage* or *MNI* space via in-built functions.
 
-In addition, SimNIBS offers several advanced options such as :ref:`Optimizations of TMS coil positions <tms_optimize>`, or TES optimizations for :ref:`single and multiple targets <tdcs_opt>` and :ref:`brain network targeting <tdcs_distributed_opt>`.
+In addition, SimNIBS offers several advanced options such as :ref:`Optimizations of TMS coil positions <overview_tms_opt>`, or TES optimizations for :ref:`single and multiple targets <tdcs_opt>` and :ref:`brain network targeting <overview_tes_opt>`.
 
 .. raw:: html
 

@@ -48,7 +48,8 @@ The optimization will create the Gmsh output file :file:`ernie_tes_flex_opt_surf
 
 Example 2: Optimizing the focality of TI stimulation
 ----------------------------------------------------
-This example optimizes the intensity - focality tradeoff of TIS, focused on the left hand knob
+This example optimizes the intensity - focality tradeoff of TIS, focused on the left hand knob. 
+This requires the defintion of two regions: The first will be used as target ROI, the second will be the avoidance area (or "non-ROI). In addition, two thresholds are defined - the optimization goal is to ensure that the QoI (here: *maxTI*) is lower than the first threshold in the avoidance region, while it exceeds the second threshold in the ROI.
 
 * *Python*
 
@@ -74,4 +75,8 @@ Notes
 * The optimization uses the MKL Pardiso direct solver for accelerating the simulations. The SimNIBS standard FEM solver can be chosen optionally to reduce memory consumption, but will also substantially slow down the optimization.
 * 32GB main memory are recommended, even thougth some optimizations will run with 16GB main memory.
 * Optimization is performed using the differential evolution algorithm, which is stochastic in nature. As such, solutions will differ between repeated optimization runs, even though the achieved final cost will be very close to each other.
-* Please see :ref:`tes_flex_opt_doc` for a description of the option settings, :ref:`regionofinterest_doc` for a description of the region-of-interest parameters, and :ref:`electrode_layouts` for a description of the electrode array layout parameters. 
+* For TTF, we recommend setting *constrain_electrode_locations* to True, which will restrict the locations for each of the four electrode arrays to frontal, left and right parietal, and occipital. This speeds up the search by reducing the likelihood for overlapping configurations. The restriction is applied to the centers of the arrays, so that half of an array can still move into the neighboring skin areas, keeping sufficient flexibility for the optimization.
+.. figure:: ../images/tes_flex_opt_skinregions.png
+   :scale: 40 %
+* Please see :ref:`tes_flex_opt_doc` for a description of the option settings, :ref:`regionofinterest_doc` for a description of the region-of-interest parameters, and :ref:`electrode_layouts` for a description of the electrode array layout parameters.
+

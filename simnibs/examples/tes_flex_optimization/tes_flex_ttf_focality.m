@@ -18,7 +18,7 @@ opt.threshold = [100, 100];                                           % define t
                                                                       % if two thresholds are defined, the first one is the threshold of the non-ROI and the second one is for the ROI
 opt.e_postproc = 'magn';                                              % postprocessing of e-fields ('magn': magnitude, 'normal': normal component, 'tangential': tangential component)
 opt.constrain_electrode_locations = true;                             % electrode array locations are restricted to be frontal, parietal and occipital
-                                                                      % to reduce possibility of overlapping configurations, which will be sorted out anyway
+                                                                      % to reduce likelihood for overlapping configurations
 
 % Define first pair of electrode arrays %
 electrode_layout = opt_struct('ElectrodeArrayPair');                  % Pair of TES electrode arrays

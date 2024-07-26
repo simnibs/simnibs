@@ -56,6 +56,7 @@ Current Contributors
    * Implementation of the tcd format and flexible TMS optimization (4.5)
    * Coil models for Brainsway H1, H4 and H7, and of MagVenture MST Twin coil (4.5)
    * Region-of-interest class (4.5)
+   * Help with the flexible TES optimization (4.5)
    * Integration of mmg to improve tetrahedral mesh quality (4.1)
 
 * Bianka Rumi
@@ -69,8 +70,8 @@ Current Contributors
    * Main contributor to the Ernie Extended dataset
 
 *  Kathleen E. Mantell
-	* Main contributor to the NHP dataset
-	
+   * Main contributor to the NHP dataset
+
 * Alex Opitz
    * Implementation of first diffusion-to-conductivity mapping approach
    * Co-contributor to many other parts in SimNIBS 1.0

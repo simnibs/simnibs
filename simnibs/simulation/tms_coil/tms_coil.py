@@ -564,7 +564,7 @@ class TmsCoil(TcdElement):
             for i, tag in enumerate(np.unique(casings.elm.tag1)):
                 casing = casings.crop_mesh(tags=[tag])
                 if i == 0:
-                    casing = TmsCoil._add_logo(casing)
+                    casing = TmsCoil._add_logo(casing,coil_matrix)
                 idx_inside = msh_skin.pts_inside_surface(casing.nodes[:])
                 casing.elm.tag1[:] = 0
                 if len(idx_inside):
@@ -665,13 +665,15 @@ class TmsCoil(TcdElement):
         return elements_by_stimulators
 
     @staticmethod
-    def _add_logo(mesh: Msh) -> Msh:
+    def _add_logo(mesh: Msh, coil_matrix) -> Msh:
         """Adds the SimNIBS logo to the coil surface
 
         Parameters
         ----------
         mesh : Msh
             The mesh of the coil
+        coil_matrix : 4x4 affine matrix np.array
+            matsimnibs
 
         Returns
         -------
@@ -694,6 +696,8 @@ class TmsCoil(TcdElement):
             msh_logo = msh_logo.crop_mesh(tags=1)
         msh_logo.elm.tag1[msh_logo.elm.tag1 == 1] = 2  # 'simnibs' in light blue
 
+        # apply inverse of matsimnibs to node coordinates of coil mesh
+        
         # center logo in xy-plane, mirror at yz-plane and scale
         bbox_coil = np.vstack([np.min(mesh.nodes[:], 0), np.max(mesh.nodes[:], 0)])
         bbox_logo = np.vstack(
@@ -709,6 +713,8 @@ class TmsCoil(TcdElement):
         # shift logo along negative z to the top side of coil
         msh_logo.nodes.node_coord[:, 2] += bbox_coil[0, 2] - bbox_logo[0, 2] - 5
 
+        # apply matsimnibs to node coordinates of logo
+        
         mesh = mesh.join_mesh(msh_logo)
         return mesh
 
