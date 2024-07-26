@@ -313,6 +313,21 @@ class TmsFlexOptimization:
             else:
                 raise ValueError("No ROI specified")
 
+            if self.global_translation_ranges is None:
+                self.global_translation_ranges = [[-30, 30], [-30, 30], [-30, 30]]
+            if self.global_rotation_ranges is None:
+                self.global_rotation_ranges = [[-30, 30], [-30, 30], [-95, 95]]
+        elif self.method == "distance":
+            if self.global_translation_ranges is None:
+                self.global_translation_ranges = [[-5, 5], [-5, 5], [-30, 30]]
+            if self.global_rotation_ranges is None:
+                self.global_rotation_ranges = [[-20, 20], [-20, 20], [-5, 5]]
+        else:
+            raise ValueError("method should be 'distance' or 'emag'")
+        
+        self._global_translation_ranges = np.array(self.global_translation_ranges)
+        self._global_rotation_ranges = np.array(self.global_rotation_ranges)
+
         if self.pos is None:
             if self.roi is None:
                 raise ValueError("No initial position or ROI specified")
@@ -321,19 +336,17 @@ class TmsFlexOptimization:
         self.pos.eeg_cap = self.eeg_cap
         self.pos._prepare()
 
-        if self.global_translation_ranges is not None:
-            self._global_translation_ranges = np.array(self.global_translation_ranges)
-
-        if self.global_rotation_ranges is not None:
-            self._global_rotation_ranges = np.array(self.global_rotation_ranges)
-
         self.pos.calc_matsimnibs(self._mesh)
 
-        if "vol_tol" not in self.direct_args:
-            if self.method == "distance":
+        if self.method == "distance":
+            if "vol_tol" not in self.direct_args:
                 self.direct_args["vol_tol"] = 1e-19
-            else:
+        elif self.method == "emag":
+            if "vol_tol" not in self.direct_args:
                 self.direct_args["vol_tol"] = 1e-16
+
+        if "locally_biased" not in self.direct_args:
+            self.direct_args["locally_biased"] = True
 
         self._prepared = True
 

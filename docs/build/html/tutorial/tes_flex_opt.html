@@ -44,9 +44,275 @@
 <p class="admonition-title">Note</p>
 <p>When using this feature in a publication, please cite</p>
 </div>
-<p><strong>TODO</strong></p>
-<section id="references">
-<h2>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
+<p></p>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">¶</a></h2>
+<p>The leadfield-free TES optimization supports standard 2-channel TES, focal center-surround Nx1 TES, TI stimulation and Tumor Treating Fields (TTF). Several quantities of interest (QoI) are supported, including:</p>
+<ul class="simple">
+<li><p>for TES: Electric field magnitude (“magn”) and its normal component relative to the cortex orientation (“normal”)</p></li>
+<li><p>for TIS: maximal envelope of TI field magnitude (“max_TI”) and envelope of the normal component of the TI field (“dir_TI_normal”)</p></li>
+<li><p>for TTF: Electric field magnitude (“magn”), whereby the field magnitudes of the two array pairs will be averaged</p></li>
+</ul>
+<p>The following optimization goals are available:</p>
+<ul class="simple">
+<li><p>Maximize the QoI in a region-of-interest</p></li>
+<li><p>Optimize the intensity-focality tradeoff between the QoI in the region-of-interest and the QoI in an avoidance region (e.g. the rest of the brain)</p></li>
+<li><p>Maximize the intensity of the QoI in the region-of-interest, while making the field as <em>unfocal</em> as possible. This can be relevant for TTF, where the aim is to focus the treatment on a tumor region, while maintaing high intensities throughout the brain (as the cancer cells might already have infiltrated further regions).</p></li>
+</ul>
+</section>
+<section id="example-1-optimizing-the-electric-field-magnitude-for-2-channel-tes">
+<h2>Example 1: Optimizing the electric field magnitude for 2-channel TES<a class="headerlink" href="#example-1-optimizing-the-electric-field-magnitude-for-2-channel-tes" title="Link to this heading">¶</a></h2>
+<p>This example maximizes the electric field strength in a ROI around the left hand knob.</p>
+<ul>
+<li><p><em>Python</em></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Example to run TESoptimize with a standard TES montage to optimize the </span>
+<span class="sd">field intensity in the ROI</span>
+
+<span class="sd">© SimNIBS developers 2024 under the GPL v3 license</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">opt_struct</span>
+
+
+<span class="sd">&#39;&#39;&#39; Initialize structure &#39;&#39;&#39;</span>
+<span class="n">opt</span> <span class="o">=</span> <span class="n">opt_struct</span><span class="o">.</span><span class="n">TesFlexOptimization</span><span class="p">()</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">subpath</span> <span class="o">=</span> <span class="s1">&#39;m2m_ernie&#39;</span>                           <span class="c1"># path of m2m folder containing the headmodel</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">output_folder</span> <span class="o">=</span> <span class="s2">&quot;tes_optimize_tes_intensity&quot;</span>
+
+<span class="sd">&#39;&#39;&#39; Set up goal function &#39;&#39;&#39;</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">goal</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span>                                   <span class="c1"># maximize the mean of field magnitude in the ROI</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">e_postproc</span> <span class="o">=</span> <span class="s2">&quot;magn&quot;</span>                             <span class="c1"># postprocessing of e-fields (&quot;magn&quot;: magnitude,</span>
+                                                    <span class="c1"># &quot;normal&quot;: normal component, &quot;tangential&quot;: tangential component)</span>
+
+<span class="sd">&#39;&#39;&#39; Define electrodes and array layout &#39;&#39;&#39;</span>
+<span class="n">electrode_layout</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_electrode_layout</span><span class="p">(</span><span class="s2">&quot;ElectrodeArrayPair&quot;</span><span class="p">)</span> <span class="c1"># Pair of TES electrode arrays (here: 1 electrode per array)s</span>
+<span class="n">electrode_layout</span><span class="o">.</span><span class="n">length_x</span> <span class="o">=</span> <span class="p">[</span><span class="mi">70</span><span class="p">]</span>                                  <span class="c1"># x-dimension of electrodes</span>
+<span class="n">electrode_layout</span><span class="o">.</span><span class="n">length_y</span> <span class="o">=</span> <span class="p">[</span><span class="mi">50</span><span class="p">]</span>                                  <span class="c1"># y-dimension of electrodes</span>
+<span class="n">electrode_layout</span><span class="o">.</span><span class="n">dirichlet_correction_detailed</span> <span class="o">=</span> <span class="kc">False</span>            <span class="c1"># account for inhomogenous current distribution at electrode-skin interface (slow)</span>
+<span class="n">electrode_layout</span><span class="o">.</span><span class="n">current</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.002</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.002</span><span class="p">]</span>                        <span class="c1"># electrode currents</span>
+
+<span class="sd">&#39;&#39;&#39; Define ROI &#39;&#39;&#39;</span>
+<span class="n">roi</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_roi</span><span class="p">()</span>
+<span class="n">roi</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;surface&quot;</span>
+<span class="n">roi</span><span class="o">.</span><span class="n">surface_type</span> <span class="o">=</span> <span class="s2">&quot;central&quot;</span>                        <span class="c1"># define ROI on central GM surfaces</span>
+<span class="n">roi</span><span class="o">.</span><span class="n">roi_sphere_center_space</span> <span class="o">=</span> <span class="s2">&quot;subject&quot;</span>
+<span class="n">roi</span><span class="o">.</span><span class="n">roi_sphere_center</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">41.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">13.0</span><span class="p">,</span>  <span class="mf">66.0</span><span class="p">]</span>       <span class="c1"># center of spherical ROI in subject space (in mm)</span>
+<span class="n">roi</span><span class="o">.</span><span class="n">roi_sphere_radius</span> <span class="o">=</span> <span class="mi">20</span>                          <span class="c1"># radius of spherical ROI (in mm)</span>
+<span class="c1"># uncomment for visual control of ROI:</span>
+<span class="c1">#roi.subpath = opt.subpath</span>
+<span class="c1">#roi.write_visualization(&#39;&#39;,&#39;roi.msh&#39;)</span>
+
+<span class="sd">&#39;&#39;&#39; Run optimization &#39;&#39;&#39;</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p></p>
+<ul>
+<li><p><em>MATLAB</em></p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">%</span>
+<span class="c">% Example to run TESoptimize with a standard TES montage to optimize the </span>
+<span class="c">% field intensity in the ROI</span>
+<span class="c">%</span>
+<span class="c">% (C) SimNIBS developers 2024 under the GPL v3 license</span>
+<span class="c">%</span>
+
+<span class="c">% Initialize structure</span>
+<span class="n">opt</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TesFlexOptimization&#39;</span><span class="p">);</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">subpath</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;m2m_ernie&#39;</span><span class="p">;</span><span class="w">                                </span><span class="c">% path of m2m folder containing the headmodel</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">output_folder</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;tes_optimize_tes_intensity&#39;</span><span class="p">;</span>
+
+<span class="c">% Set up goal function</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">goal</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;mean&#39;</span><span class="p">;</span><span class="w">                                        </span><span class="c">% maximize the mean of field magnitude in the ROI</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">e_postproc</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;magn&#39;</span><span class="p">;</span><span class="w">                                  </span><span class="c">% postprocessing of e-fields (&#39;magn&#39;: magnitude,</span>
+<span class="w">                                                          </span><span class="c">% &#39;normal&#39;: normal component, &#39;tangential&#39;: tangential component)</span>
+
+<span class="c">% Define electrodes and array layout</span>
+<span class="n">electrode_layout</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;ElectrodeArrayPair&#39;</span><span class="p">);</span><span class="w">      </span><span class="c">% Pair of TES electrode arrays (here: 1 electrode per array)</span>
+<span class="n">electrode_layout</span><span class="p">.</span><span class="n">length_x</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">70</span><span class="p">];</span><span class="w">                         </span><span class="c">% x-dimension of electrodes</span>
+<span class="n">electrode_layout</span><span class="p">.</span><span class="n">length_y</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">50</span><span class="p">];</span><span class="w">                         </span><span class="c">% y-dimension of electrodes</span>
+<span class="n">electrode_layout</span><span class="p">.</span><span class="n">dirichlet_correction_detailed</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span><span class="w">   </span><span class="c">% account for inhomogenous current distribution at electrode-skin interface (slow)</span>
+<span class="n">electrode_layout</span><span class="p">.</span><span class="n">current</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mf">0.002</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">0.002</span><span class="p">];</span><span class="w">               </span><span class="c">% electrode currents</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">electrode</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">electrode_layout</span><span class="p">;</span>
+
+<span class="c">% Define ROI</span>
+<span class="n">roi</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;RegionOfInterest&#39;</span><span class="p">);</span>
+<span class="n">roi</span><span class="p">.</span><span class="n">method</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;surface&#39;</span><span class="p">;</span>
+<span class="n">roi</span><span class="p">.</span><span class="n">surface_type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;central&#39;</span><span class="p">;</span><span class="w">                             </span><span class="c">% define ROI on central GM surfaces</span>
+<span class="n">roi</span><span class="p">.</span><span class="n">roi_sphere_center_space</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;subject&#39;</span><span class="p">;</span>
+<span class="n">roi</span><span class="p">.</span><span class="n">roi_sphere_center</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="o">-</span><span class="mf">41.0</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">13.0</span><span class="p">,</span><span class="w">  </span><span class="mf">66.0</span><span class="p">];</span><span class="w">            </span><span class="c">% center of spherical ROI in subject space (in mm)</span>
+<span class="n">roi</span><span class="p">.</span><span class="n">roi_sphere_radius</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">20</span><span class="p">;</span><span class="w">                               </span><span class="c">% radius of spherical ROI (in mm)</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">roi</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">roi</span><span class="p">;</span>
+<span class="c">% uncomment for visual control of ROI:</span>
+<span class="c">% roi.subpath = opt.subpath;</span>
+<span class="c">% roi.fname_visu = &#39;roi&#39;;</span>
+<span class="c">% run_simnibs(roi)</span>
+
+<span class="c">% Run optimization</span>
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p></p>
+<p>The optimization will create the Gmsh output file <code class="file docutils literal notranslate"><span class="pre">ernie_tes_flex_opt_surface_mesh.msh</span></code> with the ROI, the optimized field and the electrode positions. The optimized electrode positions are listed in the <em>summary.txt</em>. In addition, the results folder contains visualizations (electrode_channel…png) for control of the electrode array layouts.</p>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../_images/tes_intensity_opt.png"><img alt="../_images/tes_intensity_opt.png" src="../_images/tes_intensity_opt.png" style="width: 470.40000000000003px; height: 209.20000000000002px;" /></a>
+</figure>
+</section>
+<section id="example-2-optimizing-the-focality-of-ti-stimulation">
+<h2>Example 2: Optimizing the focality of TI stimulation<a class="headerlink" href="#example-2-optimizing-the-focality-of-ti-stimulation" title="Link to this heading">¶</a></h2>
+<p>This example optimizes the intensity - focality tradeoff of TIS, focused on the left hand knob</p>
+<ul>
+<li><p><em>Python</em></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Example to run TESoptimize for Temporal Interference (TI) to optimize the </span>
+<span class="sd">focality in the ROI vs non-ROI</span>
+
+<span class="sd">© SimNIBS developers 2024 under the GPL v3 license</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">opt_struct</span>
+
+
+<span class="sd">&#39;&#39;&#39; Initialize structure &#39;&#39;&#39;</span>
+<span class="n">opt</span> <span class="o">=</span> <span class="n">opt_struct</span><span class="o">.</span><span class="n">TesFlexOptimization</span><span class="p">()</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">subpath</span> <span class="o">=</span> <span class="s1">&#39;m2m_ernie&#39;</span>                               <span class="c1"># path of m2m folder containing the headmodel</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">output_folder</span> <span class="o">=</span> <span class="s2">&quot;tes_optimize_ti_focality&quot;</span>
+
+<span class="sd">&#39;&#39;&#39; Set up goal function &#39;&#39;&#39;</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">goal</span> <span class="o">=</span> <span class="s2">&quot;focality&quot;</span>                                   <span class="c1"># optimize the focality of &quot;max_TI&quot; in the ROI (&quot;max_TI&quot; defined by e_postproc)</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">]</span>                              <span class="c1"># define threshold(s) of the electric field in V/m in the non-ROI and the ROI:</span>
+                                                        <span class="c1"># if one threshold is defined, it is the goal that the e-field in the non-ROI is lower than this value and higher than this value in the ROI</span>
+                                                        <span class="c1"># if two thresholds are defined, the first one is the threshold of the non-ROI and the second one is for the ROI</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">e_postproc</span> <span class="o">=</span> <span class="s2">&quot;max_TI&quot;</span>                               <span class="c1"># postprocessing of e-fields</span>
+                                                        <span class="c1"># &quot;max_TI&quot;: maximal envelope of TI field magnitude</span>
+                                                        <span class="c1"># &quot;dir_TI_normal&quot;: envelope of normal component</span>
+                                                        <span class="c1"># &quot;dir_TI_tangential&quot;: envelope of tangential component</span>
+<span class="sd">&#39;&#39;&#39; Define first electrode pair &#39;&#39;&#39;</span>
+<span class="n">electrode_layout</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_electrode_layout</span><span class="p">(</span><span class="s2">&quot;ElectrodeArrayPair&quot;</span><span class="p">)</span>   <span class="c1"># Pair of TES electrode arrays (here: 1 electrode per array)</span>
+<span class="n">electrode_layout</span><span class="o">.</span><span class="n">radius</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">]</span>                                      <span class="c1"># radii of electrodes</span>
+<span class="n">electrode_layout</span><span class="o">.</span><span class="n">current</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.002</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.002</span><span class="p">]</span>                          <span class="c1"># electrode currents</span>
+
+<span class="sd">&#39;&#39;&#39; Define second electrode pair &#39;&#39;&#39;</span>
+<span class="n">electrode_layout</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_electrode_layout</span><span class="p">(</span><span class="s2">&quot;ElectrodeArrayPair&quot;</span><span class="p">)</span>
+<span class="n">electrode_layout</span><span class="o">.</span><span class="n">radius</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">]</span>
+<span class="n">electrode_layout</span><span class="o">.</span><span class="n">current</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.002</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.002</span><span class="p">]</span>
+
+<span class="sd">&#39;&#39;&#39; Define ROI &#39;&#39;&#39;</span>
+<span class="n">roi</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_roi</span><span class="p">()</span>
+<span class="n">roi</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;surface&quot;</span>
+<span class="n">roi</span><span class="o">.</span><span class="n">surface_type</span> <span class="o">=</span> <span class="s2">&quot;central&quot;</span>                            <span class="c1"># define ROI on central GM surfaces</span>
+<span class="n">roi</span><span class="o">.</span><span class="n">roi_sphere_center_space</span> <span class="o">=</span> <span class="s2">&quot;subject&quot;</span>
+<span class="n">roi</span><span class="o">.</span><span class="n">roi_sphere_center</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">41.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">13.0</span><span class="p">,</span>  <span class="mf">66.0</span><span class="p">]</span>           <span class="c1"># center of spherical ROI in subject space (in mm)</span>
+<span class="n">roi</span><span class="o">.</span><span class="n">roi_sphere_radius</span> <span class="o">=</span> <span class="mi">20</span>                              <span class="c1"># radius of spherical ROI (in mm)</span>
+<span class="c1"># uncomment for visual control of ROI:</span>
+<span class="c1">#roi.subpath = opt.subpath</span>
+<span class="c1">#roi.write_visualization(&#39;&#39;,&#39;roi.msh&#39;)</span>
+
+<span class="sd">&#39;&#39;&#39; Define non-ROI &#39;&#39;&#39;</span>
+<span class="c1"># all of GM surface except a spherical region with 25 mm around roi center</span>
+<span class="n">non_roi</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_roi</span><span class="p">()</span>
+<span class="n">non_roi</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;surface&quot;</span>
+<span class="n">non_roi</span><span class="o">.</span><span class="n">surface_type</span> <span class="o">=</span> <span class="s2">&quot;central&quot;</span>
+<span class="n">non_roi</span><span class="o">.</span><span class="n">roi_sphere_center_space</span> <span class="o">=</span> <span class="s2">&quot;subject&quot;</span>
+<span class="n">non_roi</span><span class="o">.</span><span class="n">roi_sphere_center</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">41.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">13.0</span><span class="p">,</span>  <span class="mf">66.0</span><span class="p">]</span>
+<span class="n">non_roi</span><span class="o">.</span><span class="n">roi_sphere_radius</span> <span class="o">=</span> <span class="mi">25</span>
+<span class="n">non_roi</span><span class="o">.</span><span class="n">roi_sphere_operator</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;difference&quot;</span><span class="p">]</span>                             <span class="c1"># take difference between GM surface and the sphere region</span>
+<span class="c1"># uncomment for visual control of non-ROI:</span>
+<span class="c1">#non_roi.subpath = opt.subpath</span>
+<span class="c1">#non_roi.write_visualization(&#39;&#39;,&#39;non-roi.msh&#39;)</span>
+
+<span class="sd">&#39;&#39;&#39; Run optimization &#39;&#39;&#39;</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p></p>
+<ul>
+<li><p><em>MATLAB</em></p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">%</span>
+<span class="c">% Example to run TESoptimize for Temporal Interference (TI) to optimize the </span>
+<span class="c">% focality in the ROI vs non-ROI</span>
+<span class="c">%</span>
+<span class="c">% (C) SimNIBS developers 2024 under the GPL v3 license</span>
+<span class="c">%</span>
+
+<span class="c">% Initialize structure</span>
+<span class="n">opt</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TesFlexOptimization&#39;</span><span class="p">);</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">subpath</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;m2m_ernie&#39;</span><span class="p">;</span><span class="w">                              </span><span class="c">% path of m2m folder containing the headmodel</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">output_folder</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;tes_optimize_ti_focality&#39;</span><span class="p">;</span>
+
+<span class="c">% Set up goal function</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">goal</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;focality&#39;</span><span class="p">;</span><span class="w">                                  </span><span class="c">% optimize the focality of &#39;max_TI&#39; in the ROI (&#39;max_TI&#39; defined by e_postproc)</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">threshold</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mf">0.1</span><span class="p">,</span><span class="w"> </span><span class="mf">0.2</span><span class="p">];</span><span class="w">                             </span><span class="c">% define threshold(s) of the electric field in V/m in the non-ROI and the ROI:</span>
+<span class="w">                                                        </span><span class="c">% if one threshold is defined, it is the goal that the e-field in the non-ROI is lower than this value and higher than this value in the ROI</span>
+<span class="w">                                                        </span><span class="c">% if two thresholds are defined, the first one is the threshold of the non-ROI and the second one is for the ROI</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">e_postproc</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;max_TI&#39;</span><span class="p">;</span><span class="w">                              </span><span class="c">% postprocessing of e-fields</span>
+<span class="w">                                                        </span><span class="c">% &#39;max_TI&#39;: maximal envelope of TI field magnitude</span>
+<span class="w">                                                        </span><span class="c">% &#39;dir_TI_normal&#39;: envelope of normal component</span>
+<span class="w">                                                        </span><span class="c">% &#39;dir_TI_tangential&#39;: envelope of tangential component</span>
+<span class="c">% Define first electrode pair</span>
+<span class="n">electrode_layout</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;ElectrodeArrayPair&#39;</span><span class="p">);</span><span class="w">    </span><span class="c">% Pair of TES electrode arrays (here: 1 electrode per array)</span>
+<span class="n">electrode_layout</span><span class="p">.</span><span class="n">radius</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">10</span><span class="p">];</span><span class="w">                         </span><span class="c">% radii of electrodes</span>
+<span class="n">electrode_layout</span><span class="p">.</span><span class="n">current</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mf">0.002</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">0.002</span><span class="p">];</span><span class="w">             </span><span class="c">% electrode currents</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">electrode</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">electrode_layout</span><span class="p">;</span>
+
+<span class="c">% Define second electrode pair</span>
+<span class="n">electrode_layout</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;ElectrodeArrayPair&#39;</span><span class="p">);</span>
+<span class="n">electrode_layout</span><span class="p">.</span><span class="n">radius</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">10</span><span class="p">];</span>
+<span class="n">electrode_layout</span><span class="p">.</span><span class="n">current</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mf">0.002</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">0.002</span><span class="p">];</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">electrode</span><span class="p">{</span><span class="mi">2</span><span class="p">}</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">electrode_layout</span><span class="p">;</span>
+
+<span class="c">% Define ROI</span>
+<span class="n">roi</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;RegionOfInterest&#39;</span><span class="p">);</span>
+<span class="n">roi</span><span class="p">.</span><span class="n">method</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;surface&#39;</span><span class="p">;</span>
+<span class="n">roi</span><span class="p">.</span><span class="n">surface_type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;central&#39;</span><span class="p">;</span><span class="w">                           </span><span class="c">% define ROI on central GM surfaces</span>
+<span class="n">roi</span><span class="p">.</span><span class="n">roi_sphere_center_space</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;subject&#39;</span><span class="p">;</span>
+<span class="n">roi</span><span class="p">.</span><span class="n">roi_sphere_center</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="o">-</span><span class="mf">41.0</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">13.0</span><span class="p">,</span><span class="w">  </span><span class="mf">66.0</span><span class="p">];</span><span class="w">          </span><span class="c">% center of spherical ROI in subject space (in mm)</span>
+<span class="n">roi</span><span class="p">.</span><span class="n">roi_sphere_radius</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">20</span><span class="p">;</span><span class="w">                             </span><span class="c">% radius of spherical ROI (in mm)</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">roi</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">roi</span><span class="p">;</span>
+<span class="c">% uncomment for visual control of ROI:</span>
+<span class="c">% roi.subpath = opt.subpath;</span>
+<span class="c">% roi.fname_visu = &#39;roi&#39;;</span>
+<span class="c">% run_simnibs(roi)</span>
+
+<span class="c">% Define non-ROI</span>
+<span class="c">% all of GM surface except a spherical region with 25 mm around roi center</span>
+<span class="n">non_roi</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;RegionOfInterest&#39;</span><span class="p">);</span>
+<span class="n">non_roi</span><span class="p">.</span><span class="n">method</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;surface&#39;</span><span class="p">;</span>
+<span class="n">non_roi</span><span class="p">.</span><span class="n">surface_type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;central&#39;</span><span class="p">;</span>
+<span class="n">non_roi</span><span class="p">.</span><span class="n">roi_sphere_center_space</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;subject&#39;</span><span class="p">;</span>
+<span class="n">non_roi</span><span class="p">.</span><span class="n">roi_sphere_center</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="o">-</span><span class="mf">41.0</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mf">13.0</span><span class="p">,</span><span class="w">  </span><span class="mf">66.0</span><span class="p">];</span>
+<span class="n">non_roi</span><span class="p">.</span><span class="n">roi_sphere_radius</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">25</span><span class="p">;</span>
+<span class="n">non_roi</span><span class="p">.</span><span class="n">roi_sphere_operator</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s">&#39;difference&#39;</span><span class="p">];</span><span class="w">           </span><span class="c">% take difference between GM surface and the sphere region</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">roi</span><span class="p">{</span><span class="mi">2</span><span class="p">}</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">non_roi</span><span class="p">;</span>
+<span class="c">% uncomment for visual control of the ROI before running the optimization:</span>
+<span class="c">% non_roi.subpath = opt.subpath;</span>
+<span class="c">% non_roi.fname_visu = &#39;non-roi&#39;;</span>
+<span class="c">% run_simnibs(non_roi)</span>
+
+<span class="c">% Run optimization</span>
+<span class="n">run_simnibs</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p></p>
+<p>The optimization will create the Gmsh output file <code class="file docutils literal notranslate"><span class="pre">ernie_tes_flex_opt_surface_mesh.msh</span></code> with the optimized field, electrode positions, ROI, and avoidance region. The optimized electrode positions are listed in the <em>summary.txt</em>. In addition, the results folder contains visualizations (electrode_channel…png) for control of the electrode array layouts.</p>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../_images/ti_focality_opt.png"><img alt="../_images/ti_focality_opt.png" src="../_images/ti_focality_opt.png" style="width: 657.2px; height: 205.20000000000002px;" /></a>
+</figure>
+</section>
+<section id="notes">
+<h2>Notes<a class="headerlink" href="#notes" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>The optimization uses the MKL Pardiso direct solver for accelerating the simulations. The SimNIBS standard FEM solver can be chosen optionally to reduce memory consumption, but will also substantially slow down the optimization.</p></li>
+<li><p>32GB main memory are recommended, even thougth some optimizations will run with 16GB main memory.</p></li>
+<li><p>Optimization is performed using the differential evolution algorithm, which is stochastic in nature. As such, solutions will differ between repeated optimization runs, even though the achieved final cost will be very close to each other.</p></li>
+<li><p>Please see <a class="reference internal" href="../documentation/opt_struct/tes_flex_opt_doc.html#tes-flex-opt-doc"><span class="std std-ref">TesFlexOptimization</span></a> for a description of the option settings, <a class="reference internal" href="../documentation/opt_struct/regionofinterest_doc.html#regionofinterest-doc"><span class="std std-ref">RegionOfInterest</span></a> for a description of the region-of-interest parameters, and <a class="reference internal" href="../documentation/opt_struct/electrode_layouts.html#electrode-layouts"><span class="std std-ref">Electrode and array layouts for TesFlexOptimization</span></a> for a description of the electrode array layout parameters.</p></li>
+</ul>
 </section>
 </section>
 

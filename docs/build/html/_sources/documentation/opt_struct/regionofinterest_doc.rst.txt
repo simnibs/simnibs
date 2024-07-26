@@ -3,7 +3,7 @@
 RegionOfInterest 
 =================
 
-Used for the definition of regions of interests on surfaces and in volumes
+Used for the definition of regions of interests on surfaces and in volumes. Please see also :file:`roi_definition.py` and :file:`roi_definition.m` in examples/utilities for usage examples.
 
 Initialization
 ---------------

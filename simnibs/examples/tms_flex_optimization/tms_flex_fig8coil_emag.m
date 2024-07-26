@@ -33,13 +33,5 @@ tms_opt.roi.roi_sphere_radius = 30;
 
 % Set optimization method and parameters: 'emag' maximizes electric field strength in ROI
 tms_opt.method = 'emag';
-% Note: translations and rotations are defined in the "coil coordinate system":
-%       origin in the initial coil position,
-%       z-axis pointing orthogonally into the head surface,
-%       y-axis defined by pos.pos_ydir (set arbitrarily when using auto init)
-%
-% translations relative to initial position in [mm]
-tms_opt.global_translation_ranges = {[-30, 30], [-30, 30], [-30, 30]};
-tms_opt.global_rotation_ranges = {[-30, 30], [-30, 30], [-95, 95]};
 
 run_simnibs(tms_opt)

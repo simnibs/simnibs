@@ -265,7 +265,7 @@
 <li><p>When maximizing the electric field magnitude in a ROI, the general-purpose TMS optimization uses the MKL Pardiso direct solver for accelerating the simulations. The SimNIBS standard FEM solver can be chosen optionally to reduce memory consumption, but will also substantially slow down the optimization.</p></li>
 <li><p>32GB main memory are recommended, even thougth some optimizations will run with 16GB main memory.</p></li>
 <li><p>A combination of global and local search with settings that balance efficiency with robustness in finding a good solution is used as standard. For non-flexible coils, disabling global search (setting parameter run_global_optimization to False) will work fine for most situations. In case a more exhaustive optimization is desired, we suggest to set the “locally_biased” argument of the DIRECT solver to False.</p></li>
-<li><p>Please see <a class="reference internal" href="../documentation/opt_struct/tms_flex_opt_doc.html#tms-flex-opt-doc"><span class="std std-ref">TmsFlexOptimization</span></a> for a description of the option settings.</p></li>
+<li><p>Please see <a class="reference internal" href="../documentation/opt_struct/tms_flex_opt_doc.html#tms-flex-opt-doc"><span class="std std-ref">TmsFlexOptimization</span></a> for a description of the option settings, and <a class="reference internal" href="../documentation/opt_struct/regionofinterest_doc.html#regionofinterest-doc"><span class="std std-ref">RegionOfInterest</span></a> for a description of the region-of-interest settings.</p></li>
 </ul>
 </section>
 </section>

@@ -33,7 +33,7 @@ tms_opt.method = 'distance'
 #       y-axis defined by pos.pos_ydir (here: pointing to Cz)
 #
 # translations relative to C1 in [mm]
-tms_opt.global_translation_ranges = [[0, 0],[0, 0],[-10, 30]]
+tms_opt.global_translation_ranges = [[0, 0],[0, 0],[-30, 10]]
 # rotations of +/- degrees around all three axis
 tms_opt.global_rotation_ranges = [[-20, 20],[-20, 20],[-20, 20]]
 

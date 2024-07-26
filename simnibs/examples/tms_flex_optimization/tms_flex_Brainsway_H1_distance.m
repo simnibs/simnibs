@@ -29,6 +29,13 @@ tms_opt.pos.matsimnibs = mni2subject_coilpos(center_MNI, ydir_MNI, zdir_MNI, ...
 
 % Set optimization method and parameters: 'distance' minimizes distance to the skin
 tms_opt.method = 'distance';
+
+% Note: translations and rotations are defined in the "coil coordinate system":
+%       origin in the initial coil position,
+%       z-axis pointing orthogonally into the head surface,
+%       y-axis defined by pos.pos_ydir (set arbitrarily when using auto init)
+%
+% translations relative to initial position in [mm]
 tms_opt.global_translation_ranges = {[-20, 20], [-20, 20], [-30, 30]};
 % rotations of +/- degrees around all three axis
 tms_opt.global_rotation_ranges = {[-30, 30], [-10,10], [-5, 5]};
