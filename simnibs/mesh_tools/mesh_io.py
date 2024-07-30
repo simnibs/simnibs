@@ -6163,7 +6163,7 @@ def write_geo_spheres(positions, fn, values=None, name="", mode='bw'):
 
 
 def write_geo_vectors(positions, values, fn, name="", mode='bw'):
-    """ Writes a .geo file with spheres in specified positions
+    """ Writes a .geo file with vectors in specified positions
 
     Parameters
     ------------
@@ -6198,6 +6198,52 @@ def write_geo_vectors(positions, values, fn, name="", mode='bw'):
             f.write(
                 ("VP(" + ", ".join([str(i) for i in p]) + ")"
                  "{" + ", ".join([str(i) for i in v]) + "};\n").encode('ascii'))
+        f.write(b"};\n")
+
+
+def write_geo_axis_vectors(affine_matrix, fn, values=None, name="", mode='bw'):
+    """ Writes a .geo file with axis vectors transformed with the affine matrix
+
+    Parameters
+    ------------
+    affine_matrix: 4x4 ndarray:
+        affine matrix to transform the axis vectors
+    fn: str
+        name of file to be written
+    values: 1x3 ndarray
+        scale factors to be assigned to the vectors and the center sphere.
+    name: str (optional)
+        Name of the view
+    mode: str (optional)
+        Mode in which open the file. Default: 'bw'
+
+    """
+    if affine_matrix.shape[0] != 4 or affine_matrix.shape[1] != 4:
+        raise ValueError('Affine matrix must have size (4x4)')
+    
+    if values is None:
+        values = np.ones(4)
+    else:
+        values = np.array(values)
+
+    if values.shape[0] != 4:
+        raise ValueError('values must have length 4')
+
+    positions = np.tile(affine_matrix[:3, 3], (3,1))
+    vectors = [
+        (affine_matrix @ np.array([1,0,0,0]))[:3] * values[0],
+        (affine_matrix @ np.array([0,1,0,0]))[:3] * values[1],
+        (affine_matrix @ np.array([0,0,1,0]))[:3] * values[2],
+    ]
+
+    with open(fn, mode) as f:
+        f.write(('View"' + name + '"{\n').encode('ascii'))
+        for p, v in zip(positions, vectors):
+            f.write(
+                ("VP(" + ", ".join([str(i) for i in p]) + ")"
+                 "{" + ", ".join([str(i) for i in v]) + "};\n").encode('ascii'))
+        f.write(("SP(" + ", ".join([str(i) for i in positions[0]]) +
+                     "){" + str(values[3]) + "};\n").encode('ascii'))
         f.write(b"};\n")
 
 

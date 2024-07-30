@@ -509,7 +509,8 @@ class TmsCoil(TcdElement):
         msh_skin: Msh,
         coil_matrix: npt.NDArray[np.float_],
         visibility=1,
-        infix=''
+        infix='',
+        axis_vectors=True
     ):
         for i, element in enumerate(self.elements):
             #And here again? *.*
@@ -562,6 +563,26 @@ class TmsCoil(TcdElement):
                     name=f"{i+1}{infix}-sampled_grid_points",
                     mode="ba",
                 )
+
+        if axis_vectors:
+            visualization.add_view(Visible=visibility, ShowScale=0,                     
+                    VectorType=4,
+                    CenterGlyphs=0,
+                    GlyphLocation=2,
+                    ArrowSizeMax=65,
+                    ArrowSizeMin=65,
+                    RangeType=2,
+                    CustomMin=0.99999,
+                    CustomMax=3.00001,
+                    PointType=1, 
+                    PointSize=8.0)
+            mesh_io.write_geo_axis_vectors(
+                coil_matrix,
+                goe_fn,
+                values=[3, 2, 1, 2.5],
+                name=f"coil_axis_vectors",
+                mode="ba",
+            )
 
         casings = self.get_mesh(
             coil_affine=coil_matrix,

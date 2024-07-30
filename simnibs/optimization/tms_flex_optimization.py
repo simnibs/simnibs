@@ -547,6 +547,7 @@ class TmsFlexOptimization:
                     self.pos.matsimnibs,
                     visibility=0,
                     infix="-initial",
+                    axis_vectors=True
                 )
 
             if roi_result_vis.has_surface_mesh():
@@ -557,6 +558,7 @@ class TmsFlexOptimization:
                     self.pos.matsimnibs,
                     visibility=0,
                     infix="-initial",
+                    axis_vectors=True
                 )
             roi_result_vis.write_gmsh_options()
 
@@ -565,17 +567,13 @@ class TmsFlexOptimization:
                     mesh_io.open_in_gmsh(vis_msh_file_name, True)
 
         logger.info(
-            f"===============SUMMARY==============={os.linesep}"
+            f"{os.linesep}===============SUMMARY==============={os.linesep}"
             f"Optimized coil path: {fn_optimized_coil}{os.linesep}"
             f"Initial cost: {initial_cost}{os.linesep}"
-            f"Optimized cost: {optimized_cost}"
+            f"Optimized cost: {optimized_cost}{os.linesep}"
+            f"Optimized mean E-field magnitude in ROI: {np.mean(optimized_e_mag)}{os.linesep}" if self.method == "emag" else ""
+            f"Optimized matsimnibs:{os.linesep}{opt_matsimnibs}"
         )
-        if self.method == "emag":
-            logger.info(
-                f"Optimized mean E-field magnitude in ROI: {np.mean(optimized_e_mag)}"
-            )
-
-        logger.info(f"Optimized matsimnibs:{os.linesep}{opt_matsimnibs}")
 
         self._finish_logger()
 
