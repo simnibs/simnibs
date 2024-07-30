@@ -15,7 +15,7 @@ from simnibs.utils.simnibs_logger import logger
 from simnibs.utils.file_finder import Templates, SubjectFiles
 from simnibs.utils.utils_numba import sumf, sumf2, node2elmf, sumf3, postp, postp_mag, spmatmul
 
-from .fem import get_dirichlet_node_index_cog, TDCSFEMNeumann
+from .fem import get_dirichlet_node_index_cog, TDCSFEMNeumann, TMSFEM
 from .sim_struct import SimuList
 
 class OnlineFEM:
@@ -85,11 +85,11 @@ class OnlineFEM:
         # True: interpolate the dadt field using positions (coordinates) of elements centroids
         # False: interpolate the dadt field using positions (coordinates) of nodes
         self.useElements = useElements
-
-        if solver_options != "pardiso":
-            self.solver_options = "" # "" will use PETsc with DEFAULT_SOLVER_OPTIONS from fem.py
-        else:
+        
+        if solver_options == "mumps" or solver_options == "pardiso":
             self.solver_options = solver_options
+        else:
+            self.solver_options = "" # "" will use PETsc with DEFAULT_SOLVER_OPTIONS from fem.py
             
         # creating logger
         if fn_logger is not None:
@@ -734,48 +734,58 @@ class OnlineFEM:
             useElements = self.useElements
             node_coordinates = self.mesh.nodes.node_coord.T
 
-            # get the number of nodes
+            # # get the number of nodes
             number_of_nodes = node_coordinates.shape[1]
 
-            # get the coordinates of nodal points/element centers to prepare for the calculation of dadt.
-            # Use self.coordinates to interpolate the field in calculate_dadt().
+            # # get the coordinates of nodal points/element centers to prepare for the calculation of dadt.
+            # # Use self.coordinates to interpolate the field in calculate_dadt().
             self.coordinates = get_coordinates(node_coordinates, self.node_numbers, useElements)
 
-            # set the reshaped_node_numbers (there are two different ways to reshape it and sometimes
-            # it is more efficient to use one or the other
+            # # set the reshaped_node_numbers (there are two different ways to reshape it and sometimes
+            # # it is more efficient to use one or the other
             self.reshaped_node_numbers = (self.node_numbers - 1).T.ravel()
             self.reshaped_node_numbersT = (self.node_numbers - 1).ravel()
 
-            # get the distances between local node [0] and nodes [1], [2] and [3] in each element
+            # # get the distances between local node [0] and nodes [1], [2] and [3] in each element
             local_dist, _ = _get_local_distances(self.node_numbers, node_coordinates)
 
-            # calculate the volume of a tetrahedron given the coordinates of its four nodal points
+            # # calculate the volume of a tetrahedron given the coordinates of its four nodal points
             self.volume = np.abs(np.linalg.det(local_dist)) / 6.
 
-            # get gradient operator
+            # # get gradient operator
             self.gradient = _get_gradient(local_dist)
 
-            # set the force integrals. We use the force integrals to assemble the right hand side force vector
+            # # set the force integrals. We use the force integrals to assemble the right hand side force vector
             if self.cond.ndim == 1:
                 self.force_integrals = get_force_integrals(self.volume, self.gradient, self.cond)
 
             #  assemble the left hand side stiffness matrix
             # (volume, gradient, conductivity, node_numbers, number_of_nodes, dirichlet_node
-            self.A = assemble_stiffness_matrix(volume=self.volume,
-                                               gradient=self.gradient,
-                                               conductivity=self.cond,
-                                               node_numbers=self.node_numbers,
-                                               number_of_nodes=number_of_nodes)
+            # start = time.time()
+            # self.A = assemble_stiffness_matrix(volume=self.volume,
+            #                                     gradient=self.gradient,
+            #                                     conductivity=self.cond,
+            #                                     node_numbers=self.node_numbers,
+            #                                     number_of_nodes=number_of_nodes)
 
-            self.A = delete_row_csr(self.A, self.dirichlet_node-1)
-            self.A = delete_col_csr(self.A, self.dirichlet_node-1)
-            self.solver = pardiso.Solver(self.A)
+            # self.A = delete_row_csr(self.A, self.dirichlet_node-1)
+            # self.A = delete_col_csr(self.A, self.dirichlet_node-1)
+            # self.solver = pardiso.Solver(self.A)
+            # logger.info(f'{time.time()-start}s to init pardiso solver')
+            
+            self.fem = TMSFEM(mesh=self.mesh,
+                              cond=self.cond,
+                              solver_options=self.solver_options,
+                              solver_loglevel=self.solver_loglevel
+                              )
+            self.fem.prepare_solver()
+            self.solver = self.fem._solver
 
         elif self.method == "TES":
             self.fem = TDCSFEMNeumann(mesh=self.mesh,
                                       cond=self.cond,
                                       ground_electrode=self.dirichlet_node,
-                                      input_type="nodes",
+                                      input_type="nodes", #this option is actually not supported fem.py claims only 'tag' is supported
                                       solver_options=self.solver_options,
                                       solver_loglevel=self.solver_loglevel
                                       )
