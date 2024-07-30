@@ -20,6 +20,7 @@ from simnibs.utils.mesh_element_properties import ElementTags
 
 from ..mesh_tools import mesh_io
 from ..utils import cond_utils as cond_lib
+import mumps
 from . import pardiso
 from . import petsc_solver
 from ..utils.simnibs_logger import logger
@@ -61,7 +62,27 @@ def _initialize_petsc():
         atexit.register(petsc_solver.petsc_finalize)
         _PETSC_IS_INITILIZED = True
 
+class MUMPS_Solver:
+    def __init__(self, A=None, isSymmetric=True, log_level=20):
+        self.log_level = log_level
+        start = time.time()
+        self.ctx = mumps.Context()
+        self.ctx.set_matrix(A, symmetric=isSymmetric)
+        logger.log(self.log_level, f'{time.time()-start:.2f} seconds to init solver')
+        start = time.time()
+        self.ctx.analyze()
+        logger.log(self.log_level, f'{time.time()-start:.2f} seconds to analyze matrix')
+        start = time.time()
+        self.ctx.factor()
+        logger.log(self.log_level, f'{time.time()-start:.2f} seconds to factorize matrix')
+        
+    def solve(self, b):
+        start = time.time()
+        x = self.ctx._solve_dense(b)
+        logger.log(self.log_level, f'{time.time()-start:.2f} seconds to solve system')
+        return x
 
+        
 def calc_fields(potentials, fields, cond=None, dadt=None, units='mm', E=None):
     ''' Given a mesh and the electric potentials at the nodes,
     calculates the fields
@@ -602,6 +623,8 @@ class FEMSystem(object):
 
         if self._solver_options == 'pardiso':
             self._solver = pardiso.Solver(A, log_level=self.solver_loglevel)
+        elif self._solver_options == 'mumps':
+            self._solver = MUMPS_Solver(A, isSymmetric=True, log_level=self.solver_loglevel)
         else:
             _initialize_petsc()
             self._A_reduced = A  # We need to save this as PETSc does not copy the vectors

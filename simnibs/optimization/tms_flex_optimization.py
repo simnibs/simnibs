@@ -192,6 +192,8 @@ class TmsFlexOptimization:
 
         self._prepared = False
         self._log_handlers = []
+        
+        self.solver_options = "pardiso"
 
         if settings_dict:
             self.from_dict(settings_dict)
@@ -466,6 +468,7 @@ class TmsFlexOptimization:
                     self.run_local_optimization,
                     self.direct_args,
                     self.l_bfgs_b_args,
+                    self.solver_options
                 )
             )
         else:
@@ -1297,6 +1300,7 @@ def optimize_e_mag(
     local_optimization: bool = True,
     direct_args: dict | None = None,
     l_bfgs_b_args: dict | None = None,
+    solver_options = "pardiso",
     debug: bool = False,
 ) -> tuple[float, float, npt.NDArray[np.float_], npt.NDArray[np.float_], list]:
     """Optimizes the deformations of the coil elements as well as the global transformation to maximize the mean e-field magnitude in the ROI while preventing intersections of the
@@ -1419,7 +1423,7 @@ def optimize_e_mag(
         )
 
     fem = OnlineFEM(
-        head_mesh, "TMS", roi, coil=coil_sampled, dataType=[0], useElements=False
+        head_mesh, "TMS", roi, coil=coil_sampled, dataType=[0], useElements=False, solver_options=solver_options
     )
 
     initial_deformation_settings = np.array(
