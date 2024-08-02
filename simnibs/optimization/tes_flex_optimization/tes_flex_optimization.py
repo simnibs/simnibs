@@ -486,6 +486,7 @@ class TesFlexOptimization:
             useElements=True,
             dataType=[1] * len(self._roi),
             dirichlet_node=self.dirichlet_node,
+            cpus=self._n_cpu
         )
         self._prepared = True
         
@@ -1099,16 +1100,9 @@ class TesFlexOptimization:
         self._n_cpu = cpus
 
         if not cpus is None:
-            logger.info(f"Attempting to limit number of threads to {cpus}")
-            os.environ["MKL_DOMAIN_NUM_THREADS"] = (
-                f"MKL_DOMAIN_PARDISO={str(int(cpus))}"
-            )
-            # Note: Using MKL_DOMAIN_PARDISO means that only PARDISO is affected, VML, BLAS, LAPACK is potentially still more threads otherwise change to MKL_NUM_THREADS OR MKL_DOMAIN_ALL
             from numba import set_num_threads
-
             set_num_threads(int(cpus))
             from numba import get_num_threads
-
             logger.info(f"Numba reports {get_num_threads()} threads available")
         
         # prepare optimization
