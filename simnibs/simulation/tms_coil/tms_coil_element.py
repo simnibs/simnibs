@@ -7,8 +7,7 @@ import zlib
 import fmm3dpy
 import numpy as np
 import numpy.typing as npt
-from scipy import ndimage
-from simnibs.utils.utils_numba import map_coord_lin, map_coord_lin_trans
+from simnibs.simulation.numba_fem_utils import map_coord_lin_trans
 
 from simnibs.mesh_tools.mesh_io import Elements, Msh, Nodes
 from simnibs.simulation.tms_coil.tcd_element import TcdElement

@@ -101,7 +101,7 @@ def calc_fields(potentials, fields, cond=None, dadt=None, units='mm', E=None):
         j: Current density magnitude at the elements
         s: Conductivity at the elements
         D: dA/dt at the nodes
-        g: gradiet of the potential at the elements
+        g: gradient of the potential at the elements
     cond: simnibs.mesh.mesh_io.ElementData (optional)
         Conductivity at the elements, used to calculate J, j and s.
         Might be a scalar or a tensor.

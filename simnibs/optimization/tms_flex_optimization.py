@@ -409,15 +409,9 @@ class TmsFlexOptimization:
 
         if not cpus is None:
             logger.info(f"Attempting to limit number of threads to {cpus}")
-            os.environ["MKL_DOMAIN_NUM_THREADS"] = (
-                f"MKL_DOMAIN_PARDISO={str(int(cpus))}"
-            )
-            # Note: Using MKL_DOMAIN_PARDISO means that only PARDISO is affected, VML, BLAS, LAPACK is potentially still more threads otherwise change to MKL_NUM_THREADS OR MKL_DOMAIN_ALL
             from numba import set_num_threads
-
             set_num_threads(int(cpus))
             from numba import get_num_threads
-
             logger.info(f"Numba reports {get_num_threads()} threads available")
 
         self._prepare()
@@ -468,7 +462,8 @@ class TmsFlexOptimization:
                     self.run_local_optimization,
                     self.direct_args,
                     self.l_bfgs_b_args,
-                    self.solver_options
+                    self.solver_options,
+                    cpus=cpus
                 )
             )
         else:
@@ -1301,6 +1296,7 @@ def optimize_e_mag(
     direct_args: dict | None = None,
     l_bfgs_b_args: dict | None = None,
     solver_options = "pardiso",
+    cpus = 1,
     debug: bool = False,
 ) -> tuple[float, float, npt.NDArray[np.float_], npt.NDArray[np.float_], list]:
     """Optimizes the deformations of the coil elements as well as the global transformation to maximize the mean e-field magnitude in the ROI while preventing intersections of the
@@ -1423,7 +1419,7 @@ def optimize_e_mag(
         )
 
     fem = OnlineFEM(
-        head_mesh, "TMS", roi, coil=coil_sampled, dataType=[0], useElements=False, solver_options=solver_options
+        head_mesh, "TMS", roi, coil=coil_sampled, dataType=[0], useElements=False, solver_options=solver_options, cpus=cpus
     )
 
     initial_deformation_settings = np.array(

@@ -6,14 +6,13 @@ import numpy as np
 from scipy import sparse
 
 from simnibs import __version__
-from simnibs.simulation import pardiso
 from simnibs.simulation.tms_coil.tms_coil import TmsCoil
 from simnibs.mesh_tools import mesh_io
 from simnibs.mesh_tools.mesh_io import Msh, read_msh
 from simnibs.utils import simnibs_logger
 from simnibs.utils.simnibs_logger import logger
 from simnibs.utils.file_finder import Templates, SubjectFiles
-from simnibs.utils.utils_numba import sumf, sumf2, node2elmf, sumf3, postp, postp_mag, spmatmul
+from simnibs.simulation.numba_fem_utils import sumf, sumf2, node2elmf, sumf3, postp, postp_mag, spmatmul
 
 from .fem import get_dirichlet_node_index_cog, TDCSFEMNeumann, TMSFEM
 from .sim_struct import SimuList
@@ -33,7 +32,7 @@ class OnlineFEM:
     anisotropy_type : str
         Type of anisotropy for simulation ('scalar', 'vn', 'mc')
     solver_options : str
-        Options for theF EM solver (Node or "pardiso))
+        Options for the FEM solver (Node or "pardiso))
     fn_logger : str
         Filename of log file (optional)
     useElements : bool
@@ -102,15 +101,18 @@ class OnlineFEM:
 
         if not cpus is None:
             logger.info(f"Attempting to limit number of threads to {cpus}")
-            os.environ["MKL_DOMAIN_NUM_THREADS"] = (
-                f"MKL_DOMAIN_PARDISO={str(int(cpus))}"
-            )
-            # Note: Using MKL_DOMAIN_PARDISO means that only PARDISO is affected, VML, BLAS, LAPACK is potentially still more threads otherwise change to MKL_NUM_THREADS OR MKL_DOMAIN_ALL
+            if solver_options == "pardiso":
+                os.environ["MKL_DOMAIN_NUM_THREADS"] = (
+                    f"MKL_DOMAIN_PARDISO={str(int(cpus))}"
+                )
+                # Note: Using MKL_DOMAIN_PARDISO means that only PARDISO is affected, VML, BLAS, LAPACK is potentially still more threads otherwise change to MKL_NUM_THREADS OR MKL_DOMAIN_ALL
+            else: #mainly for solver_options == "mumps" but PETsc can also use MPI
+                os.environ["MKL_DOMAIN_NUM_THREADS"] = f"OMP_NUM_THREADS={str(int(cpus))}"
             from numba import set_num_threads
 
+            #below is to limit numba threads
             set_num_threads(int(cpus))
             from numba import get_num_threads
-
             logger.info(f"Numba reports {get_num_threads()} threads available")
         
         # read mesh or store in self
@@ -724,7 +726,6 @@ class OnlineFEM:
 
         # TODO: also use the new TMSFEM class here for TMS but implement the fast RHS calculations from here in it
         if self.method == "TMS":
-
             self.cond = self.cond.value.squeeze()
 
             if self.cond.ndim == 2:
@@ -733,9 +734,6 @@ class OnlineFEM:
             self.node_numbers = self.mesh.elm.node_number_list  # self.node_numbers
             useElements = self.useElements
             node_coordinates = self.mesh.nodes.node_coord.T
-
-            # # get the number of nodes
-            number_of_nodes = node_coordinates.shape[1]
 
             # # get the coordinates of nodal points/element centers to prepare for the calculation of dadt.
             # # Use self.coordinates to interpolate the field in calculate_dadt().
@@ -758,20 +756,6 @@ class OnlineFEM:
             # # set the force integrals. We use the force integrals to assemble the right hand side force vector
             if self.cond.ndim == 1:
                 self.force_integrals = get_force_integrals(self.volume, self.gradient, self.cond)
-
-            #  assemble the left hand side stiffness matrix
-            # (volume, gradient, conductivity, node_numbers, number_of_nodes, dirichlet_node
-            # start = time.time()
-            # self.A = assemble_stiffness_matrix(volume=self.volume,
-            #                                     gradient=self.gradient,
-            #                                     conductivity=self.cond,
-            #                                     node_numbers=self.node_numbers,
-            #                                     number_of_nodes=number_of_nodes)
-
-            # self.A = delete_row_csr(self.A, self.dirichlet_node-1)
-            # self.A = delete_col_csr(self.A, self.dirichlet_node-1)
-            # self.solver = pardiso.Solver(self.A)
-            # logger.info(f'{time.time()-start}s to init pardiso solver')
             
             self.fem = TMSFEM(mesh=self.mesh,
                               cond=self.cond,
@@ -896,73 +880,6 @@ def get_force_integrals(volume, gradient, conductivity):
     force_integrals = np.swapaxes(-vol_cond[:, None, None] * gradient, 0, 1)  # (4, number_of_elements, 3)
 
     return force_integrals
-
-
-def assemble_stiffness_matrix(volume, gradient, conductivity, node_numbers, number_of_nodes):
-    """
-    Assembly of the l.h.s stiffness matrix. Based in the OptVS algorithm in Cuvelier et. al. 2016.
-
-    Cuvelier, F., Japhet, C., & Scarella, G. (2016). An efficient way to assemble finite element matrices in
-    vector languages. BIT Numerical Mathematics, 56(3), 833-864.
-
-    Parameters
-    ----------
-    volume : np.array of float [n_elements]
-        Volume of the tetrahedra
-    gradient : np.array of size [n_elements, 4, 3]
-        Gradient in each tetrahedra
-    conductivity : np.array of float [n_elements]
-        Electrical conductivity value (in S/m) assigned to each tetrahedra
-    node_numbers : np.array of size [n_elements x 4]
-        Node number list (connectivity list)
-    number_of_nodes : int
-        Number of nodes
-    bc : DirichletBC object
-        Dirichlet boundary condition object
-
-    Returns
-    -------
-    stiffmat : scipy.sparse [(n_nodes-1) x (n_nodes-1)]
-        Stiffness matrix in sparse (CSR) format (without Dirichlet node)
-    """
-
-    # gradient: (number_of_elements, 4, 3),
-    # volume: (number_of_elements,),
-    # conductivity: (number_of_elements,),
-    # node_numbers: (number_of_elements, 4),
-    # number_of_nodes: number_of_nodes
-    # (number_of_elements, 4)
-    index = node_numbers - 1
-
-    dim = np.arange(index.shape[1])
-    idx = np.repeat(dim, len(dim))
-    idy = np.tile(dim, len(dim))
-
-    # Simplify the integration using commutative law of dot product (elementary-wise product in this case
-    # units == 'mm': * 1e6 from the gradient operator, 1e-9 from the volume
-    if conductivity.ndim == 1:
-        factor = (volume * conductivity * 1e-3)[:, None, None] * gradient
-    elif conductivity.ndim == 3:
-        factor = volume[:, None, None] * np.einsum('aij, ajk -> aik', gradient, conductivity) * 1e-3
-
-    stiffmat = sparse.coo_matrix((number_of_nodes, number_of_nodes), dtype='float64')
-
-    stiffmat.data = (factor @ np.swapaxes(gradient, 1, 2)).flatten()
-    stiffmat.row = (index[:, idx]).flatten()
-    stiffmat.col = (index[:, idy]).flatten()
-
-    stiffmat = stiffmat.tocsr()
-    stiffmat.eliminate_zeros()
-
-    # Make stiffmat symmetric if necessary
-    # stiffmat = (stiffmat + stiffmat.T) * 0.5
-    stiffmat = stiffmat.sorted_indices()
-
-    # remove row and column for the dirichlet boundary condition
-    # stiffmat = delete_row_csr(stiffmat, dirichlet_node-1)
-    # stiffmat = delete_cols_csr(stiffmat, dirichlet_node-1)
-
-    return stiffmat
 
 
 def get_coordinates(node_coordinates, node_numbers, useElements):
