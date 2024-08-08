@@ -16,6 +16,8 @@ from ...simulation import analytical_solutions
 from .. import opt_struct
 from .. import tdcs_optimization
 
+NUM_TOL = 1e-8
+
 
 @pytest.fixture()
 def sphere_surf():
@@ -846,57 +848,48 @@ class TestTDCSoptimize:
         assert p.max_active_electrodes == max_active_electrodes
         assert p.name == 'aaa'
 
-
+    # angle constraints cannot be used when n_targets > 1
     @pytest.mark.parametrize('intensity', [3e-4, -3e-4])
-    @pytest.mark.parametrize('max_el_c', [1e-3, None])
-    @pytest.mark.parametrize('max_tot_c', [2e-3, None])
     @pytest.mark.parametrize('max_ac', [None, 3])
-    @pytest.mark.parametrize('max_angle', [None, 30])
-    @pytest.mark.parametrize('n_targets', [1, 3])
+    @pytest.mark.parametrize(["max_el_c","max_tot_c"], [(1e-3, 2e-3), (2e-3, 4e-3)])
+    @pytest.mark.parametrize(["max_angle", "n_targets"], [(None, 1), (None, 3), (30.0, 1)])
     def test_optimize(self, intensity, max_el_c, max_tot_c, max_ac,
-                      max_angle, n_targets, sphere_surf, fn_surf, leadfield_surf):
+                      max_angle, n_targets, fn_surf, leadfield_surf):
 
-        p = opt_struct.TDCSoptimize(leadfield_hdf=fn_surf,
-                                     max_individual_current=max_el_c,
-                                     max_total_current=max_tot_c,
-                                     max_active_electrodes=max_ac)
+        p = opt_struct.TDCSoptimize(fn_surf, max_tot_c, max_el_c, max_ac)
 
         for i in range(n_targets):
             t = p.add_target()
             t.indexes = i + 1
             t.directions = [1., 0., 0.]
             t.intensity = intensity
+            t.max_angle = max_angle
 
-        if max_el_c is None and max_tot_c is None:
-            pass
-        elif n_targets > 1 and max_angle is not None:
-            pass
-        else:
-            currents = p.optimize()
-            assert np.isclose(np.sum(currents), 0, atol=1e-6)
-            if max_el_c is not None:
-                assert np.max(np.abs(currents)) < max_el_c * 1.05
-            if max_tot_c is not None:
-                assert np.linalg.norm(currents, 1) < 2 * max_tot_c * 1.05
-            if max_ac is not None:
-                assert np.linalg.norm(currents, 0) <= max_ac
-            for i in range(n_targets):
-                field = currents[1:].dot(leadfield_surf[:, i, :])
-                assert np.sign(field[0]) == np.sign(intensity)
+        currents = p.optimize()
+        assert np.isclose(np.sum(currents), 0, atol=1e-6)
+        assert np.max(np.abs(currents)) < max_el_c * 1.05
+        assert np.linalg.norm(currents, 1) < 2 * max_tot_c * 1.05
+        if max_ac is not None:
+            assert np.linalg.norm(currents, 0) <= max_ac
+        for i in range(n_targets):
+            field = currents[1:].dot(leadfield_surf[:, i, :])
+            assert np.sign(field[0]) == np.sign(intensity)
 
-    @pytest.mark.parametrize('max_el_c', [1e-3, None])
-    @pytest.mark.parametrize('max_tot_c', [2e-3, None])
+    @pytest.mark.parametrize(["max_el_c","max_tot_c"], [(1e-3, 2e-3), (2e-3, 4e-3)])
     @pytest.mark.parametrize('max_ac', [None, 3])
     @pytest.mark.parametrize('n_targets', [1, 3])
-    def test_optimize_norm(self, max_el_c, max_tot_c, max_ac, n_targets, sphere_surf, fn_surf, leadfield_surf):
+    def test_optimize_norm(
+        self, max_el_c, max_tot_c, max_ac, n_targets, fn_surf,
+    ):
 
         intensity = 3e-5
-        p = opt_struct.TDCSoptimize(
-            leadfield_hdf=fn_surf,
-            max_individual_current=max_el_c,
-            max_total_current=max_tot_c,
-            max_active_electrodes=max_ac
-        )
+        # 0.75 is completely heuristic: I simply looked at how well the
+        # intensities were achieved at the time of writing and set the cutoff
+        # so that the tests would pass. However, most were close to 3e-5. In
+        # any case this should catch significantly degraded performance!
+        min_acceptable_intensity = 0.75 * intensity
+
+        p = opt_struct.TDCSoptimize(fn_surf, max_tot_c, max_el_c, max_ac)
 
         for i in range(n_targets):
             t = p.add_target()
@@ -904,17 +897,23 @@ class TestTDCSoptimize:
             t.directions = None
             t.intensity = intensity
 
-        if max_el_c is None and max_tot_c is None:
-            pass
-        else:
-            currents = p.optimize()
-            assert np.isclose(np.sum(currents), 0, atol=1e-6)
-            if max_el_c is not None:
-                assert np.max(np.abs(currents)) < max_el_c * 1.05
-            if max_tot_c is not None:
-                assert np.linalg.norm(currents, 1) < 2 * max_tot_c * 1.05
-            if max_ac is not None:
-                assert np.linalg.norm(currents, 0) <= max_ac
+        currents = p.optimize()
+
+        # check that the constraints are fulfilled
+        assert np.isclose(np.sum(currents), 0, atol=1e-6)
+        assert np.max(np.abs(currents)) < max_el_c * 1.05
+        assert np.linalg.norm(currents, 1) < 2 * max_tot_c * 1.05
+        if max_ac is not None:
+            assert np.linalg.norm(currents, 0) <= max_ac
+
+        # check that we reached meaningful target intensities
+        field = p.field(currents)
+        assert all(
+            [t.mean_intensity(field) >= min_acceptable_intensity for t in p.target]
+        )
+        assert all(
+            [t.mean_intensity(field) <= intensity + NUM_TOL for t in p.target]
+        )
 
     def test_field_node(self, leadfield_surf, fn_surf):
         p = opt_struct.TDCSoptimize(leadfield_hdf=fn_surf)
@@ -1143,11 +1142,9 @@ class TestTDCSDistributedoptimize:
         assert np.allclose(m.field['target_map'][:], sphere_surf.nodes[:, 0], atol=1e-3)
 
     @pytest.mark.parametrize('intensity', [3e-5, -2e-5])
-    @pytest.mark.parametrize('max_el_c', [1e-3, None])
-    @pytest.mark.parametrize('max_tot_c', [2e-3, None])
+    @pytest.mark.parametrize(["max_el_c","max_tot_c"], [(1e-3, 2e-3), (2e-3, 4e-3)])
     @pytest.mark.parametrize('max_ac', [None, 3])
-    def test_optimize(self, intensity, max_el_c, max_tot_c, max_ac,
-                      sphere_surf, fn_surf, leadfield_surf):
+    def test_optimize(self, intensity, max_el_c, max_tot_c, max_ac, fn_surf):
 
         target_img = np.random.rand(100, 100, 100)
         affine = np.eye(4)
@@ -1155,25 +1152,22 @@ class TestTDCSDistributedoptimize:
         affine[:3, :3] *= 2
 
         p = opt_struct.TDCSDistributedOptimize(
-            leadfield_hdf=fn_surf,
-            max_individual_current=max_el_c,
-            max_total_current=max_tot_c,
-            max_active_electrodes=max_ac,
+            fn_surf,
+            max_tot_c,
+            max_el_c,
+            max_ac,
             target_image=(target_img, affine),
             intensity=intensity,
             min_img_value=0,
             mni_space=False
         )
 
-        if max_el_c is None and max_tot_c is None:
-            pass
-        else:
-            currents = p.optimize()
-            assert np.isclose(np.sum(currents), 0, atol=1e-6)
-            if max_el_c is not None:
-                assert np.max(np.abs(currents)) < max_el_c * 1.05
-            if max_tot_c is not None:
-                assert np.linalg.norm(currents, 1) < 2 * max_tot_c * 1.05
-            if max_ac is not None:
-                assert np.linalg.norm(currents, 0) <= max_ac
+        currents = p.optimize()
+        assert np.isclose(np.sum(currents), 0, atol=1e-6)
+        if max_el_c is not None:
+            assert np.max(np.abs(currents)) < max_el_c * 1.05
+        if max_tot_c is not None:
+            assert np.linalg.norm(currents, 1) < 2 * max_tot_c * 1.05
+        if max_ac is not None:
+            assert np.linalg.norm(currents, 0) <= max_ac
 

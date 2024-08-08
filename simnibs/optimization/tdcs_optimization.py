@@ -6,18 +6,18 @@ import h5py
 import functools
 import logging
 
-import numpy as np
-import scipy.spatial
 import nibabel
+import numpy as np
+import numpy.typing as npt
+import scipy.linalg
+import scipy.optimize
+import scipy.spatial
 
 from ..mesh_tools import mesh_io, gmsh_view
 from ..utils import transformations
 from ..utils.simnibs_logger import logger
 from ..utils.matlab_read import try_to_read_matlab_field, remove_None
 from ..utils.mesh_element_properties import ElementTags
-
-import scipy.optimize
-import scipy.linalg
 
 
 class TDCSoptimize:
@@ -113,15 +113,10 @@ class TDCSoptimize:
         self._field_name = None
         self._field_units = None
         self.name = name
-        # I can't put [] in the arguments for weird reasons (it gets the previous value)
-        if target is None:
-            self.target = []
-        else:
-            self.target = target
-        if avoid is None:
-            self.avoid = []
-        else:
-            self.avoid = avoid
+        self.target = target if target is not None else []
+        self.avoid = avoid if avoid is not None else []
+
+        self._assert_valid_currents()
 
     @property
     def lf_type(self):
@@ -363,6 +358,20 @@ class TDCSoptimize:
             if a.lf_type is None:
                 a.lf_type = self.lf_type
 
+    def _assert_valid_currents(
+            self,
+            max_total_current: float | None = None,
+            max_individual_current: float | None = None,
+        ):
+        if max_total_current is None:
+            max_total_current = self.max_total_current
+        if max_individual_current is None:
+            max_individual_current = self.max_individual_current
+
+        assert max_total_current > 0, f"`max_total_current` must be positive (got {max_total_current})"
+        assert max_individual_current > 0, f"`max_individual_current` must be positive (got {max_individual_current})"
+        assert max_total_current >= max_individual_current
+
     def optimize(self, fn_out_mesh=None, fn_out_csv=None):
         """Runs the optimization problem
 
@@ -388,20 +397,9 @@ class TDCSoptimize:
                 self.max_active_electrodes > 1
             ), "The maximum number of active electrodes should be at least 2"
 
-        if self.max_total_current is None:
-            logger.warning("Maximum total current not set!")
-            max_total_current = 1e3
-
-        else:
-            assert self.max_total_current > 0
-            max_total_current = self.max_total_current
-
-        if self.max_individual_current is None:
-            max_individual_current = max_total_current
-
-        else:
-            assert self.max_individual_current > 0
-            max_individual_current = self.max_individual_current
+        self._assert_valid_currents()
+        max_total_current = self.max_total_current
+        max_individual_current = self.max_individual_current
 
         self._assign_mesh_lf_type_to_target()
         weights = self.get_weights()
@@ -414,32 +412,32 @@ class TDCSoptimize:
             t = self.target[0]
             max_angle = t.max_angle
             indices, directions = t.get_indexes_and_directions()
-            assert max_angle > 0, "max_angle must be >= 0"
+
+            assert max_angle >= 0, "`max_angle` must be >= 0"
             if self.max_active_electrodes is None:
                 opt_problem = TESLinearAngleConstrained(
                     indices,
                     directions,
-                    t.target_mean,
+                    t.intensity,
                     max_angle,
                     self.leadfield,
                     max_total_current,
                     max_individual_current,
                     weights=weights,
-                    weights_target=t.get_weights(),
+                    target_weights=t.get_weights(),
                 )
-
             else:
                 opt_problem = TESLinearAngleElecConstrained(
                     self.max_active_electrodes,
                     indices,
                     directions,
-                    t.target_mean,
+                    t.intensity,
                     max_angle,
                     self.leadfield,
                     max_total_current,
                     max_individual_current,
                     weights,
-                    weights_target=t.get_weights(),
+                    target_weights=t.get_weights(),
                 )
 
         # Norm-constrained optimization
@@ -848,14 +846,14 @@ class TDCSoptimize:
             v_units = "mm3"
         else:
             v_units = "mm2"
-        s += "Focality: 50%: {0:.2e} 70%: {1:.2e} ({2})\n".format(
-            *field.get_focality(cuttofs=[50, 70], peak_percentile=99.9), v_units
-        )
+
+        s += f"Focality: 50 %: {field.get_focality(cuttofs=50, peak_percentile=99.9)[0]:.2e} ({v_units})\n"
+        s += f"          70 %: {field.get_focality(cuttofs=70, peak_percentile=99.9)[0]:.2e} ({v_units})\n"
+
         for i, t in enumerate(self.target):
             s += "Target {0}\n".format(i + 1)
-            s += "    Intensity specified:{0:.2f} achieved: {1:.2f} ({2})\n".format(
-                t.intensity, t.mean_intensity(field), self.field_units
-            )
+            s += f"    Intensity specified: {t.intensity:10.4f} ({self.field_units})\n"
+            s += f"    Intensity achieved:  {t.mean_intensity(field):10.4f} ({self.field_units})\n"
             if t.max_angle is not None:
                 s += (
                     "    Average angle across target: {0:.1f} "
@@ -1566,6 +1564,10 @@ class TDCSDistributedOptimize:
         if min_img_value < 0:
             raise ValueError("min_img_value must be > 0")
 
+        self._tdcs_opt_obj._assert_valid_currents(
+            self.max_total_current, self.max_individual_current
+        )
+
     @property
     def lf_type(self):
         self._tdcs_opt_obj.mesh = self.mesh
@@ -1871,19 +1873,11 @@ class TDCSDistributedOptimize:
                 self.max_active_electrodes > 1
             ), "The maximum number of active electrodes should be at least 2"
 
-        if self.max_total_current is None:
-            logger.warning("Maximum total current not set!")
-            max_total_current = 1e3
-        else:
-            assert self.max_total_current > 0
-            max_total_current = self.max_total_current
-
-        if self.max_individual_current is None:
-            max_individual_current = max_total_current
-
-        else:
-            assert self.max_individual_current > 0
-            max_individual_current = self.max_individual_current
+        self._tdcs_opt_obj._assert_valid_currents(
+            self.max_total_current, self.max_individual_current
+        )
+        max_total_current = self.max_total_current
+        max_individual_current = self.max_individual_current
 
         assert self.min_img_value is not None, "min_img_value not set"
         assert self.intensity is not None, "intensity not set"
@@ -2166,8 +2160,8 @@ class TESConstraints:
         d_ = np.array(2 * self.max_total_current)
         return C_, d_
 
-    def _kirschoff_constraint(self):
-        # Kirschoff law, defined in the extended system
+    def _kirchhoff_constraint(self):
+        # Kirchhoff's law defined in the extended system
         # A_.dot(x_) = b_
         A_ = np.hstack([np.ones((1, self.n)), -np.ones((1, self.n))])
         b_ = np.array([0.0])
@@ -2188,45 +2182,122 @@ class TESOptimizationProblem(TESConstraints):
 
     max_el_current: float
         Maximum current flow through each electrode
+
+    References
+    ----------
+    Saturnino (2019). Accessibility of cortical regions to focal TES:
+        Dependence on spatial position, safety, and practical constraints.
+        https://www.sciencedirect.com/science/article/pii/S1053811919307748
     """
 
     def __init__(
         self, leadfield, max_total_current=1e4, max_el_current=1e4, weights=None
     ):
+        # + 1 because we add the reference
         super().__init__(leadfield.shape[0] + 1, max_total_current, max_el_current)
+        self.n_elec_no_ref = leadfield.shape[0]
+        self.n_target = leadfield.shape[1]
         self.leadfield = leadfield
+        self.weights = np.ones(self.n_target) if weights is None else np.array(weights)
 
-        if weights is None:
-            self.weights = np.ones(leadfield.shape[1])
-        else:
-            self.weights = weights
+        assert (
+            self.weights.shape[0] == self.n_target
+        ), "Please define one weight per leadfield element"
 
-        if len(self.weights) != leadfield.shape[1]:
-            raise ValueError("Define a weight per leadfield element")
+        self.P = self._calc_P_mat()
+        self.Q = self._calc_Q_mat()
 
-        self.Q = self._quadratic_component()
+    def _calc_P_mat(self):
+        """Compute the matrix P which adds a reference electrode to the system
+        (eq. 6).
+        """
+        return np.linalg.pinv(
+            np.vstack([-np.ones(self.n_elec_no_ref), np.eye(self.n_elec_no_ref)])
+        )
 
-    def _quadratic_component(self):
-        """Calculate the energy matrix for optimization
-        x.dot(Q.dot(x)) = e
-        "x" are the electrode currents
-        "e" is the average squared electric field norm
+    def _calc_l_vec(self, target_indices, target_direction, weights):
+        """Calculates the matrix `l` (eq. 14).
+
+        This operator calculates the mean electric field in the target when
+        applied to a vector of currents.
+
+        In the paper,
+
+        tau = target_indices
+        t = weights
+        n = target_direction
+
+        """
+        target_direction = np.atleast_2d(target_direction)
+        if target_direction.shape[1] != 3:
+            target_direction = target_direction.T
+        assert target_direction.shape[1] == 3, "A direction must have 3 dimentions"
+
+        target_indices = np.atleast_1d(target_indices)
+        assert len(target_indices) == len(
+            target_direction
+        ), "Please define one direction per target"
+
+        target_direction = target_direction / np.linalg.norm(
+            target_direction, axis=1, keepdims=True
+        )
+
+        weights = weights[target_indices]
+        leadfield = self.leadfield[:, target_indices] * weights[:, None]
+
+        l = np.tensordot(leadfield, target_direction, axes=2) / weights.sum()
+
+        return l @ self.P  # add a reference channel
+
+    def _calc_Q_mat(
+        self,
+        indices: None | npt.NDArray = None,
+        weights: None | npt.NDArray = None
+    ):
+        """Calculate the energy matrix, Q, for optimization
+
+            x.dot(Q.dot(x)) = e
+
+        where `x` is the electrode currents and `e` is the average squared
+        electric field norm.
+
+        Optionally, restrict calculations to elements in `indices`.
+
+        Eq. 18 or 21 depending on whether `indices` and/or `weights` are
+        specified or not.
+
+        Parameters
+        ----------
+        indices :
+            Target indices. If None, calculate for the whole domain.
+        weights :
+            Target weights. If None, use the weights supplied during
+            initialization.
 
         Returns
-        ----------
+        -------
         Q: np.ndarray
             Quadratic component
         """
-        lf = self.leadfield
-        Q = sum(
-            lf[..., i].dot((lf[..., i] * self.weights).T) for i in range(lf.shape[2])
+        weights = self.weights if weights is None else np.atleast_1d(weights)
+        if indices is not None:
+            indices = np.atleast_1d(indices)
+            weights = weights[indices]
+            leadfield = self.leadfield[:, indices]
+        else:
+            leadfield = self.leadfield
+
+        # Contract over the last/first two axes
+        Q = (
+            np.tensordot(
+                leadfield,
+                np.transpose(leadfield * weights[:, None], (1, 2, 0)),
+                axes=2,
+            )
+            / weights.sum()
         )
-        Q /= np.sum(self.weights)
 
-        P = np.linalg.pinv(np.vstack([-np.ones(Q.shape[0]), np.eye(Q.shape[0])]))
-
-        Q = P.T.dot(Q).dot(P)
-        return Q
+        return self.P.T @ Q @ self.P  # add a reference channel
 
     def extend_currents(self, x):
         """
@@ -2285,11 +2356,12 @@ class TESLinearConstrained(TESOptimizationProblem):
             Weights (such are areas/volumes) for calculating the mean. Defined for every
             index
         """
-        if target_weights is None:
-            target_weights = self.weights
-        l = _calc_l(self.leadfield, target_indices, target_direction, target_weights)
+        target_weights = self.weights if target_weights is None else target_weights
+
+        l = self._calc_l_vec(target_indices, target_direction, target_weights)
         l *= np.sign(target_mean)
         self.l = np.vstack([self.l, l])
+
         self.target_means = np.hstack([self.target_means, np.abs(target_mean)])
 
     def solve(self, log_level=20):
@@ -2330,13 +2402,12 @@ class TESLinearAngleConstrained(TESOptimizationProblem):
     ):
 
         super().__init__(leadfield, max_total_current, max_el_current, weights)
-        if target_weights is None:
-            target_weights = self.weights
+        target_weights = self.weights if target_weights is None else target_weights
 
         self.l = np.atleast_2d(
-            _calc_l(leadfield, target_indices, target_direction, target_weights)
+            self._calc_l_vec(target_indices, target_direction, target_weights)
         )
-        self.Qnorm = _calc_Qnorm(leadfield, target_indices, self.weights)
+        self.Qnorm = self._calc_Q_mat(target_indices)
         self.target_mean = np.atleast_1d(target_mean)
         self.max_angle = max_angle
 
@@ -2345,8 +2416,8 @@ class TESLinearAngleConstrained(TESOptimizationProblem):
             self.l,
             self.target_mean,
             self.Q,
-            self.max_total_current,
             self.max_el_current,
+            self.max_total_current,
             self.Qnorm,
             self.max_angle,
             log_level=log_level,
@@ -2385,12 +2456,12 @@ class TESLinearElecConstrained(TESLinearConstrained):
             return x, x.dot(Q).dot(x)
 
     def solve(
-        self, log_level=20, eps_bb=1e-1, max_bb_iter=100, init_startegy="compact"
+        self, log_level=20, eps_bb=1e-1, max_bb_iter=100, init_strategy="compact"
     ):
         # Heuristically eliminate electrodes
         max_el_current = min(self.max_el_current, self.max_total_current)
         el = np.arange(self.n)
-        if init_startegy == "compact":
+        if init_strategy == "compact":
             x = _linear_constrained_tes_opt(
                 self.l,
                 self.target_means,
@@ -2403,10 +2474,8 @@ class TESLinearElecConstrained(TESLinearConstrained):
             if not np.any(active):
                 active = np.ones(self.n, dtype=bool)
             init = bb_state([], el[~active].tolist(), el[active].tolist())
-
-        elif init_startegy == "full":
+        elif init_strategy == "full":
             init = bb_state([], [], el.tolist())
-
         else:
             raise ValueError("Invalid initialization strategy")
 
@@ -2446,7 +2515,6 @@ class TESLinearAngleElecConstrained(TESLinearAngleConstrained):
         weights=None,
         target_weights=None,
     ):
-
         super().__init__(
             target_indices,
             target_direction,
@@ -2462,7 +2530,7 @@ class TESLinearAngleElecConstrained(TESLinearAngleConstrained):
         self.n_elec = n_elec
         self._feasible = True
 
-    def _solve_reduced(self, linear, quadratic, extra_ineq=None, feasible=False):
+    def _solve_reduced(self, linear, quadratic, extra_ineq=None):
         l = linear[0]
         Q = quadratic[0]
         Qnorm = quadratic[1]
@@ -2490,12 +2558,12 @@ class TESLinearAngleElecConstrained(TESLinearAngleConstrained):
             return x, x.dot(Q).dot(x)
 
     def solve(
-        self, log_level=20, eps_bb=1e-1, max_bb_iter=100, init_startegy="compact"
+        self, log_level=20, eps_bb=1e-1, max_bb_iter=100, init_strategy="compact"
     ):
         # Heuristically eliminate electrodes
         max_el_current = min(self.max_el_current, self.max_total_current)
         el = np.arange(self.n)
-        #  first determine if ploblem is feasible
+        #  first determine if problem is feasible
         x = _linear_angle_constrained_tes_opt(
             self.l,
             self.target_mean,
@@ -2509,15 +2577,15 @@ class TESLinearAngleElecConstrained(TESLinearAngleConstrained):
 
         feasible = np.allclose(self.l.dot(x), self.target_mean, rtol=1e-2)
         if not feasible:
-            init_startegy = "full"
+            init_strategy = "full"
 
-        if init_startegy == "compact":
+        if init_strategy == "compact":
             active = np.abs(x) > 1e-3 * max_el_current
             if not np.any(active):
                 active = np.ones(self.n, dtype=bool)
             init = bb_state([], el[~active].tolist(), el[active].tolist())
 
-        elif init_startegy == "full":
+        elif init_strategy == "full":
             init = bb_state([], [], el.tolist())
 
         else:
@@ -2564,10 +2632,11 @@ class TESNormConstrained(TESOptimizationProblem):
             Weights (such are areas/volumes) for calculating the mean. Defined for every
             index
         """
-        if target_weights is None:
-            target_weights = self.weights
-        Qnorm = _calc_Qnorm(self.leadfield, target_indices, target_weights)
+        target_weights = self.weights if target_weights is None else target_weights
+
+        Qnorm = self._calc_Q_mat(target_indices, target_weights)
         self.Qnorm = np.concatenate([self.Qnorm, Qnorm[None, ...]])
+
         self.target_means = np.hstack([self.target_means, np.abs(target_mean)])
 
     def solve(self, log_level=20):
@@ -2618,12 +2687,12 @@ class TESNormElecConstrained(TESNormConstrained):
             return x, x.dot(Q).dot(x)
 
     def solve(
-        self, log_level=20, eps_bb=1e-1, max_bb_iter=100, init_startegy="compact"
+        self, log_level=20, eps_bb=1e-1, max_bb_iter=100, init_strategy="compact"
     ):
         # Heuristically eliminate electrodes
         max_el_current = min(self.max_el_current, self.max_total_current)
         el = np.arange(self.n)
-        if init_startegy == "compact":
+        if init_strategy == "compact":
             x = _norm_constrained_tes_opt(
                 self.Qnorm,
                 self.target_means,
@@ -2636,10 +2705,8 @@ class TESNormElecConstrained(TESNormConstrained):
             if not np.any(active):
                 active = np.ones(self.n, dtype=bool)
             init = bb_state([], el[~active].tolist(), el[active].tolist())
-
-        elif init_startegy == "full":
+        elif init_strategy == "full":
             init = bb_state([], [], el.tolist())
-
         else:
             raise ValueError("Invalid initialization strategy")
 
@@ -2660,7 +2727,7 @@ class TESNormElecConstrained(TESNormConstrained):
 
 
 class TESDistributed(TESConstraints):
-    """Class defining TES Oprimization problems with distributed sources
+    """Class defining TES Optimization problems with distributed sources
 
 
     minimize (W(target_field - leadfield x))^2
@@ -2695,10 +2762,7 @@ class TESDistributed(TESConstraints):
         max_el_current=1e4,
     ):
         super().__init__(leadfield.shape[0] + 1, max_total_current, max_el_current)
-        if weights is None:
-            weights = np.ones(leadfield.shape[1])
-        else:
-            weights = weights
+        weights = np.ones(leadfield.shape[1]) if weights is None else weights
         self.l, self.Q = self._calc_l_Q(leadfield, target_field, weights)
 
     def _calc_l_Q(self, leadfield, target_field, weights):
@@ -2782,12 +2846,12 @@ class TESDistributedElecConstrained(TESDistributed):
         return x, l.dot(x) + x.dot(Q).dot(x)
 
     def solve(
-        self, log_level=20, eps_bb=1e-1, max_bb_iter=500, init_startegy="compact"
+        self, log_level=20, eps_bb=1e-1, max_bb_iter=500, init_strategy="compact"
     ):
         # Heuristically eliminate electrodes
         max_el_current = min(self.max_el_current, self.max_total_current)
         el = np.arange(self.n)
-        if init_startegy == "compact":
+        if init_strategy == "compact":
             x = _least_squares_tes_opt(
                 self.l,
                 self.Q,
@@ -2800,7 +2864,7 @@ class TESDistributedElecConstrained(TESDistributed):
                 active = np.ones(self.n, dtype=bool)
             init = bb_state([], el[~active].tolist(), el[active].tolist())
 
-        elif init_startegy == "full":
+        elif init_strategy == "full":
             init = bb_state([], [], el.tolist())
 
         else:
@@ -2822,49 +2886,6 @@ class TESDistributedElecConstrained(TESDistributed):
         return final_state.x_ub
 
 
-def _calc_l(leadfield, target_indices, target_direction, weights):
-    """Calculates the matrix "l" (eq. 14 in Saturnino et al. 2019)"""
-    target_indices = np.atleast_1d(target_indices)
-    target_direction = np.atleast_2d(target_direction)
-    if target_direction.shape[1] != 3:
-        target_direction = target_direction.T
-    if len(target_indices) != len(target_direction):
-        raise ValueError("Please define one direction per target")
-    if target_direction.shape[1] != 3:
-        raise ValueError("A direction must have 3 dimentions")
-
-    target_direction = (
-        target_direction / np.linalg.norm(target_direction, axis=1)[:, None]
-    )
-
-    lf_t = leadfield[:, target_indices]
-    w_idx = weights[target_indices]
-    lf_t *= w_idx[None, :, None]
-    lf_t /= np.sum(w_idx)
-    l = np.einsum("ijk, jk -> i", lf_t, target_direction)
-
-    P = np.linalg.pinv(np.vstack([-np.ones(len(l)), np.eye(len(l))]))
-
-    return l.dot(P)
-
-
-def _calc_Qnorm(leadfield, target_indices, weights):
-    """Calculates the matrix "Qnorm" (like eq. 21 in Saturnino et al. 2019,
-    but for all field components and not just)
-    """
-    n = leadfield.shape[0]
-    target_indices = np.atleast_1d(target_indices)
-    lf_t = leadfield[:, target_indices]
-    w_idx = weights[target_indices]
-    Q_in = sum(lf_t[..., i].dot((lf_t[..., i] * w_idx[None, :]).T) for i in range(3))
-    Q_in /= np.sum(w_idx)
-
-    P = np.linalg.pinv(np.vstack([-np.ones(n), np.eye(n)]))
-
-    Qnorm = P.T.dot(Q_in).dot(P)
-    return Qnorm
-
-
 def _linear_constrained_tes_opt(
     l,
     target_mean,
@@ -2875,40 +2896,53 @@ def _linear_constrained_tes_opt(
     extra_eq=None,
     log_level=10,
 ):
-
     assert (
         l.shape[0] == target_mean.shape[0]
     ), "Please specify one target mean per target"
     assert l.shape[1] == Q.shape[0]
+
+    scale = max_total_current
+
+    target_mean = target_mean / scale
+    max_el_current = max_el_current / scale
+    max_total_current = max_total_current / scale
 
     n = l.shape[1]
     tes_constraints = TESConstraints(n, max_total_current, max_el_current)
     # First solve an LP to get a feasible starting point
     l_ = np.hstack([l, -l])
 
-    # L1 constaints
     C_, d_ = tes_constraints._l1_constraint()
-    # Kirschoffs law
-    A_, b_ = tes_constraints._kirschoff_constraint()
+    A_, b_ = tes_constraints._kirchhoff_constraint()
 
     # Inequality constraints
     if extra_ineq is not None:
         C_ = np.vstack([C_, extra_ineq[0]])
-        d_ = np.hstack([d_, extra_ineq[1]])
+        d_ = np.hstack([d_, extra_ineq[1] / scale])
 
     if extra_eq is not None:
         A_ = np.vstack([A_, extra_eq[0]])
-        b_ = np.hstack([b_, extra_eq[1]])
+        b_ = np.hstack([b_, extra_eq[1] / scale])
 
     sol = scipy.optimize.linprog(
         -np.average(l_, axis=0),
-        np.vstack([C_, l_]),
-        np.hstack([d_, target_mean]),
-        A_,
-        b_,
+        A_ub=np.vstack([C_, l_]),
+        b_ub=np.hstack([d_, target_mean]),
+        # constraints due to Kirchhoff's law
+        A_eq=A_,
+        b_eq=b_,
         bounds=(0, max_el_current),
-        method="interior-point",
+        method="highs",
+        options=dict(
+            # Sets the primal/dual feasibility tolerances for `highs-ds`;
+            # `highs-ipm` uses the minimum of the two
+            dual_feasibility_tolerance=1e-8,
+            primal_feasibility_tolerance=1e-8,
+        ),
     )
+    if sol.status != 0:
+        raise RuntimeError(sol.message)
+
     x_ = sol.x
 
     # Test if the objective can be reached
@@ -2916,28 +2950,29 @@ def _linear_constrained_tes_opt(
 
     if np.any(np.abs(f - target_mean) >= np.abs(1e-2 * target_mean)):
         logger.log(log_level, "Could not reach target intensities")
-        return x_[:n] - x_[n:]
+        return (x_[:n] - x_[n:]) * scale
 
     logger.log(log_level, "Target intensity reached, optimizing focality")
 
     # Do the QP
-    eps = 1e-3 * np.max(np.abs(x_))
-    Q_ = np.vstack([np.hstack([Q, -Q]), np.hstack([-Q, Q])])
+    Q_ = np.block([[Q, -Q], [-Q, Q]])
     C_b, d_b = tes_constraints._bound_contraints()
+    abs_x_max = np.abs(x_).max()
 
     x_ = _active_set_QP(
-        np.zeros(2 * n),
-        Q_,
-        np.vstack([C_b, C_]),
-        np.hstack([d_b, d_]),
-        x_,
-        eps,
-        np.vstack([A_, l_]),
-        np.hstack([b_, f]),  # I use "f"
+        l=np.zeros(2 * n),
+        Q=Q_,
+        C=np.vstack([C_b, C_]),
+        d=np.hstack([d_b, d_]),
+        x0=x_,
+        A=np.vstack([A_, l_]),
+        b=np.hstack([b_, f]),  # I use "f"
+        tol_primal=1e-3 * abs_x_max * scale,
+        tol_feasibility_x0=1e-3 * abs_x_max,
+        tol_zero_div=1e-9 / scale,
     )
 
-    x = x_[:n] - x_[n:]
-    return x
+    return (x_[:n] - x_[n:]) * scale
 
 
 def _calc_angle(x, Qin, l):
@@ -3235,10 +3270,7 @@ def _norm_constrained_tes_opt(
             min_energy = energy
             x_min_energy = x
 
-    if x_min_energy is None:
-        return x_max_norm
-    else:
-        return x_min_energy
+    return x_max_norm if x_min_energy is None else x_min_energy
 
 
 def _norm_opt_x0(
@@ -3254,6 +3286,15 @@ def _norm_opt_x0(
 ):
 
     x = x0.copy()
+
+    scale = max_total_current
+
+    # not necessary to rescale Q and Qnorm
+    x = x / scale
+    target_norm = target_norm / scale
+    max_el_current = max_el_current / scale
+    max_total_current = max_total_current / scale
+
     n = len(x)
     n_eqs = Qnorm.shape[0]
 
@@ -3275,19 +3316,17 @@ def _norm_opt_x0(
 
     tes_constraints = TESConstraints(n, max_total_current, max_el_current)
 
-    # L1 constaints
     C_, d_ = tes_constraints._l1_constraint()
-    # Kirschoffs law
-    A_, b_ = tes_constraints._kirschoff_constraint()
+    A_, b_ = tes_constraints._kirchhoff_constraint()
 
     # Extra constraints
     if extra_ineq is not None:
         C_ = np.vstack([C_, extra_ineq[0]])
-        d_ = np.hstack([d_, extra_ineq[1]])
+        d_ = np.hstack([d_, extra_ineq[1] / scale])
 
     if extra_eq is not None:
         A_ = np.vstack([A_, extra_eq[0]])
-        b_ = np.hstack([b_, extra_eq[1]])
+        b_ = np.hstack([b_, extra_eq[1] / scale])
 
     # First of all, see if the norm can be reached
     n_iter = 0
@@ -3297,24 +3336,38 @@ def _norm_opt_x0(
         l = x.dot(Qnorm)
         l_ = np.hstack([l, -l])
         sol = scipy.optimize.linprog(
-            -np.average(l_, axis=0),
-            np.vstack([C_, l_]),
-            np.hstack([d_, target_norm**2]),
-            A_,
-            b_,
+            c=-np.average(l_, axis=0),
+            A_ub=np.vstack([C_, l_]),
+            b_ub=np.hstack([d_, target_norm**2]),
+            # constraints due to Kirchhoff's law
+            A_eq=A_,
+            b_eq=b_,
             bounds=(0, max_el_current),
-            method="interior-point",
+            method="highs",
+            options=dict(
+                # Sets the primal/dual feasibility tolerances for `highs-ds`;
+                # `highs-ipm` uses the minimum of the two
+                dual_feasibility_tolerance=1e-8,
+                primal_feasibility_tolerance=1e-8,
+            ),
         )
-        x = sol.x[:n] - sol.x[n:]
-        if (cur_min - sol.fun) < 1e-3 * np.abs(sol.fun):
-            break
-        else:
-            cur_min = sol.fun
-            n_iter += 1
+        if sol.status != 0:
+            raise RuntimeError(sol.message)
 
-    # Test if the norm constraint is not fulfilled, quit
+        if (delta := cur_min - sol.fun) > 0:
+            x = sol.x[:n] - sol.x[n:]
+            if delta < 1e-3 * np.abs(sol.fun):
+                break
+            else:
+                cur_min = sol.fun
+                n_iter += 1
+        else:
+            break
+
+    # If the target norm cannot be reached, exit
     if np.any(np.sqrt(x.dot(Qnorm).dot(x)) < target_norm * 0.9):
         logger.log(log_level, "Target norm could not be reached")
+        x *= scale
         return x, x.dot(Q).dot(x), np.sqrt(x.dot(Qnorm).dot(x))
 
     # notice, I reset x on purpose
@@ -3330,8 +3383,8 @@ def _norm_opt_x0(
     prev_norms = 0
     n_iter = 0
 
-    ## Preparations for the QPs
-    Q_ = np.vstack([np.hstack([Q, -Q]), np.hstack([-Q, Q])])
+    # Preparations for the QPs
+    Q_ = np.block([[Q, -Q], [-Q, Q]])
 
     # Bound constraints
     C_b, d_b = tes_constraints._bound_contraints()
@@ -3359,19 +3412,29 @@ def _norm_opt_x0(
         l = -2 * x.dot(Qnorm)
         x_ = np.hstack([x, -x, np.zeros(n_eqs)])
         x_[x_ < 0] = 0
-        current_norm = x.dot(Qnorm).dot(x)
+        squared_norm = x.dot(Qnorm).dot(x)
         # Add the slack variables
-        x_[-n_eqs:] = (target_norm**2) - current_norm
+        x_[-n_eqs:] = (target_norm**2) - squared_norm
         # Update the penalty
         a_[-n_eqs:] = tau
         # Inequalily Cx < d
         C_[-n_eqs:, : 2 * n] = np.hstack([l, -l])
-        d_[-n_eqs:] = -current_norm - (target_norm**2)
+        d_[-n_eqs:] = -squared_norm - (target_norm**2)
         # Run the QP
         # Sometimes due to numerical instabilities this can fail
+        abs_x_max = np.abs(x).max()
         try:
             x_ = _active_set_QP(
-                a_, Q_, C_, d_, x_, A=A_, b=b_, eps=1e-3 * np.max(np.abs(x))
+                l=a_,
+                Q=Q_,
+                C=C_,
+                d=d_,
+                x0=x_,
+                A=A_,
+                b=b_,
+                tol_primal=1e-3 * abs_x_max * scale,
+                tol_feasibility_x0=1e-3 * abs_x_max,
+                tol_zero_div=1e-9 / scale,
             )
         except ValueError:
             return None, np.inf, 0
@@ -3398,7 +3461,7 @@ def _norm_opt_x0(
             prev_norms = norms
             n_iter += 1
 
-    return x, energy, norms
+    return x * scale, energy * scale**2, norms * scale
 
 
 def _least_squares_tes_opt(
@@ -3415,10 +3478,8 @@ def _least_squares_tes_opt(
     # First solve an LP to get a feasible starting point
     l_ = np.hstack([l, -l])
 
-    # L1 constaints
     C_, d_ = tes_constraints._l1_constraint()
-    # Kirschoffs law
-    A_, b_ = tes_constraints._kirschoff_constraint()
+    A_, b_ = tes_constraints._kirchhoff_constraint()
 
     # Inequality constraints
     if extra_ineq is not None:
@@ -3429,7 +3490,7 @@ def _least_squares_tes_opt(
         A_ = np.vstack([A_, extra_eq[0]])
         b_ = np.hstack([b_, extra_eq[1]])
 
-    Q_ = np.vstack([np.hstack([Q, -Q]), np.hstack([-Q, Q])])
+    Q_ = np.block([[Q, -Q], [-Q, Q]])
 
     x = _eq_constrained_QP(np.squeeze(l), Q, A_[:, :n], b_)
     x_ = np.hstack([x, -x])
@@ -3450,33 +3511,82 @@ def _least_squares_tes_opt(
         np.vstack([C_b, C_]),
         np.hstack([d_b, d_]),
         x_,
-        eps,
         A_,
         b_,
+        tol_primal=eps,
+        tol_feasibility_x0=eps,
     )
 
     x = x_[:n] - x_[n:]
     return x
 
 
-def _active_set_QP(l, Q, C, d, x0, eps=1e-5, A=None, b=None):
+def _active_set_QP(
+        l: npt.NDArray,
+        Q: npt.NDArray,
+        C: npt.NDArray,
+        d: npt.NDArray,
+        x0: npt.NDArray,
+        A: None | npt.NDArray =None,
+        b: None | npt.NDArray = None,
+        tol_primal: float = 1e-5,
+        tol_feasibility_x0: float = 1e-5,
+        tol_zero_div: float = 1e-9,
+    ):
     """Solves the problem
-    minimize l^T x + 1/2 x^T Q x
-    subject to  Cx <= d
-                Ax = b
 
-    Numerically stable methods for quadratic programminga, Gill and Murray
-    https://link.springer.com/article/10.1007/BF01588976
+        minimize    l^T x + 1/2 x^T Q x
+        subject to  Cx <= d
+                    Ax = b
+
+    Parameters
+    ----------
+    l :
+    Q :
+    C :
+        Left-hand side matrix for inequality constraints.
+    d :
+        Right-hand side for inequality constraints.
+    x0 :
+        Initial point.
+    A :
+        Left-hand side matrix for equality constraints.
+    b :
+        Right-hand side for equality constraints.
+    tol_primal : float
+        Tolerance for primal variables, p. If all |p| are smaller than this,
+        the solution is not updated in this iteration and the duals are checked
+        for termination. (The duals use -`tol_primal` as tolerance.)
+    tol_feasibility_x0 : float
+        Tolerance for determining the feasibility of the initial point, `x0`
+        (i.e., if the constraints are violated).
+    tol_zero_div : float
+        Tolerance for avoiding zero division. In particular, the values for
+        which C @ p < tol_zero_div are ignored in (d - C @ x) / (C @ p).
+
+    Returns
+    -------
+    x :
+        The solution vector.
+
+    References
+    ----------
+    Gill and Murray (1978). Numerically stable methods for quadratic
+        programming. https://link.springer.com/article/10.1007/BF01588976
     """
     # get the active set:
     x = np.copy(x0)
     n = len(x0)
     n_iter = 0
-    active = np.abs(C.dot(x) - d) < eps
-    if np.any(np.abs(C.dot(x) - d) < -eps):
-        raise ValueError("Infeasible Start!")
-    if A is not None and not np.allclose(A.dot(x0), b, atol=eps):
-        raise ValueError("infeasible start!")
+    active = np.abs(C.dot(x) - d) < tol_feasibility_x0
+
+    # Check feasibility of x0
+    assert np.all(C.dot(x) <= d + tol_feasibility_x0), f"Infeasible start ({C.dot(x)} > {d})"
+    if A is not None and b is not None:
+        assert np.allclose(A.dot(x), b, atol=tol_feasibility_x0), f"Infeasible start ({A.dot(x)} != {b})"
+
+    # if not np.allclose(A.dot(x0), b, atol=eps):
+    #     print(f"Infeasible start ({A.dot(x0)} != {b})")
 
     if A is None:
         A = np.empty((0, len(x0)))
@@ -3513,7 +3623,7 @@ def _active_set_QP(l, Q, C, d, x0, eps=1e-5, A=None, b=None):
             p = Z.dot(w_z)
             p = np.squeeze(p.T)
         # If no update, check the duals and try to terminate
-        if np.all(np.abs(p) < eps):
+        if np.all(np.abs(p) < tol_primal):
             # calculate duals
             if Active.shape[0] > 0:
                 try:
@@ -3526,7 +3636,7 @@ def _active_set_QP(l, Q, C, d, x0, eps=1e-5, A=None, b=None):
                 duals = np.atleast_1d(np.squeeze(duals.T))
                 duals_inequality = duals[A.shape[0] :]
 
-            if np.all(duals_inequality > -eps):
+            if np.all(duals_inequality > -tol_primal):
                 break
 
             min_C_dual = np.argmin(duals_inequality) + A.shape[0]
@@ -3540,7 +3650,7 @@ def _active_set_QP(l, Q, C, d, x0, eps=1e-5, A=None, b=None):
 
         else:
             den = C.dot(p)
-            s = den > 1e-9
+            s = den > tol_zero_div
             alpha_violation = (d[s] - C[s, :].dot(x)) / den[s]
             # if no constraint can be violated, step size is one
             if len(alpha_violation) == 0 or np.min(alpha_violation >= 1):
