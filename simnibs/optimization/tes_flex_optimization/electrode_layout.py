@@ -1136,8 +1136,8 @@ class ElectrodeArrayPair(ElectrodeLayout):
         self.length_x_bounds = None
         self.length_y_bounds = None
         self.current_estimator_method = None
-        self._dirichlet_correction = False
-        self._dirichlet_correction_detailed = False
+        self.dirichlet_correction = False
+        self.dirichlet_correction_detailed = False
         self.current_outlier_correction = False
 
         self._prepared = False
@@ -1145,25 +1145,10 @@ class ElectrodeArrayPair(ElectrodeLayout):
         if settings_dict:
            self.from_dict(settings_dict)
 
-    @property
-    def dirichlet_correction(self):
-        return self._dirichlet_correction
-
-    @dirichlet_correction.setter
-    def dirichlet_correction(self, value):
-        self._dirichlet_correction = value
-
-    @property
-    def dirichlet_correction_detailed(self):
-        return self._dirichlet_correction_detailed
-
-    @dirichlet_correction_detailed.setter
-    def dirichlet_correction_detailed(self, value):
-        self._dirichlet_correction_detailed = value
-        if value:
-            self._dirichlet_correction = True
-
     def _prepare(self):
+
+        if self.dirichlet_correction_detailed:
+            self.dirichlet_correction = True
 
         if not hasattr(self.radius, "__len__") and self.radius is not None:
             self.radius = np.array([self.radius])
