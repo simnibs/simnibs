@@ -502,7 +502,7 @@ class TesFlexOptimization:
             Create summary file 'fields_summary.txt'. Default: True.
         """
         if not os.path.isdir(self.output_folder):
-            os.mkdir(self.output_folder)
+            os.makedirs(self.output_folder)
         log_fn = os.path.join(
             self.output_folder,
             fname_prefix + '_{0}.log'.format(self.time_str))
