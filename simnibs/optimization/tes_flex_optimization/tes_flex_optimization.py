@@ -187,7 +187,6 @@ class TesFlexOptimization:
             "len_tol": 1.0 / 3600000000.0,
             "f_min_rtol": 1e-12,
             "maxiter": 1000,
-            "polish": True,
             "disp": True,
             "recombination": 0.7,  # differential evolution
             "mutation": [0.01, 0.5],  # differential evolution
@@ -877,9 +876,14 @@ class TesFlexOptimization:
                         name="optimizer/optimizer_options/ub",
                     )
                 else:
+                    if self._optimizer_options_std[key] is None:
+                        data = "None"
+                    else:
+                        data = self._optimizer_options_std[key]
+
                     f.create_dataset(
-                        data=self._optimizer_options_std[key],
-                        name=f"optimizer/optimizer_options/{key}",
+                        data=data,
+                        name=f"optimizer/optimizer_options/{key}"
                     )
 
             # electrodes
@@ -922,7 +926,6 @@ class TesFlexOptimization:
                     f.create_dataset(
                         data=elec.radius, name=f"electrode/channel_{i_stim}/radius"
                     )
-                    
 
                 for i_array, _electrode_array in enumerate(
                     self.electrode[i_stim]._electrode_arrays
@@ -963,8 +966,7 @@ class TesFlexOptimization:
                     f.create_dataset(
                         data=e_pp[i_stim][i_roi],
                         name=f"e_pp/channel_{i_stim}/e_roi_{i_roi}",
-                    )  
-                
+                    )
 
     def add_electrode_layout(self, electrode_type, electrode=None):
         """
@@ -1153,7 +1155,7 @@ class TesFlexOptimization:
                 bounds=self._optimizer_options_std["bounds"],
                 disp=self._optimizer_options_std["disp"],
                 polish=False,
-                seed = self.seed
+                seed=self.seed
             )  # we will decide if to polish afterwards
 
         else:
@@ -1172,7 +1174,7 @@ class TesFlexOptimization:
         # run local optimization to polish results
         #######################################################################################################
         if self.polish:
-            logger.info( "Polishing optimization results!")
+            logger.info("Polishing optimization results!")
             result = minimize(
                 self.goal_fun,
                 x0=optim_x,
