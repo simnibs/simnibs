@@ -318,6 +318,23 @@ class TesFlexOptimization:
         # number of independent stimulation channels
         self.n_channel_stim = len(self.electrode)
 
+        # plot electrodes (has to be called here because initial values may be different)
+        for i_channel_stim in range(self.n_channel_stim):
+            el_layout = self.electrode[i_channel_stim]
+            usesDirichlet = el_layout.dirichlet_correction or el_layout.dirichlet_correction_detailed
+
+            for i_array, _electrode_array in enumerate(
+                    el_layout._electrode_arrays
+            ):
+                _electrode_array.plot(
+                    show=False,
+                    fn_plot=os.path.join(
+                        self.output_folder,
+                        f"electrode_channel_{i_channel_stim}_array_{i_array}.png",
+                    ),
+                    usesDirichlet=usesDirichlet
+                )
+
         # initialize lists with number of dirichlet correction iterations for convergence analysis
         self.n_iter_dirichlet_correction = [[] for _ in range(self.n_channel_stim)]
 
@@ -571,23 +588,7 @@ class TesFlexOptimization:
         logger.log(26, "=" * 100)
         logger.log(26, "Optimization results:")
         logger.log(26, "=" * 100)
-        
-        # plot electrodes
-        for i_channel_stim in range(self.n_channel_stim):
-            el_layout = self.electrode[i_channel_stim]
-            usesDirichlet = el_layout.dirichlet_correction or el_layout.dirichlet_correction_detailed
 
-            for i_array, _electrode_array in enumerate(
-                el_layout._electrode_arrays
-            ):
-                _electrode_array.plot(
-                    show=False,
-                    fn_plot=os.path.join(
-                        self.output_folder,
-                        f"electrode_channel_{i_channel_stim}_array_{i_array}.png",
-                    ),
-                    usesDirichlet = usesDirichlet
-                )
                 
     def _log_summary_postopt(self):
         ''' summary of optimization results'''
@@ -1077,7 +1078,7 @@ class TesFlexOptimization:
 
         return self
 
-    def run(self, cpus=None, allow_multiple_runs=False, save_mat=True, return_n_max=1):
+    def run(self, cpus=None, save_mat=True):
         """
         Runs the tes optimization
 
@@ -1086,17 +1087,14 @@ class TesFlexOptimization:
         cpus : int, optional, default: None
             Number of CPU cores to use (so far used only during ellipsoid-fitting; 
                                         still ignored during FEM)
-        allow_multiple_runs: bool, optional, default: False
-            Whether to allow multiple runs in one folder. (not implemented yet)
         save_mat: bool, optional, default: True
             Save the ".mat" file of this structure
-        return_n_max: int, optional, default: 1
-            Return n-th best solutions. (not implemented yet)
 
         Returns
         --------
         <files>: Results files (.hdf5) in self.output_folder.
         """
+
         start = time.time()
         self._set_logger()
         self._n_cpu = cpus
@@ -1230,7 +1228,7 @@ class TesFlexOptimization:
                     mesh_io.open_in_gmsh(i, True)
                         
             # TODO: extract key metrics from m_head, m_surf (field in roi, focality)
-            #       and add to summary log
+            #       and add to summary log (AT)
 
         # append optimization results to summary
         self._log_summary_postopt()
@@ -1522,7 +1520,7 @@ class TesFlexOptimization:
         lb = np.delete(lb, idx_alpha_remove)
         ub = np.delete(ub, idx_alpha_remove)
 
-        # TODO: think this works only for one channel_stim right now (HDTES), test with 2 channel stim and adapt
+        # TODO: think this works only for one channel_stim right now (HDTES), test with 2 channel stim and adapt (KW)
         # add bounds of geometry parameters of electrode (if any)
         for i_channel_stim in range(self.n_channel_stim):
             if self.electrode[i_channel_stim]._any_free_geometry:
@@ -1581,7 +1579,7 @@ class TesFlexOptimization:
                 )
                 i_para += i_para_increment
 
-        # TODO: same here I think it only works for one channel_stim
+        # TODO: same here I think it only works for one channel_stim (KW)
         # extract geometrical electrode parameters from optimal parameters and update electrode
         for i_channel_stim in range(self.n_channel_stim):
             if self.electrode[i_channel_stim]._any_free_geometry:
