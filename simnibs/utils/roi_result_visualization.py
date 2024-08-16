@@ -347,17 +347,14 @@ class RoiResultVisualization:
 
         geo_filenames = []
         for sim_result_filename in self.sim_result_filenames:
-            match os.path.basename(sim_result_filename).split("_")[1]:
-                case "TMS":
-                    geo_filenames.append(
-                        f"{'_'.join(sim_result_filename.split('_')[:-1])}_coil_pos.geo"
-                    )
-                case "TDCS":
-                    geo_filenames.append(
-                        f"{'_'.join(sim_result_filename.split('_')[:-1])}_el_currents.geo"
-                    )
-                case _:
-                    raise NotImplementedError
+            tms_geo_file_name = f"{'_'.join(sim_result_filename.split('_')[:-1])}_coil_pos.geo"
+            tdcs_geo_file_name = f"{'_'.join(sim_result_filename.split('_')[:-1])}_el_currents.geo"
+            if os.path.isfile(tms_geo_file_name):
+                geo_filenames.append(tms_geo_file_name)
+            elif os.path.isfile(tdcs_geo_file_name):
+                geo_filenames.append(tms_geo_file_name)
+            else:
+                raise NotImplementedError
 
         dont_duplicate_views = ["scalp"]
         added_views = []
