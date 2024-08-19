@@ -97,7 +97,7 @@ elif sys.platform == 'linux':
     petsc_compile_args = None
 
     # CGAL
-    cgal_dirs = None
+    cgal_dirs = [os.path.join(os.environ['CONDA_PREFIX'], 'lib')]
     cgal_libs = ['mpfr', 'gmp', 'z', 'tbb', 'tbbmalloc', 'pthread']
     cgal_include = [
         np.get_include(),
