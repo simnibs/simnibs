@@ -654,7 +654,7 @@ class TestRoiResultVisualization:
         roi_2.apply_tissue_mask(1004, "intersection")
 
         #Create result mesh 1
-        result_mesh_1_file_path = os.path.join(tmp_path, "test_1_TMS_scalar.msh")
+        result_mesh_1_file_path = os.path.join(tmp_path, "test_1_TDCS_scalar.msh")
         result_mesh_1 = deepcopy(sphere3_msh)
         opt_1 = gmsh_view.Visualization(result_mesh_1)
         result_mesh_1.add_node_field(-np.arange(result_mesh_1.nodes.nr), "node_test_1")
@@ -669,7 +669,7 @@ class TestRoiResultVisualization:
             np.arange(result_mesh_1.elm.nr) * 2, "elm_test_2"
         )
         opt_1.add_view(ColormapNumber=4)
-        geo_file_path = os.path.join(tmp_path, "test_1_TMS_coil_pos.geo")
+        geo_file_path = os.path.join(tmp_path, "test_1_TDCS_el_currents.geo")
         opt_1.add_merge(geo_file_path)
         mesh_io.write_geo_lines(
             [[1, 3, 4], [8, 9, 10]],

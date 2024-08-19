@@ -352,7 +352,7 @@ class RoiResultVisualization:
             if os.path.isfile(tms_geo_file_name):
                 geo_filenames.append(tms_geo_file_name)
             elif os.path.isfile(tdcs_geo_file_name):
-                geo_filenames.append(tms_geo_file_name)
+                geo_filenames.append(tdcs_geo_file_name)
             else:
                 raise NotImplementedError
 
