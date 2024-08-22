@@ -10,7 +10,7 @@
 #include <CGAL/Polygon_mesh_processing/orient_polygon_soup.h>
 #include <CGAL/Polygon_mesh_processing/polygon_soup_to_polygon_mesh.h>
 
-#ifdef CGAL_CONCURRENT_MESH_3
+#ifdef CGAL_LINKED_WITH_TBB
 #include "tbb/task_arena.h"
 #include "tbb/task_group.h"
 #endif
@@ -82,7 +82,7 @@ int _mesh_surfaces(
   // Mesh generation
   CGAL::get_default_random() = CGAL::Random(0);
   C3t3_surf c3t3 = CGAL::make_mesh_3<C3t3_surf>(domain, criteria, no_perturb(), no_exude());
-  #ifdef CGAL_CONCURRENT_MESH_3
+  #ifdef CGAL_LINKED_WITH_TBB
     tbb::task_arena limited(1);        // No more than 2 threads in this arena.
     tbb::task_group tg;
     limited.execute([&]{ // Use at most 2 threads for this job.
