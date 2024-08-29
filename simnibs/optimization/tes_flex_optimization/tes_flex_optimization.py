@@ -176,6 +176,7 @@ class TesFlexOptimization:
         self.x0 = None
 
         # track goal fun value (in ROI 0) and focality measures for later analysis
+        self.optim_funvalue = None
         self.goal_fun_value = None
         self.AUC = None
         self.integral_focality = None
@@ -787,8 +788,14 @@ class TesFlexOptimization:
                      type=self.e_postproc[i_roi],
                  )
                  e_plot[i_roi].append(e[0][i_roi])
+                 e_plot[i_roi].append(e[1][i_roi])
                  e_plot[i_roi].append(e_pp[0][i_roi])
-                 e_plot_label[i_roi].append("e_stim_0")
+                 e_plot_label[i_roi].append("e_stim_0_Ex")
+                 e_plot_label[i_roi].append("e_stim_0_Ey")
+                 e_plot_label[i_roi].append("e_stim_0_Ez")
+                 e_plot_label[i_roi].append("e_stim_1_Ex")
+                 e_plot_label[i_roi].append("e_stim_1_Ey")
+                 e_plot_label[i_roi].append("e_stim_1_Ez")
                  e_plot_label[i_roi].append("e_pp")
                  
                  fn_out = os.path.join(self._detailed_results_folder, f"e_roi_{i_roi}")
@@ -809,10 +816,12 @@ class TesFlexOptimization:
                          e2=None,
                          dirvec=self._goal_dir[i_roi],
                          type=self.e_postproc[i_roi],
-                     ).reshape((-1,1))
+                     ).reshape((-1, 1))
                      e_plot[i_roi].append(e[i_channel_stim][i_roi])
                      e_plot[i_roi].append(e_pp[i_channel_stim][i_roi])
-                     e_plot_label[i_roi].append(f"e_stim_{i_channel_stim}")
+                     e_plot_label[i_roi].append(f"e_stim_{i_channel_stim}_Ex")
+                     e_plot_label[i_roi].append(f"e_stim_{i_channel_stim}_Ey")
+                     e_plot_label[i_roi].append(f"e_stim_{i_channel_stim}_Ez")
                      e_plot_label[i_roi].append(f"e_pp_stim_{i_channel_stim}")
                 
                 fn_out = os.path.join(self._detailed_results_folder, f"e_roi_{i_roi}")
@@ -1161,13 +1170,13 @@ class TesFlexOptimization:
                 f"Specified optimization method: '{self.optimizer}' not implemented."
             )
         
-        optim_funvalue = result.fun
+        self.optim_funvalue = result.fun
         optim_x = result.x
         
         logger.info(f"Global optimization finished! Best electrode position: {optim_x}")
         logger.log(26, f"Number of function evaluations (global optimization):   {self.n_test}")
         logger.log(26, f"Number of FEM evaluations (global optimization):        {self.n_sim}")
-        logger.log(26, f"Goal function value (global optimization):              {optim_funvalue}")
+        logger.log(26, f"Goal function value (global optimization):              {self.optim_funvalue}")
         
         # run local optimization to polish results
         #######################################################################################################
@@ -1183,11 +1192,11 @@ class TesFlexOptimization:
             )
             logger.info(f"Local optimization finished! Best electrode position: {result.x}")
     
-            if optim_funvalue <= result.fun:
+            if self.optim_funvalue <= result.fun:
                 logger.info("Local optimization did not improve the results, proceeding with global optimization results.")
             else:
                 optim_x = result.x
-                optim_funvalue = result.fun
+                self.optim_funvalue = result.fun
                 
         # transform optimal electrode pos from array to list of list
         self.electrode_pos_opt = self.get_electrode_pos_from_array(optim_x)
@@ -1197,7 +1206,7 @@ class TesFlexOptimization:
         
         logger.log(26, f"Total number of function evaluations:                   {self.n_test}")
         logger.log(26, f"Total number of FEM evaluations:                        {self.n_sim}")
-        logger.log(26, f"Final goal function value:                              {optim_funvalue}")
+        logger.log(26, f"Final goal function value:                              {self.optim_funvalue}")
         logger.log(26, f"Duration (setup and optimization):                      {time.time() - start}")
                 
         # run final simulation with real electrode including remeshing
@@ -1235,7 +1244,7 @@ class TesFlexOptimization:
         
         # write results details (final fields via onlineFEM with dirichlet_corrections as txt and hdf5)
         if self.detailed_results:
-            self._write_detailed_results_postopt(optim_funvalue)
+            self._write_detailed_results_postopt(self.optim_funvalue)
         
         self._finish_logger()
 
