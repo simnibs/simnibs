@@ -34,10 +34,8 @@ For more info, refer to https://doc.cgal.org/latest/Manual/thirdparty.html
 cgal_mesh_macros = [
     ('CGAL_MESH_3_NO_DEPRECATED_SURFACE_INDEX', None),
     ('CGAL_MESH_3_NO_DEPRECATED_C3T3_ITERATORS', None),
-    ('CGAL_CONCURRENT_MESH_3', None),
     ('CGAL_EIGEN3_ENABLED', None),
     ('CGAL_USE_ZLIB', 1),
-    ('CGAL_LINKED_WITH_TBB', None)
 ]
 
 is_conda = 'CONDA_PREFIX' in os.environ
@@ -80,6 +78,10 @@ if sys.platform == 'win32':
         '/D _MBCS'
     ]
     cgal_link_args = None
+    cgal_mesh_macros += [
+        ('CGAL_CONCURRENT_MESH_3', None),
+        ('CGAL_LINKED_WITH_TBB', None),
+    ]
 
     # CAT
     cat_compile_args = None
@@ -97,7 +99,7 @@ elif sys.platform == 'linux':
     petsc_compile_args = None
 
     # CGAL
-    cgal_dirs = None
+    cgal_dirs = [os.path.join(os.environ['CONDA_PREFIX'], 'lib')]
     cgal_libs = ['mpfr', 'gmp', 'z', 'tbb', 'tbbmalloc', 'pthread']
     cgal_include = [
         np.get_include(),
@@ -110,8 +112,12 @@ elif sys.platform == 'linux':
         '-frounding-math',
         '-std=gnu++14',
     ]
-    cgal_mesh_macros += [('NOMINMAX', None)]
     cgal_link_args = None
+    cgal_mesh_macros += [
+        ('CGAL_CONCURRENT_MESH_3', None),
+        ('CGAL_LINKED_WITH_TBB', None),
+        ('NOMINMAX', None),
+    ]
 
     # CAT
     cat_compile_args = [
@@ -133,7 +139,7 @@ elif sys.platform == 'darwin':
 
     # CGAL
     cgal_dirs = None
-    cgal_libs = ['mpfr', 'gmp', 'z', 'tbb', 'tbbmalloc']
+    cgal_libs = ['mpfr', 'gmp', 'z']
     cgal_include = [
         np.get_include(),
         os.path.join(os.environ['CONDA_PREFIX'], 'include','eigen3'),

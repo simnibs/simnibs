@@ -1042,14 +1042,14 @@ class ElectrodeArray:
         ax.set_axisbelow(True)
         ax.set_xlim(
             (
-                np.min(self.center - 1.5 * np.max(self.radius)),
-                np.max(self.center + 1.5 * np.max(self.radius)),
+                np.min(self.center - 1.5 * np.max((self.radius, self.length_x/2))),
+                np.max(self.center + 1.5 * np.max((self.radius, self.length_x/2))),
             )
         )
         ax.set_ylim(
             (
-                np.min(self.center - 1.5 * np.max(self.radius)),
-                np.max(self.center + 1.5 * np.max(self.radius)),
+                np.min(self.center - 1.5 * np.max((self.radius, self.length_y/2))),
+                np.max(self.center + 1.5 * np.max((self.radius, self.length_y/2))),
             )
         )
         ax.set_aspect("equal", "box")
@@ -1152,6 +1152,7 @@ class ElectrodeArrayPair(ElectrodeLayout):
 
         if not hasattr(self.radius, "__len__") and self.radius is not None:
             self.radius = np.array([self.radius])
+
         if not hasattr(self.length_x, "__len__") and self.length_x is not None:
             self.length_x = np.array([self.length_x])
 
@@ -1166,6 +1167,12 @@ class ElectrodeArrayPair(ElectrodeLayout):
 
         if type(self.radius) is list:
             self.radius = np.array(self.radius)
+
+        if type(self.length_x) is list:
+            self.length_x = np.array(self.length_x)
+
+        if type(self.length_y) is list:
+            self.length_y = np.array(self.length_y)
 
         if self.length_x is None:
             assert self.length_y is None, "length_x provided but not length_y"
@@ -1509,8 +1516,8 @@ class CircularArray(ElectrodeLayout):
         self.radius_outer_bounds = None
         self.current = None
         self.current_estimator_method = None
-        self._dirichlet_correction = False
-        self._dirichlet_correction_detailed = False
+        self.dirichlet_correction = False
+        self.dirichlet_correction_detailed = False
         self.current_outlier_correction = False
 
         self._prepared = False
@@ -1518,25 +1525,11 @@ class CircularArray(ElectrodeLayout):
         if settings_dict:
            self.from_dict(settings_dict)
 
-    @property
-    def dirichlet_correction(self):
-        return self._dirichlet_correction
-
-    @dirichlet_correction.setter
-    def dirichlet_correction(self, value):
-        self._dirichlet_correction = value
-
-    @property
-    def dirichlet_correction_detailed(self):
-        return self._dirichlet_correction_detailed
-
-    @dirichlet_correction_detailed.setter
-    def dirichlet_correction_detailed(self, value):
-        self._dirichlet_correction_detailed = value
-        if value:
-            self._dirichlet_correction = True
-
     def _prepare(self):
+
+        if self.dirichlet_correction_detailed:
+            self.dirtichlet_correction = True
+
         if type(self.current) is int or type(self.current) is float:
             self.current = [self.current]
 
