@@ -595,8 +595,8 @@ class TmsCoil(TcdElement):
             for i, tag in enumerate(np.unique(casings.elm.tag1)):
                 casing = casings.crop_mesh(tags=[tag])
                 casing.elm.tag1[:] = 0
-                if i == 0:
-                    casing = TmsCoil._add_logo(casing,coil_matrix)
+                #if i == 0:
+                #   casing = TmsCoil._add_logo(casing,coil_matrix)
                     
                 idx_inside = msh_skin.pts_inside_surface(casing.nodes[:])
                 if len(idx_inside):
