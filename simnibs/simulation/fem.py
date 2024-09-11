@@ -604,8 +604,8 @@ class FEMSystem(object):
         cond,
         dirichlet=None,
         units='mm',
-        store_G=False,
-        solver_options="cg+hypre",
+        store_G: bool = False,
+        solver_options: None | str = "cg+hypre",
         solver_loglevel=logging.INFO
     ):
         if units in ['mm', 'm']:

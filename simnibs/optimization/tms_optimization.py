@@ -112,7 +112,7 @@ class TMSoptimize:
         self.angle_resolution = 30
         self.scalp_normals_smoothing_steps = 20
         self.open_in_gmsh = True
-        self.solver_options = ""
+        self.solver_options = None
         self.method = "direct"
 
         self.name = ""  # This is here only for leagacy reasons, it doesnt do anything
@@ -563,7 +563,7 @@ class TMSoptimize:
 
         if not np.all(th[target_region - 1]):
             raise ValueError("Target region must contain only tetrahedra")
-        
+
         # Run dipole simulations
         S = fem.DipoleFEM(self.mesh, cond_field, self.solver_options)
         vols = self.mesh.elements_volumes_and_areas()
