@@ -21,15 +21,9 @@ from simnibs.utils.mesh_element_properties import ElementTags
 from ..mesh_tools import mesh_io
 from ..utils import cond_utils as cond_lib
 import mumps
-from . import pardiso
-from . import petsc_solver
 from ..utils.simnibs_logger import logger
 
-DEFAULT_SOLVER_OPTIONS = \
-        '-ksp_type cg ' \
-        '-ksp_rtol 1e-10 -pc_type hypre ' \
-        '-pc_hypre_type boomeramg ' \
-        '-pc_hypre_boomeramg_coarsen_type HMIS'
+from petsc4py import PETSc
 
 '''
     This program is part of the SimNIBS package.
@@ -52,15 +46,82 @@ DEFAULT_SOLVER_OPTIONS = \
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-_PETSC_IS_INITILIZED = False
-def _initialize_petsc():
-    global _PETSC_IS_INITILIZED
-    if not _PETSC_IS_INITILIZED:
-        # Initialize PETSc
-        petsc_solver.petsc_initialize()
-        # Register the finalizer for PETSc
-        atexit.register(petsc_solver.petsc_finalize)
-        _PETSC_IS_INITILIZED = True
+VALID_SOLVER_OPTIONS = {"cg+hypre", "pardiso", "mumps"}
+
+class KSPSolver:
+    def __init__(self, A, ksp_type, pc_type, factor_solver_type=None, rtol=1e-10) -> None:
+        """Simple interface to setup PETSc KSP object with very limited flexibility.
+
+        when pc_type = hypre the, the following options are hardcoded:
+            - HYPRE type = boomeramg
+            - BoomerAMG coarsen type = HMIS
+
+
+        """
+
+        self.set_system_matrix(A)
+        self.setup_ksp(ksp_type, pc_type, factor_solver_type, rtol)
+        self.initialize_system_vectors()
+
+    def set_system_matrix(self, S):
+        S = S.tocsr()
+        A = PETSc.Mat(comm=PETSc.COMM_WORLD)
+        A.createAIJ(size=S.shape, csr=(S.indptr, S.indices, S.data))
+        A.assemble()
+        self.A = A
+        return A
+
+
+    def initialize_system_vectors(self):
+        """Create vectors to hold RHS and solution."""
+        self._b = self.A.createVecLeft()
+        self._x = self.A.createVecRight()
+
+    def setup_ksp(self, ksp_type, pc_type, factor_solver_type, rtol):
+
+        # Build KSP solver object
+        ksp = PETSc.KSP()
+        ksp.create(comm=self.A.getComm())
+        ksp.setOperators(self.A)
+        ksp.setTolerances(rtol=rtol)
+        ksp.setType(ksp_type)
+        # ksp.setConvergenceHistory()
+
+        # setup PC
+        ksp.getPC().setType(pc_type)
+        if ksp.getPC().getType() == "hypre":
+            ksp.getPC().setHYPREType("boomeramg")
+
+            # This option cannot be set from the python interface directly
+            #-pc_hypre_boomeramg_coarsen_type HMIS
+            options = PETSc.Options()
+            options["pc_hypre_boomeramg_coarsen_type"] = "HMIS"
+            ksp.getPC().setFromOptions()
+
+        # setup factor solver
+        if factor_solver_type is not None:
+            ksp.getPC().setFactorSolverType(factor_solver_type)
+            # MUMPS: to explicitly set the permutation analysis tool to METIS
+            # ksp.getPC().getFactorMatrix().setMumpsIcntl(7, 5)
+
+        ksp.setUp()
+
+        self.ksp = ksp
+
+    def _solve_single(self, b):
+        self._b[:] = b
+        self.ksp.solve(self._b, self._x)
+        return self._x[:]
+
+    def solve(self, b: np.ndarray):
+        if b.ndim == 1:
+            x = self._solve_single(b)
+        else:
+            assert b.ndim == 2
+            x = np.zeros_like(b)
+            for i in range(b.shape[1]):
+                x[:, i] = self._solve_single(b[:, i])
+        return x
 
 class MUMPS_Solver:
     def __init__(self, A=None, isSymmetric=True, log_level=20):
@@ -75,14 +136,14 @@ class MUMPS_Solver:
         start = time.time()
         self.ctx.factor()
         logger.log(self.log_level, f'{time.time()-start:.2f} seconds to factorize matrix')
-        
+
     def solve(self, b):
         start = time.time()
         x = self.ctx._solve_dense(b)
         logger.log(self.log_level, f'{time.time()-start:.2f} seconds to solve system')
         return x
 
-        
+
 def calc_fields(potentials, fields, cond=None, dadt=None, units='mm', E=None):
     ''' Given a mesh and the electric potentials at the nodes,
     calculates the fields
@@ -515,7 +576,7 @@ class FEMSystem(object):
         Options to be used by the solver. Default: DEFAULT_SOLVER_OPTIONS
     solver_loglevel: int (optional)
         sets the log level of the standard logging messages of the solvers.
-        Default: logging.INFO 
+        Default: logging.INFO
 
     Attributes
     ----------
@@ -537,8 +598,16 @@ class FEMSystem(object):
     Once created, do NOT change the attributes of this class.
 
     '''
-    def __init__(self, mesh, cond, dirichlet=None, units='mm', store_G=False,
-                 solver_options=None, solver_loglevel=logging.INFO):
+    def __init__(
+        self,
+        mesh,
+        cond,
+        dirichlet=None,
+        units='mm',
+        store_G=False,
+        solver_options="cg+hypre",
+        solver_loglevel=logging.INFO
+    ):
         if units in ['mm', 'm']:
             self.units = units
         else:
@@ -558,10 +627,9 @@ class FEMSystem(object):
         self._solver = None
         self._G = None # Gradient operator
         self._D = None # Gradient matrix
-        if solver_options in [None, '']:
-            self._solver_options = DEFAULT_SOLVER_OPTIONS
-        else:
-            self._solver_options = solver_options
+        solver_options = "cg+hypre" if solver_options is None else solver_options
+        assert solver_options in VALID_SOLVER_OPTIONS # or isinstance(solver_options, PETSc.KSP)
+        self._solver_options = solver_options
         self.assemble_fem_matrix(store_G=store_G)
 
     @property
@@ -622,13 +690,21 @@ class FEMSystem(object):
             A, dof_map = self.dirichlet.apply_to_matrix(A, dof_map)
 
         if self._solver_options == 'pardiso':
-            self._solver = pardiso.Solver(A, log_level=self.solver_loglevel)
+            self._solver = KSPSolver(A, "preonly", "cholesky", "mkl_pardiso")
         elif self._solver_options == 'mumps':
             self._solver = MUMPS_Solver(A, isSymmetric=True, log_level=self.solver_loglevel)
+            # or with PETSc (only on MacOS)
+            # self._solver = KSPSolverSimple(A, "preonly", "cholesky", "mumps")
+        elif self._solver_options == "cg+hypre":
+            self._solver = KSPSolver(A, "cg", "hypre")
         else:
-            _initialize_petsc()
-            self._A_reduced = A  # We need to save this as PETSc does not copy the vectors
-            self._solver = petsc_solver.Solver(self._solver_options, A, log_level=self.solver_loglevel)
+            raise ValueError(f"Invalid solver (got {self._solver_options})")
+
+            # assume KSP object
+            # self._solver = self._solver_options
+            # self._solver.setUp
+            # self._initialize_system_vectors()
+
 
     def solve(self, b=None):
         ''' Solves the FEM system
@@ -1451,7 +1527,7 @@ def tms_dadt(mesh, cond, dAdt, solver_options=None):
     s = TMSFEM(mesh, cond, solver_options)
     b = s.assemble_rhs(dAdt)
     v = s.solve(b)
-    
+
     del s, b
     gc.collect()
     return mesh_io.NodeData(v, name='v', mesh=mesh)
@@ -1575,7 +1651,7 @@ def _run_tms(mesh, cond, cond_list, fn_coil, fields, matsimnibs, didt, fn_out, f
     #summary += m.fields_summary(roi=2)
 #
     #logger.log(25, summary)
-    
+
     del dAdt, v, b
     gc.collect()
 
@@ -1623,7 +1699,7 @@ def tdcs_neumann(mesh, cond, currents, electrode_surface_tags):
     S = TDCSFEMNeumann(mesh, cond, electrode_surface_tags[0])
     b = S.assemble_rhs(electrode_surface_tags[1:], currents[1:])
     v = S.solve(b)
-    
+
     del S, b
     gc.collect()
     return mesh_io.NodeData(v, name='v', mesh=mesh)
@@ -1765,8 +1841,8 @@ def tdcs_leadfield(mesh, cond, electrode_surface, fn_hdf5, dataset,
             if input_type == "tag":
                 # estimate calibration error
                 ref_electrode = el_tag
-                # other_electrodes = [x for x in electrode_surface if np.all(x!=ref_electrode)][0]  
-                other_electrodes = np.array([x for x in electrode_surface if x!=ref_electrode])             
+                # other_electrodes = [x for x in electrode_surface if np.all(x!=ref_electrode)][0]
+                other_electrodes = np.array([x for x in electrode_surface if x!=ref_electrode])
 
                 v_ = mesh_io.NodeData(v, name='v', mesh=mesh)
                 flux = np.array([
@@ -1797,7 +1873,7 @@ def tdcs_leadfield(mesh, cond, electrode_surface, fn_hdf5, dataset,
 
         del S, b, v
         gc.collect()
-        
+
     # Run simulations (parallel)
     else:
         # Lock has to be passed through inheritance
@@ -1884,7 +1960,7 @@ def _run_tdcs_leadfield(i, el_tags, currents, fn_hdf5, dataset, input_type, mesh
     with h5py.File(fn_hdf5, 'a') as f:
         f[dataset][i] = out_field
     tdcs_global_solver.lock.release()
-    
+
     del b, v
     gc.collect()
 
@@ -2010,7 +2086,7 @@ def tms_many_simulations(
 
             del b
             gc.collect()
-            
+
         del S
         gc.collect()
 
@@ -2103,7 +2179,7 @@ def _run_tms_many_simulations(i, matsimnibs, didt, fn_hdf5, dataset):
     with h5py.File(fn_hdf5, 'a') as f:
         f[dataset][i] = out_field
     tms_many_global_solver.lock.release()
-    
+
     del b
     gc.collect()
 

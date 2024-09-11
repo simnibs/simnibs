@@ -1,7 +1,7 @@
 import scipy.sparse as sp
 import numpy as np
 
-from .. import pardiso
+from simnibs.simulation.fem import KSPSolver
 
 def create_matrix(dim, alpha=0.95, smallest_coef=0.1, largest_coef=.9):
     ''' Based o scikit-learn make_sparse_spd_matrix'''
@@ -26,7 +26,6 @@ def create_matrix(dim, alpha=0.95, smallest_coef=0.1, largest_coef=.9):
     return A,b,x
 
 
-
 def test_create_matrix():
     A, b, x = create_matrix(100, .95)
 
@@ -39,14 +38,14 @@ def test_create_matrix():
 class TestPardiso():
     def test_solve(self):
         A, b, x = create_matrix(1000, .99)
-        solver = pardiso.Solver(A)
+        solver = KSPSolver(A, "preonly", "cholesky", "mkl_pardiso")
         x_pd = solver.solve(b)
         assert np.allclose(x, x_pd)
 
     def test_solve_csr(self):
         A, b, x = create_matrix(1000, .99)
         A = A.tocsr()
-        solver = pardiso.Solver(A)
+        solver = KSPSolver(A, "preonly", "cholesky", "mkl_pardiso")
         x_pd = solver.solve(b)
         assert np.allclose(x, x_pd)
 
@@ -54,6 +53,6 @@ class TestPardiso():
         A, _, _ = create_matrix(1000, .99)
         x = np.random.random((1000, 3))
         b = A.dot(x)
-        solver = pardiso.Solver(A)
+        solver = KSPSolver(A, "preonly", "cholesky", "mkl_pardiso")
         x_pd = solver.solve(b)
         assert np.allclose(x, x_pd)
