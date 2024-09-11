@@ -1349,16 +1349,16 @@ class POSITION(object):
         """
         # Generate dict from instance variables (excluding variables starting with _ or __)
         settings = {
-            key:value for key, value in self.__dict__.items() 
+            key:value for key, value in self.__dict__.items()
             if not key.startswith('__')
             and not key.startswith('_')
-            and not callable(value) 
+            and not callable(value)
             and not callable(getattr(value, "__get__", None))
             and value is not None
         }
 
         return settings
-    
+
     def from_dict(self, settings: dict) -> "POSITION":
         """ Reads parameters from a dict
 
@@ -2174,7 +2174,7 @@ class LEADFIELD():
         self.name = ''  # This is here only for leagacy reasons, it doesnt do anything
         self._log_handlers = []
 
-        self.solver_options = ''
+        self.solver_options = None
         if matlab_struct:
             self.read_mat_struct(matlab_struct)
 
