@@ -8,7 +8,6 @@ dependencies:
   - cython
   - mock
   - requests
-  - freeglut
   - pip
   - cgal=5.5.1
   - libwebp
@@ -25,6 +24,6 @@ dependencies:
   - matplotlib
   - python-mumps
   - pip:
-    - fmm3dpy
+    - simnibs/external/wheels/fmm3dpy-1.0.0-cp311-cp311-macosx_11_0_arm64.whl
     - charm_gems==1.3.3
     - pygpc==0.3.9
