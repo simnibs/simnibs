@@ -26,6 +26,7 @@ dependencies:
   - zlib
   - matplotlib
   - python-mumps
+  - setuptools-scm
   - pip:
     - fmm3dpy==1.0.0
     - charm_gems==1.3.3
