@@ -2,6 +2,9 @@ import os
 import time
 import copy
 import logging
+import platform
+import warnings
+
 import numpy as np
 from scipy import sparse
 
@@ -85,10 +88,9 @@ class OnlineFEM:
         # False: interpolate the dadt field using positions (coordinates) of nodes
         self.useElements = useElements
 
-        if solver_options == "mumps" or solver_options == "pardiso":
-            self.solver_options = solver_options
-        else:
-            self.solver_options = None # will use default solver settings for PETSc
+        if platform.system() == "Darwin" and solver_options == "pardiso":
+            warnings.warn("solver `pardiso` was specified but MKL PARDISO is not available for Darwin systems; falling back to MUMPS")
+            solver_options = "mumps"
 
         # creating logger
         if fn_logger is not None:

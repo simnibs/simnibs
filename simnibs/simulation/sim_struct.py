@@ -195,10 +195,10 @@ class SESSION(object):
         if not self.tissues_in_niftis:
             self.tissues_in_niftis = [2]
 
-        logger.info('Head Mesh: {0}'.format(self.fnamehead))
-        logger.info('Subject Path: {0}'.format(self.subpath))
         self.pathfem = os.path.abspath(os.path.expanduser(self.pathfem))
-        logger.info('Simulation Folder: {0}'.format(self.pathfem))
+        logger.info(f'Head Mesh:          {self.fnamehead}')
+        logger.info(f'Subject Path:       {self.subpath}')
+        logger.info(f'Simulation Folder:  {self.pathfem}')
 
         if os.path.isfile(self.fnamehead):
             mesh = mesh_io.read_msh(self.fnamehead)
@@ -2212,7 +2212,7 @@ class LEADFIELD():
 
         self.fnamehead = os.path.abspath(os.path.expanduser(self.fnamehead))
         if not os.path.isfile(self.fnamehead):
-            raise IOError('Cannot locate head mesh file: %s' % self.fnamehead)
+            raise IOError(f'Cannot locate head mesh file: {self.fnamehead}')
 
         if not os.path.isdir(self.subpath):
             logger.warning('Cannot locate subjects m2m folder')
@@ -2222,10 +2222,10 @@ class LEADFIELD():
         if not self.fname_tensor:
             self.fname_tensor = sub_files.tensor_file
 
-        logger.info('Head Mesh: {0}'.format(self.fnamehead))
-        logger.info('Subject Path: {0}'.format(self.subpath))
         self.pathfem = os.path.abspath(os.path.expanduser(self.pathfem))
-        logger.info('Simulation Folder: {0}'.format(self.pathfem))
+        logger.info(f'Head Mesh:          {self.fnamehead}')
+        logger.info(f'Subject Path:       {self.subpath}')
+        logger.info(f'Simulation Folder:  {self.pathfem}')
 
         self.mesh = mesh_io.read_msh(self.fnamehead)
 

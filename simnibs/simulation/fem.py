@@ -25,6 +25,10 @@ from ..utils.simnibs_logger import logger
 
 from petsc4py import PETSc
 
+# import mkl
+# mkl.set_num_threads(4)
+# mkl.set_num_threads(mkl.get_max_threads())
+
 '''
     This program is part of the SimNIBS package.
     Please check on www.simnibs.org how to cite our work in publications.
@@ -46,7 +50,7 @@ from petsc4py import PETSc
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-VALID_SOLVER_OPTIONS = {"cg+hypre", "pardiso", "mumps"}
+VALID_SOLVER_OPTIONS = {"hypre", "pardiso", "mumps"}
 
 class KSPSolver:
     def __init__(self, A, ksp_type, pc_type, factor_solver_type=None, rtol=1e-10) -> None:
@@ -67,10 +71,14 @@ class KSPSolver:
         S = S.tocsr()
         A = PETSc.Mat(comm=PETSc.COMM_WORLD)
         A.createAIJ(size=S.shape, csr=(S.indptr, S.indices, S.data))
+
+        # Use AIJMKL matrix type
+        # options = PETSc.Options()
+        # options["mat_type"] = "aijmkl"
+        # A.setFromOptions()
+
         A.assemble()
         self.A = A
-        return A
-
 
     def initialize_system_vectors(self):
         """Create vectors to hold RHS and solution."""
@@ -104,13 +112,17 @@ class KSPSolver:
             # MUMPS: to explicitly set the permutation analysis tool to METIS
             # ksp.getPC().getFactorMatrix().setMumpsIcntl(7, 5)
 
+        start = time.perf_counter()
         ksp.setUp()
+        logger.info(f"Time to set up KSP: {time.perf_counter()-start:8.4f} s")
 
         self.ksp = ksp
 
     def _solve_single(self, b):
+        start = time.perf_counter()
         self._b[:] = b
         self.ksp.solve(self._b, self._x)
+        logger.info(f"Time to solve: {time.perf_counter()-start:8.4f} s")
         return self._x[:]
 
     def solve(self, b: np.ndarray):
@@ -605,7 +617,7 @@ class FEMSystem(object):
         dirichlet=None,
         units='mm',
         store_G: bool = False,
-        solver_options: None | str = "cg+hypre",
+        solver_options: None | str = "hypre",
         solver_loglevel=logging.INFO
     ):
         if units in ['mm', 'm']:
@@ -627,7 +639,7 @@ class FEMSystem(object):
         self._solver = None
         self._G = None # Gradient operator
         self._D = None # Gradient matrix
-        solver_options = "cg+hypre" if solver_options is None else solver_options
+        solver_options = "hypre" if solver_options is None else solver_options
         assert solver_options in VALID_SOLVER_OPTIONS # or isinstance(solver_options, PETSc.KSP)
         self._solver_options = solver_options
         self.assemble_fem_matrix(store_G=store_G)
@@ -672,8 +684,7 @@ class FEMSystem(object):
                              ' disconected nodes?')
 
         time_assemble = time.time() - start
-        logger.info(
-            '{0:.2f}s to assemble FEM matrix'.format(time_assemble))
+        logger.info(f'{time_assemble:.2f} s to assemble FEM matrix')
 
     def prepare_solver(self):
         '''Prepares the object to solve FEM systems
@@ -695,7 +706,7 @@ class FEMSystem(object):
             self._solver = MUMPS_Solver(A, isSymmetric=True, log_level=self.solver_loglevel)
             # or with PETSc (only on MacOS)
             # self._solver = KSPSolverSimple(A, "preonly", "cholesky", "mumps")
-        elif self._solver_options == "cg+hypre":
+        elif self._solver_options == "hypre":
             self._solver = KSPSolver(A, "cg", "hypre")
         else:
             raise ValueError(f"Invalid solver (got {self._solver_options})")
@@ -1831,8 +1842,7 @@ def tdcs_leadfield(mesh, cond, electrode_surface, fn_hdf5, dataset,
     # Run simulations (sequential)
     if n_workers == 1:
         for i, (el_tag, current) in enumerate(zip(electrode_surface[1:], currents)):
-            logger.info('Running Simulation {0} out of {1}'.format(
-                i+1, n_sims))
+            logger.info(f'Running Simulation {i+1} of {n_sims}')
             b = S.assemble_rhs([el_tag], [current])
             v = S.solve(b)
 
@@ -1921,7 +1931,7 @@ def _run_tdcs_leadfield(i, el_tags, currents, fn_hdf5, dataset, input_type, mesh
     global tdcs_global_post_pro
     global tdcs_global_cond
     global tdcs_global_field
-    logger.info('Running Simulation {0} out of {1}'.format(
+    logger.info('Running Simulation {0} of {1}'.format(
         i+1, tdcs_global_nsims))
     b = tdcs_global_solver.assemble_rhs(el_tags, currents)
     v = tdcs_global_solver.solve(b)
@@ -2055,7 +2065,7 @@ def tms_many_simulations(
     if n_workers == 1:
         for i, matsimnibs, didt in zip(range(n_sims), matsimnibs_list, didt_list):
             logger.info(
-                f'Running Simulation {i+1} out of {n_sims}')
+                f'Running Simulation {i+1} of {n_sims}')
             dAdt = _get_da_dt_from_coil(fn_coil, mesh, didt, matsimnibs)
             # b = S.assemble_tms_rhs(dAdt)
             b = S.assemble_rhs(dAdt)
@@ -2140,8 +2150,7 @@ def _run_tms_many_simulations(i, matsimnibs, didt, fn_hdf5, dataset):
     global tms_many_global_cond
     global tms_many_global_field
     global tms_many_global_roi
-    logger.info('Running Simulation {0} out of {1}'.format(
-        i+1, tms_many_global_nsims))
+    logger.info(f'Running Simulation {i+1} of {tms_many_global_nsims}')
     # RHS
     dAdt = _get_da_dt_from_coil(
         tms_many_global_fn_coil,
