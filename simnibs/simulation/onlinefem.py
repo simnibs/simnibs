@@ -89,8 +89,10 @@ class OnlineFEM:
         self.useElements = useElements
 
         if platform.system() == "Darwin" and solver_options == "pardiso":
-            warnings.warn("solver `pardiso` was specified but MKL PARDISO is not available for Darwin systems; falling back to MUMPS")
+            warnings.warn("solver `pardiso` was specified but MKL PARDISO is not available for Darwin systems; falling back to MUMPS.")
             solver_options = "mumps"
+
+        self.solver_options = solver_options
 
         # creating logger
         if fn_logger is not None:
