@@ -6,7 +6,7 @@
 =============
 
 
-**SimNIBS v4.5** is a free and open source software package for the Simulation of Non-invasive Brain Stimulation. It allows for realistic calculations of the electric field induced by transcranial magnetic stimulation (TMS) and transcranial electric stimulation (TES).
+**SimNIBS v4.5** is an open source software package for the Simulation of Non-invasive Brain Stimulation. It allows for realistic calculations of the electric field induced by transcranial magnetic stimulation (TMS) and transcranial electric stimulation (TES).
 
 A basic SimNIBS workflow consists of three main parts:
 
@@ -16,7 +16,9 @@ A basic SimNIBS workflow consists of three main parts:
 
    * :ref:`Visualize simulation results <visualization_tutorial>`, and easily transform them to *FsAverage* or *MNI* space via in-built functions.
 
-In addition, SimNIBS offers several advanced options such as :ref:`Optimizations of TMS coil positions <overview_tms_opt>`, or several :ref:`TES optimization methods <overview_tes_opt>` supporting single and multiple targets, brain network targeting and flexible leadfield-free optimization.
+SimNIBS offers several advanced options such as :ref:`Optimizations of TMS coil positions <overview_tms_opt>`, or several :ref:`TES optimization methods <overview_tes_opt>` supporting single and multiple targets, brain network targeting and flexible leadfield-free optimization. 
+
+Also a number of :ref:`external open-source software packages and workflows <external_packages>` build upon SimNIBS.
 
 .. raw:: html
 
@@ -135,11 +137,13 @@ SimNIBS is copyrighted |copy| by its :ref:`authors <contributors>` and licensed 
 ======
 
   * **Version 4.5.0** introduces exciting new optimization methods for :ref:`TMS <tms_flex_opt>`  and :ref:`TES <tes_flex_opt>`. 
-	* They enable the :ref:`optimization of TMS coil positions also for bent and flexible coils <tms_flex_opt>`, thereby systematically avoiding intersections of the coil with the head.
-	* In addition, they support the :ref:`optimization of several TES montages <tes_flex_opt>`, including those with rectangular electrodes, center-surround montages, temporal interference stimulation and electrode arrays for tumor treating field therapies.
-  * As part of the update to 4.5.0, several new TMS coil models and new :ref:`datasets <dataset>` were added.
-  * Version 4.1.0 improves the mesh quality and adds the option to use FreeSurfer results for more accurate representation of smaller sulci in the head meshes
-  * Version 4.0.0 is a major update that introduces our new head modeling approach :ref:`charm <head_modeling_tutorial>`. In contrast to the previous methods, *charm* does not have any external dependencies (matlab, freesurfer) and is ready-to-run directly after installation. Head models created by *charm* are more accurate for non-brain tissues and include additional tissue types such as large blood vessels and spongy bone.
+	* :ref:`Optimization of TMS coil positions also for bent and flexible coils <tms_flex_opt>`, thereby systematically avoiding intersections of the coil with the head.
+	* :ref:`Leadfield-free optimization of TES montages <tes_flex_opt>`, including those with rectangular electrodes, center-surround montages, temporal interference stimulation and electrode arrays for tumor treating field therapies.
+  * **Version 4.5.0** contains several new TMS coil models and new :ref:`datasets <dataset>`.
+  * **Version 4.5.0** introduces a new format for TMS coil models (.tcd) that supports flexible and multi-element coils and simplifies the creation of custom coil models (example scripts are provided).
+  * **Version 4.5.0** comes with a tutorial for calculating :ref:`EEG leadfields <eeg_leadfields>` with SimNIBS for use in `FieldTrip <https://www.fieldtriptoolbox.org/>`_ and `MNE-Python <https://mne.tools/stable/index.html>`_ .
+  * Version 4.1.0 improved the mesh quality and added the option to use FreeSurfer results for more accurate representation of smaller sulci in the head meshes.
+  * Version 4.0.0 introduced our new head modeling approach :ref:`charm <head_modeling_tutorial>` that is more accurate for non-brain tissues and includes additional tissue types such as large blood vessels and spongy bone, compared to our previous pipelines.
 
 Please see details in the :ref:`changelog <changelog>`.
 
@@ -157,3 +161,4 @@ Please see details in the :ref:`changelog <changelog>`.
    publications
    changelog
    contact
+   external_packages

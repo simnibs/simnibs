@@ -48,5 +48,7 @@ We have included code or binaries from the following project to this repository:
 * [CGAL](https://www.cgal.org/)
 * [Mmg](https://www.mmgtools.org/)
 * [FMM3D](https://github.com/flatironinstitute/FMM3D)
+* [MUMPS](https://mumps-solver.org)
+* [PYGPC](https://github.com/pygpc-polynomial-chaos/pygpc)
 
 For a full list of files and licenses, please see the [3RD-PARTY.md](3RD-PARTY.md) file

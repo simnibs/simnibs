@@ -59,22 +59,6 @@ License
 GNU GPL V2 or later
 
 
-SPM12
-======
-
-Files
-------
-* simibs/resources/spm12 (except toolbox/cat12)
-
-Copyright
-----------
-Copyright (C) 1991,1994-2018 Wellcome Centre for Human Neuroimaging
-
-License
----------
-GNU GPL V2 or later
-
-
 CAT12
 ======
 
@@ -242,6 +226,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE
 
+
 CYGWIN
 ======
 
@@ -304,7 +289,7 @@ PYGPC
 
 Files
 -------
-* simnibs/pygpc (except adaptive.py)
+* simnibs/simulaton/pygpc (except adaptive.py)
 
 Copyright
 ----------
@@ -411,6 +396,7 @@ freely, subject to the following restrictions:
 Jean-loup Gailly        Mark Adler
 jloup@gzip.org          madler@alumni.caltech.edu
 
+
 ADMlib
 ======
 
@@ -430,3 +416,18 @@ As a recipient of this software, you may choose which license to receive the cod
 To enter a commercial license agreement, please contact the Digital Innovations department at Duke Office of Licensing and Ventures (https://olv.duke.edu/software/) at olvquestions@duke.edu with reference to “OLV File No. 7148” in your email.
 
 Please note that this software is distributed AS IS, WITHOUT ANY WARRANTY; and without the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+
+
+MUMPS
+=======
+
+Files
+-------
+
+License
+----------
+The copyrights of this software are owned by CERFACS, CNRS, ENS Lyon, INP Toulouse, Inria, Mumps Technologies, University of Bordeaux.
+
+It is distributed under the CeCILL-C license (https://cecill.info/licences/Licence_CeCILL-C_V1-en.html).
+
