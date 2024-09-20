@@ -6128,6 +6128,91 @@ def read_res_file(fn_res, fn_pre=None):
 
     return v
 
+def write_vtk(msh: Msh, file_name):
+    import pyvista as pv
+
+    type_mapping = np.zeros(16, dtype=np.int64)
+    type_mapping[15] = pv.CellType.VERTEX 
+    type_mapping[1] = pv.CellType.LINE 
+    type_mapping[2] = pv.CellType.TRIANGLE 
+    type_mapping[4] = pv.CellType.TETRA
+
+    point_number_mapping = np.zeros(16, dtype=np.int64)
+    point_number_mapping[15] = 1
+    point_number_mapping[1] = 2
+    point_number_mapping[2] = 3
+    point_number_mapping[4] = 4
+
+    cell_types = type_mapping[msh.elm.elm_type]
+    cells = np.column_stack((point_number_mapping[msh.elm.elm_type], msh.elm.node_number_list - 1)).ravel()
+    cells = cells[cells >= 0]
+
+    grid = pv.UnstructuredGrid(cells, cell_types, msh.nodes.node_coord)
+
+    for node_data in msh.nodedata:
+        grid[node_data.field_name] = node_data.value
+
+    for elm_data in msh.elmdata:
+        grid[elm_data.field_name] = elm_data.value
+
+    grid['tag'] = msh.elm.tag1
+
+    grid.save(file_name)
+
+def read_vtk(file_name):
+    import pyvista as pv
+
+    type_mapping = np.zeros(pv.CellType.BEZIER_PYRAMID, dtype=np.int64)
+    type_mapping[pv.CellType.VERTEX] = 15
+    type_mapping[pv.CellType.LINE] = 1
+    type_mapping[pv.CellType.TRIANGLE] = 2
+    type_mapping[pv.CellType.TETRA] = 4
+
+    point_number_mapping = np.zeros(5, dtype=np.int64)
+    point_number_mapping[1] = 15
+    point_number_mapping[2] = 1
+    point_number_mapping[3] = 2
+    point_number_mapping[4] = 4
+
+    grid = pv.read(file_name)
+
+    node_number_list = np.full((grid.n_cells, 4), -1)
+    elm_type = np.full(grid.n_cells, 0)
+    i = 0
+    k = 0
+    while i < len(grid.cells):
+        node_number_list[k,0:grid.cells[i]] = grid.cells[i+1:i+1+grid.cells[i]]
+        elm_type[k] = point_number_mapping[grid.cells[i]]
+        k += 1
+        i += grid.cells[i] + 1
+
+    node_number_list[node_number_list != -1] += 1
+     
+    elm = Elements()
+    elm.node_number_list = node_number_list
+    elm.elm_type = elm_type
+    if 'tag' in grid.cell_data:
+        elm.tag1 = grid.cell_data['tag']
+    else:
+        elm.tag1 = np.zeros(elm.nr)
+    elm.tag2 = elm.tag1.copy()
+    
+    elm_data = []
+    for key in grid.cell_data:
+        if key == 'tag':
+            continue
+        elm_data.append(ElementData(grid.cell_data[key], key))
+
+    node_data = []
+    for key in grid.point_data:
+        node_data.append(NodeData(grid.point_data[key], key))
+
+    msh = Msh(Nodes(grid.points), elm)
+    msh.elmdata = elm_data
+    msh.nodedata = node_data
+
+    return msh
+
 
 def write_geo_spheres(positions, fn, values=None, name="", mode='bw'):
     """ Writes a .geo file with spheres in specified positions
