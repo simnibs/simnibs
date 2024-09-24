@@ -3,14 +3,14 @@
 
 ADMlib
 =======
-github.com/luisgo/Auxiliary_dipole_method
-**License and link to online license text (if existing):**
+github.com/luisgo/Auxiliary_dipole_method\
+**License and link to online license text (if existing):**\
 GNU General Public Licence (GPL-v2.0), for non-commercial and academic purposes only
-Commercial Licence for commercial use without the GPL-v2.0 restrictions.
-**Copyright** 
-(c) copyrights Duke University. 
+Commercial Licence for commercial use without the GPL-v2.0 restrictions.\
+**Copyright**\
+(c) copyrights Duke University.\ 
 As a recipient of this software, you may choose which Licence to receive the code under.
-Outside contributions to the Duke owned code base cannot be accepted unless the contributor transfers the copyright to those changes over to Duke University.
+Outside contributions to the Duke owned code base cannot be accepted unless the contributor transfers the copyright to those changes over to Duke University.\
 To enter a commercial Licence agreement, please contact the Digital Innovations department at Duke Office of Licensing and Ventures (https://olv.duke.edu/software/) at olvquestions@duke.edu with reference to “OLV File No. 7148” in your email.
 Please note that this software is distributed AS IS, WITHOUT ANY WARRANTY; and without the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
