@@ -116,11 +116,6 @@ Former Contributors
 * Andreas Bungert
    * Testing of the new FEM pipeline in SimNIBS 2.0
 
-* Alex Opitz
-   * Implementation of first diffusion-to-conductivity mapping approach
-   * Co-contributor to many other parts in SimNIBS 1.0
-   * Testing and validation of the new FEM calculations for tDCS in SimNIBS 2.0
-
 * Mirko Windhoff
    * Main contributor to SimNIBS 1.0
 
@@ -132,19 +127,6 @@ We would like to cordially thank our funders
 
 .. centered::  |lundbeck|_ |novo|_ |sdc|_ |stiped|_ |if|_ |nimh|_ |danishcancersociety|_
 
-
-Acknowledgements 
------------------
-SimNIBS integrates free software for Neuroimaging, computer graphics and FEM calculations into one coherent pipeline:
-
-* :ref:`charm_docs` uses `Samseg (Oula Puonti, Koen Van Leemput) from FreeSurfer <https://surfer.nmr.mgh.harvard.edu/fswiki/Samseg>`_ as segmentation backend, `CGAL <https://www.cgal.org/>`_ for meshing, `Mmg <https://www.mmgtools.org/>`_ for improving the mesh quality, a modified version of `MeshFix <http://code.google.com/p/meshfix/>`_ by `Marco Attene <https://www.cnr.it/en/people/marco.attene>`_ for surface fixing, and functions from `CAT12 <http://dbm.neuro.uni-jena.de/cat/>`_ from the `Structural Brain Mapping Group (University of Jena) <http://www.neuro.uni-jena.de/>`_ for GM central surface estimation
-* We use `Gmsh <http://geuz.org/gmsh/>`_ by `Christophe Geuzaine 
-  <http://www.montefiore.ulg.ac.be/~geuzaine/>`_ and `Jean-François Remacle <http://perso.uclouvain.be/jean-francois.remacle/>`_ for visualization.
-* :ref:`dwi2cond_docs` uses `FSL <http://www.fmrib.ox.ac.uk/fsl/>`_ from the `FMRIB Center (Oxford University) <http://www.fmrib.ox.ac.uk/>`_.
-* FEM code introduced in version 3.0 relies on `PETSc <https://www.mcs.anl.gov/petsc/>`_ , `Hypre
-  <https://computation.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods/software>`_, `PARDISO (via Intel MKL) <https://www.intel.com/content/www/us/en/docs/onemkl/developer-reference-fortran/2023-0/pardiso.html>`_ and `MUMPS <https://mumps-solver.org/>`_.
-* Uncertainty quantification and TES-flex-optimization use `pyGPC <https://github.com/pygpc-polynomial-chaos/pygpc>`_.
-* Thanks for **Luis Gomez** for providing a python version of his `ADM TMS optimization package <https://github.com/luisgo/Auxiliary_dipole_method>`_.
 
 Institutions
 ---------------

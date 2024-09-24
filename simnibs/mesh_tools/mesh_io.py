@@ -2702,7 +2702,8 @@ class Msh:
     def view(self,
              visible_tags=None,
              visible_fields=[],
-             cond_list=None):
+             cond_list=None,
+             add_logo=False):
         ''' Visualize mesh in Gmsh
 
         Parameters
@@ -2725,7 +2726,7 @@ class Msh:
         >>> vis = mesh.view()
         >>> vis.show()
         '''
-        vis = gmsh_view.Visualization(self,cond_list)
+        vis = gmsh_view.Visualization(self,cond_list,add_logo)
         if visible_tags is not None:
             vis.visibility = visible_tags
         vis.View = []

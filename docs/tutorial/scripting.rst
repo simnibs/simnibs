@@ -3,7 +3,7 @@
 Scripting Simulations
 ======================
 
-This tutorial is based on the `Example Dataset <https://github.com/simnibs/example-dataset/releases/download/v4.0/simnibs_examples.zip>`_.
+This tutorial is based on the `Example Dataset <https://github.com/simnibs/example-dataset/releases/latest/download/simnibs4_examples.zip>`_.
 Please download it before continuing.
 
 SimNIBS offers both *Python* and *MATLAB* interfaces for setting up and running simulations.

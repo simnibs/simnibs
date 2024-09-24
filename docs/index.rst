@@ -16,9 +16,7 @@ A basic SimNIBS workflow consists of three main parts:
 
    * :ref:`Visualize simulation results <visualization_tutorial>`, and easily transform them to *FsAverage* or *MNI* space via in-built functions.
 
-SimNIBS offers several advanced options such as :ref:`Optimizations of TMS coil positions <overview_tms_opt>`, or several :ref:`TES optimization methods <overview_tes_opt>` supporting single and multiple targets, brain network targeting and flexible leadfield-free optimization. 
-
-Also a number of :ref:`external open-source software packages and workflows <external_packages>` build upon SimNIBS.
+SimNIBS offers several advanced options such as :ref:`Optimizations of TMS coil positions <overview_tms_opt>` or several :ref:`TES optimization methods <overview_tes_opt>`. Also a number of :ref:`external open-source software packages and workflows <external_packages>` build upon SimNIBS.
 
 .. raw:: html
 
@@ -88,6 +86,7 @@ Also a number of :ref:`external open-source software packages and workflows <ext
 	, 12000);
   </script>
   </embed>
+  </a href="gallery.html">
 
 .. raw:: html
 
@@ -123,6 +122,7 @@ Also a number of :ref:`external open-source software packages and workflows <ext
 
 SimNIBS is copyrighted |copy| by its :ref:`authors <contributors>` and licensed under :download:`GPL v3 <../LICENSE.txt>`.
 
+It builds upon 3rd party open-source and free code and binaries from :ref:`several projects and research groups. <3rd_party>`
 
 .. note:: When you publish results based on SimNIBS, please cite `Thielscher, A., Antunes, A. and Saturnino, G.B. (2015), Field modeling for transcranial magnetic stimulation: a useful tool to understand the physiological effects of TMS? IEEE EMBS 2015, Milano, Italy <http://dx.doi.org/10.1109/EMBC.2015.7318340>`_
 

@@ -1740,7 +1740,8 @@ class TDCSLIST(SimuList):
         v = m.view(
             visible_tags=_surf_preferences(m),
             visible_fields=_field_preferences(self.postprocess),
-            cond_list=self.cond)
+            cond_list=self.cond,
+            add_logo=True)
         v.add_merge(el_geo_fn)
         v.add_view(ColormapNumber=10, ColormapAlpha=.5,
                    Visible=1)  # el_currents
