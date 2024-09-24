@@ -180,7 +180,7 @@ github.com/nipy/nibabel/tree/master\
 **License and link to online license text (if existing):**\
 MIT license\
 github.com/nipy/nibabel/blob/master/COPYING\
-**Copyright**\ 
+**Copyright**\
 Copyright (c) 2009-2019 Matthew Brett <matthew.brett@gmail.com>
 Copyright (c) 2010-2013 Stephan Gerhard <git@unidesign.ch>
 Copyright (c) 2006-2014 Michael Hanke <michael.hanke@gmail.com>
