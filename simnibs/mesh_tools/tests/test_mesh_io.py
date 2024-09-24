@@ -1931,6 +1931,46 @@ class TestReadRes:
 
         np.testing.assert_allclose([-1.2, -2, 3.0], v)
 
+class TestVTK:
+    import importlib
+    @pytest.mark.skipif(
+        not importlib.util.find_spec("pyvista"), reason="requires the pyvista library"
+    )
+    def test_read_write(self, tmp_path):
+        nodes = np.array([[1.2, 3.4, 1.2], [2.3, 5.6, 1.2], [3.1, 6.7, 9.2], [9.1, 2.5, 2.3], [23.1, 3.4, 5.3]])
+        triangles = np.array([[1,2,3], [2,4,5]])
+        tetrahedra = np.array([[1,2,3,4], [3, 4, 5, 1]])
+
+        msh = mesh_io.Msh(mesh_io.Nodes(nodes), mesh_io.Elements(triangles, tetrahedra))
+
+        msh.add_element_field(np.arange(msh.elm.nr) + 99, 'elm_test')
+        msh.add_node_field(np.arange(msh.nodes.nr)+ 999, 'node_test')
+
+        msh.elm.tag1 = np.arange(msh.elm.nr)
+        msh.elm.tag2 = np.arange(msh.elm.nr)
+
+        path = os.path.join(tmp_path, 'test.vtk')
+        mesh_io.write_vtk(msh, path)
+        vtk_msh = mesh_io.read_vtk(path)
+
+        assert msh.nodes.nr == vtk_msh.nodes.nr
+        assert msh.elm.nr == vtk_msh.elm.nr
+        assert len(msh.nodedata) == len(vtk_msh.nodedata)
+        assert len(msh.elmdata) == len(vtk_msh.elmdata)
+
+        np.testing.assert_array_equal(msh.elm.node_number_list, vtk_msh.elm.node_number_list)
+        np.testing.assert_allclose(msh.nodes.node_coord, vtk_msh.nodes.node_coord)
+        np.testing.assert_array_equal(msh.elm.tag1, vtk_msh.elm.tag1)
+        np.testing.assert_array_equal(msh.elm.tag2, vtk_msh.elm.tag2)
+
+        for msh_elm_data, vtk_msh_elm_data in zip(msh.elmdata, vtk_msh.elmdata):
+            assert msh_elm_data.field_name == vtk_msh_elm_data.field_name
+            np.testing.assert_array_equal(msh_elm_data.value, vtk_msh_elm_data.value)
+
+        for msh_node_data, vtk_node_elm_data in zip(msh.nodedata, vtk_msh.nodedata):
+            assert msh_node_data.field_name == vtk_node_elm_data.field_name
+            np.testing.assert_array_equal(msh_node_data.value, vtk_node_elm_data.value)
+
 class TestWriteGeo:
     def test_write_spheres_no_values(self):
         positions = np.array([[1, 0, 0], [0, 1, 0]], dtype=float)
