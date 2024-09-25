@@ -5,13 +5,11 @@ Calculation of EEG Leadfields
 
 .. note:: When using this feature in a publication, please cite `Nielsen JD, Puonti O, Xue R, Thielscher A, Madsen KH (2023) Evaluating the influence of anatomical accuracy and electrode positions on EEG forward solutions. Neuroimage, 277:120259. <https://doi.org/10.1016/j.neuroimage.2023.120259>`_
 
-.. attention:: Currently, exporting forward solutions to MNE-Python is only compatible with MNE-Python <= 1.5.
-
 Currently, we support exporting leadfields for FieldTrip (MATLAB) and MNE-Python (python).
 
-The general procedure for creating electroencephalography (EEG) leadfields is from a headmodel generated with SimNIBS includes the following steps
+The general procedure for creating leadfields for electroencephalography (EEG) from a headmodel generated with SimNIBS includes the following steps
 
-1. Run CHARM on the subject to create the anatomical model of the head. This creates the directory `m2m_subid`. Please see :ref:`head_modeling_tutorial` for a more thorough description of this step.
+1. Run CHARM on the subject to create the anatomical model of the head. This creates the directory `m2m_[subid]`. Please see :ref:`head_modeling_tutorial` for a more thorough description of this step.
 
 2. Prepare EEG montage (electrode locations). In order to compute the leadfield, we need to place the EEG electrodes on our head model. This step transforms the electrode location information from FieldTrip or MNE-Python to SimNIBS and as such requires that you have electrode locations defined for your subject. This could be from digitizing the electrodes during an experiment or from warping a template to fit the subject. Therefore, we will use our software of choice (FieldTrip or MNE-Python) to compute a transformation that registers the EEG electrodes to subject MRI space and use ``prepare_eeg_montage`` to save these in a format that SimNIBS understands.
 
@@ -21,21 +19,23 @@ The general procedure for creating electroencephalography (EEG) leadfields is fr
 
 FieldTrip
 ---------
-We will use the data from `this <https://www.fieldtriptoolbox.org/workshop/natmeg2014/dipolefitting>`_ FieldTrip tutorial. Download the `mri data <https://download.fieldtriptoolbox.org/workshop/natmeg2014/dicom.zip>`_ and the `EEG data <https://download.fieldtriptoolbox.org/workshop/natmeg2014/oddball1_mc_downsampled.fif>`_ to the same directory. Extract the DICOM data. In MATLAB, we will assume that you are in this directory when executing the commands.
+We will use the data from `this <https://www.fieldtriptoolbox.org/workshop/natmeg2014/dipolefitting>`_ FieldTrip tutorial. Download the `mri data <https://download.fieldtriptoolbox.org/workshop/natmeg2014/dicom.zip>`_ and the `EEG data <https://download.fieldtriptoolbox.org/workshop/natmeg2014/oddball1_mc_downsampled.fif>`_ to the same directory. Extract the DICOM data. In MATLAB, we will assume that you are in this directory when executing the commands. Let us start by converting the MR image to NIfTI.
 
 .. code-block:: matlab
+
+    ft_defaults;
 
     % convert dicom to nifti
     mri = ft_read_mri(fullfile('dicom', '00000113.dcm'));
     ft_write_mri('mri.nii.gz', mri.anatomy, 'transform', mri.transform , 'dataformat', 'nifti');
 
-The run CHARM
+Then run CHARM to obtain the head model (mesh).
 
 .. code-block:: console
 
     charm sub mri.nii.gz
 
-which will create ``m2m_sub``.
+This will create ``m2m_sub``.
 
 .. attention:: As you can see, mri.nii.gz is not ideal for making an accurate headmodel, however, it is OK for demonstration purposes.
 
@@ -48,13 +48,15 @@ Next, align electrodes with the MR image.
     elec = ft_read_sens(dataset, 'senstype', 'eeg');
     elec = ft_convert_units(elec, 'mm');
 
-    % the dataset also contains fiducials, however, I was not success in
-    % using these to get a good registration
+    % The dataset contains fiducials, however, I was not able to compute a
+    % good electrode-MRI registration using these
+
     % shape   = ft_read_headshape(dataset, 'unit', 'cm');
     % shape = ft_convert_units(shape, 'mm');
 
-    % Therefore, we will use this transformation to align the electrodes
-    % with the MRI which I estimate interactively using `ft_electroderealign`
+    % Therefore, we will use the below transformation which I estimated
+    % interactively using `ft_electroderealign to align the electrodes
+    % and the MR image
     head_to_mri_trans = [
         [1.0000    0         0         0];
         [0    1.0000         0   30.0000];
@@ -78,12 +80,12 @@ Next, align electrodes with the MR image.
     view([1 0 0]);
 
     % Finally, save the transformed electrode positions
-    elec = elec_aligned;
+    elec = elec_mri;
     save('elec.mat', 'elec');
 
 .. figure:: ../../images/tutorial_eeg/fieldtrip/eeg_mri_alignment.jpg
 
-    Coregistration result.
+    Coregistration result. Red is before transformation; blue is after.
 
 Convert this to the format that SimNIBS uses for electrode positions
 
@@ -113,7 +115,7 @@ We should now have the following files in the `fem_sub` directory
 
 which can be used for source analysis with FieldTrip.
 
-First, we process the EEG data as it is done `here <https://www.fieldtriptoolbox.org/workshop/natmeg2014/dipolefitting/#process-the-eeg-data>`_. (Note, that you need to download and put `this <https://download.fieldtriptoolbox.org/workshop/natmeg2014/trialfun_oddball_stimlocked.m>`_ file in your MATLAB path.)
+First, we process the EEG data as it is done `here <https://www.fieldtriptoolbox.org/workshop/natmeg2014/dipolefitting/#process-the-eeg-data>`_. (Note, that you need to download and put `this <https://download.fieldtriptoolbox.org/workshop/natmeg2014/trialfun_oddball_stimlocked.m>`_ file in your MATLAB path.) `ft_rejectvisual` will open a window where you can select bad trials based on variance.
 
 .. code-block:: matlab
 
@@ -160,52 +162,69 @@ First, we process the EEG data as it is done `here <https://www.fieldtriptoolbox
 
     % Compute evoked response
 
+    % Evoked response incl. source covariance matrix
     cfg = [];
+    cfg.covariance = 'yes';
+    cfg.covariancewindow = [0.08, 0.11];
     timelock_eeg_all = ft_timelockanalysis(cfg, data_eeg_reref);
 
-    cfg.trials = find(data_eeg_reref.trialinfo==1);
-    timelock_eeg_std = ft_timelockanalysis(cfg, data_eeg_reref);
+    % cfg.trials = find(data_eeg_reref.trialinfo==1);
+    % timelock_eeg_std = ft_timelockanalysis(cfg, data_eeg_reref);
+    % cfg.trials = find(data_eeg_reref.trialinfo==2);
+    % timelock_eeg_dev = ft_timelockanalysis(cfg, data_eeg_reref);
 
-    cfg.trials = find(data_eeg_reref.trialinfo==2);
-    timelock_eeg_dev = ft_timelockanalysis(cfg, data_eeg_reref);
+    % Compute noise covariance matrix
+    cfg = [];
+    cfg.covariance = 'yes';
+    cfg.covariancewindow = [-0.2, 0.0];
+    timelock_eeg_noise = ft_timelockanalysis(cfg, data_eeg_reref);
 
-Contrary to the FieldTrip tutorial we need to disable the nonlinear parameter search as FieldTrip cannot sample the leadfield at arbitrary locations. However, we use a fine grid of points to compensate for this. Additiona
+Contrary to the FieldTrip tutorial, we will not be fitting (two symmetric) dipoles as we cannot use the symmetry constraint with a leadfield from SimNIBS - and fitting a single dipole to this data probably does not make sense as the auditory stimulation is binaural. Instead, we will compute a minimum norm (distributed) source estimate.
+
+.. note:: There are a few limitations on dipole estimates in FieldTrip when using a (precomputed) leadfield from SimNIBS. For example, the symmetry constraint and the nonlinear parameter search cannot be used as FieldTrip is not able to sample the leadfield at arbitrary locations (although, technically, this `is` possible, it is not currently supported).
+
+.. code-block:: matlab
 
     load fem_sub/sub_leadfield_eeg_montage_subsampling-40000-fwd.mat
     load fem_sub/sub_leadfield_eeg_montage_subsampling-40000-src.mat
 
     fwd.tri = src.tri;
 
-    cfg = [];
-    cfg.latency = [0.080 0.110];
-    cfg.gridsearch = 'yes';
-    cfg.nonlinear = 'no';
-    % cfg.numdipoles = 2;
-    % cfg.symmetry = 'x';
-    cfg.sourcemodel = fwd;
-    cfg.headmodel = [];
-    cfg.senstype = 'eeg';
-    cfg.channel = 'all';
-    source_eeg = ft_dipolefitting(cfg, timelock_eeg_all);
+    cfg               = [];
+    cfg.method        = 'mne';
+    cfg.sourcemodel   = fwd;
+    cfg.mne.prewhiten = 'yes';
+    cfg.mne.lambda    = 3;
+    cfg.mne.scalesourcecov = 'yes';
+    cfg.mne.noisecov = timelock_eeg_noise.cov;
+    source = ft_sourceanalysis(cfg, timelock_eeg_all);
 
-Plot the location of the estimated dipole on the MR image. Since the data is probably generated by two dipoles (left and right hemispheres), fitting a single dipole will not give great results as it has to fit the field from both sources, hence ends up somewhere in the middle.
+Plot the estimated source power at 0.1 s after the presentation of the stimulus.
 
-    mri_orig = ft_read_mri('T1.nii.gz');
+.. code-block:: matlab
 
-    cfg = [];
-    cfg.resolution = 1;
-    cfg.xrange = [-100 100];
-    cfg.yrange = [-110 140];
-    cfg.zrange = [-80 120];
-    mri_resliced = ft_volumereslice(cfg, mri_orig);
+    % the 76th time point correspondings to 0.1 s post simulus
+    m = source.avg.pow(:, 76);
 
-    cfg = [];
-    cfg.location = source_eeg.dip.pos(1,:);
-    ft_sourceplot(cfg, mri_resliced);
+    figure;
+    ft_plot_mesh(source, 'vertexcolor', m);
+    view([0 90]);
+    h = light;
+    set(h, 'position', [0 1 0.2]);
+    lighting gouraud;
+    material dull;
+
+.. figure:: ../../images/tutorial_eeg/fieldtrip/eeg_mne_estimate.jpg
+
+    Minimum norm source estimate.
+
+This is not perfect but it seems to align reasonably well with the symmetric dipole estimate from `this <https://www.fieldtriptoolbox.org/workshop/natmeg2014/dipolefitting/#compare-the-eeg-and-meg-dipole-fits>`_ section of the original FieldTrip tutorial.
 
 
 MNE-Python
 ----------
+
+.. attention:: Currently, exporting forward solutions to MNE-Python is only compatible with MNE-Python <= 1.5.
 
 First, make sure MNE-Python is installed in the same environment as SimNIBS. If you used the installer, you can call ``simnibs_python``
 
@@ -213,9 +232,9 @@ First, make sure MNE-Python is installed in the same environment as SimNIBS. If 
 
     simnibs_python -m pip install mne==1.5 h5io scikit-learn pyvistaqt
 
-otherwise, ensure you are using the appropriate python interpreter and simply ``python`` (if you are using ``conda`` you can of course also install MNE-Python that way!). A miminal check that everything is working is ``simnibs_python -c "import mne, simnibs; print('OK')"``.
+otherwise, ensure you are using the appropriate python interpreter and simply use ``python`` instead of ``simnibs_python`` (if you are using ``conda`` you can of course also install MNE-Python that way!). A miminal check that everything is working is ``simnibs_python -c "import mne, simnibs; print('OK')"``.
 
-Next, download MNE-Python's example data. We will use the data of subject called `sample`. We start by converting the MRI `T1.mgz` to nifti.
+Next, download MNE-Python's example data. We will use the data of the subject called `sample`. We start by converting the MRI `T1.mgz` to NIfTI (please set the correct path to the MNE example data).
 
 .. code-block:: python
 
@@ -229,7 +248,6 @@ Next, download MNE-Python's example data. We will use the data of subject called
     from mne.coreg import Coregistration
     from mne.io import read_info
 
-    out_dir = Path("/my/out/dir")
     mne_data_path = Path("/path/to/mne_data")
 
     # this should download the data if not already present
@@ -242,7 +260,7 @@ Next, download MNE-Python's example data. We will use the data of subject called
     # sets qform code to 2 which is fine
     nii.set_qform(nii.affine)
     nii.set_sform(nii.affine)
-    nii.to_filename(out_dir / "T1.nii.gz")
+    nii.to_filename("T1.nii.gz")
 
 Then run CHARM. We use the ``--fs-dir`` option which grabs the cortical surfaces from a FreeSurfer run rather than estimate them as part of CHARM.
 
@@ -250,7 +268,7 @@ Then run CHARM. We use the ``--fs-dir`` option which grabs the cortical surfaces
 
     charm sample T1.nii.gz --forceqform --fs-dir /path/to/MNE-sample-data/subjects/sample
 
-Perform coregistration using MNE-Python (remember to modify the paths).
+Perform coregistration using MNE-Python.
 
 .. code-block:: python
 
@@ -281,13 +299,16 @@ Perform coregistration using MNE-Python (remember to modify the paths).
     )
 
     # save the updated info object, i.e., containing only EEG electrodes
-    mne.io.write_info(out_dir / "info.fif", info)
+    mne.io.write_info("info.fif", info)
 
-    _, _, mri_ras_t, _, _ = mne._freesurfer._read_mri_info("/home/jesperdn/nobackup/mne_data/MNE-sample-data/subjects/sample/mri/T1.mgz")
+    _, _, mri_ras_t, _, _ = mne._freesurfer._read_mri_info(subjects_dir / subject / "mri" / "T1.mgz")
     trans = mne.transforms.combine_transforms(coreg.trans, mri_ras_t, coreg.trans["from"], mri_ras_t["to"])
-    # if simnibs version is < 4.5 then this is needed
-    # trans["to"] = coreg.trans["to"]
-    mne.write_trans(out_dir / 'head_ras-trans.fif', trans)
+
+    # The transformation is actually head <-> RAS but MNE-Python expects
+    # head <-> MRI (FreeSurfer surface RAS)
+    trans["to"] = coreg.trans["to"]
+
+    mne.write_trans('head_ras-trans.fif', trans)
 
 Check the coregistration
 
@@ -316,7 +337,7 @@ Convert the electrode location information to a format that SimNIBS understands 
 
 .. code-block:: console
 
-    prepare_eeg_montage mne eeg_montage.csv /path/to/MNE-sample-data/MEG/sample/sample_audvis_raw.fif /path/to/head_ras-trans.fif
+    prepare_eeg_montage mne eeg_montage.csv info.fif head_ras-trans.fif
 
 This will create `eeg_montage.csv` which should contain the positions of the electrodes *in subject MRI space*.
 
@@ -332,7 +353,7 @@ Finally, prepare it for EEG.
 
     prepare_eeg_forward mne sample fem_sample/sample_leadfield_eeg_montage.hdf5 info.fif head_ras-trans.fif --fsaverage 160
 
-We should now have the following files in the `fem_subject` directory
+We should now have the following files in the `fem_sample` directory
 
 .. code-block:: console
     :caption: MNE-Python
@@ -343,7 +364,8 @@ We should now have the following files in the `fem_subject` directory
 
 for MNE-Python.
 
-### Source Analysis
+Source Analysis
+^^^^^^^^^^^^^^^
 
 Now, use the forward model that we just created to do source location with MNE-Python. The following is adapted from `this <https://mne.tools/1.5/auto_tutorials/inverse/70_eeg_mri_coords.html>`_ tutorial to use EEG data and the forward model from SimNIBS.
 
@@ -370,11 +392,13 @@ Read forward solution, make inverse operator, and apply it.
 .. code-block:: python
 
     # Read forward solution created with SimNIBS
-    fname_fwd = "/home/jesperdn/nobackup/simnibs-eeg-tutorial/mne/fem_sample/sample_leadfield_eeg_montage-fwd.fif"
+    fname_fwd = "fem_sample/sample_leadfield_eeg_montage-fwd.fif"
     fwd = mne.read_forward_solution(fname_fwd)
 
+    method = "dSPM"
+
     inv = mne.minimum_norm.make_inverse_operator(evoked.info, fwd, cov, verbose=True)
-    stc, residual = mne.minimum_norm.apply_inverse(evoked, inv, method="dSPM", return_residual=True)
+    stc, residual = mne.minimum_norm.apply_inverse(evoked, inv, method=method, return_residual=True)
 
     fig, ax = plt.subplots()
     ax.plot(1e3 * stc.times, stc.data[::100, :].T)
@@ -391,7 +415,7 @@ Read forward solution, make inverse operator, and apply it.
 
     Residual of evoked response.
 
-Plot the source time course and location. Note that this plot only works because we used ``--fs-dir`` with CHARM! Otherwise, the freesurfer and CHARM surfaces would differ and this function uses the FS surfaces for plotting.
+Plot the source time course and location. Note that this plot only works because we used ``--fs-dir`` with CHARM! Otherwise, the FreeSurfer and CHARM surfaces would differ and this function uses the FreeSurfer surfaces for plotting.
 
 .. code-block:: python
 

@@ -104,9 +104,6 @@ class Templates:
         self.mni_volume_upper_head_mask = os.path.join(
             self._resources, 'templates', 'MNI152_T1_1mm_upper_head_mask.nii.gz')
 
-        # SimNIBS logo
-        self.simnibs_logo = os.path.join(self._resources, "simnibslogo.msh")
-
         # labeling_LUT
         self.labeling_LUT = os.path.join(
             self._resources, "labeling_FreeSurferColorLUT.txt"
@@ -129,6 +126,11 @@ class Templates:
         )
         self.brainsprite = os.path.join(
             SIMNIBSDIR, "_internal_resources", "html", "brainsprite.min.js"
+        )
+
+        # SimNIBS logo
+        self.simnibs_logo = os.path.join(
+            SIMNIBSDIR, "_internal_resources", "simnibslogo.png"
         )
 
         self.eeg_montage_dir = Path(SIMNIBSDIR) / "resources" / "ElectrodeCaps_MNI"

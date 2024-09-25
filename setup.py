@@ -46,20 +46,6 @@ if not is_conda:
 #### Setup compilation arguments
 
 if sys.platform == 'win32':
-    # PETSC
-    petsc_libs = ['libpetsc', 'msmpi']
-    petsc_include = [
-        np.get_include(),
-        'simnibs/external/include/win/petsc',
-        'simnibs/external/include/win/hypre',
-        'simnibs/external/include/win/mpi',
-    ]
-    petsc_dirs = ['simnibs/external/lib/win']
-
-    petsc_runtime = None
-    petsc_extra_link_args = None
-    petsc_compile_args = None
-
     # CGAL
     cgal_dirs = [os.path.join(os.environ['CONDA_PREFIX'], 'Library', 'lib')]
     cgal_libs = ['mpfr', 'gmp', 'zlib', 'tbb', 'tbbmalloc']
@@ -87,17 +73,6 @@ if sys.platform == 'win32':
     cat_compile_args = None
 
 elif sys.platform == 'linux':
-    # PETSC
-    petsc_libs = ['petsc']
-    petsc_include = [
-        np.get_include(),
-        'simnibs/external/include/linux/petsc'
-    ]
-    petsc_dirs = ['simnibs/external/lib/linux']
-    petsc_runtime = ['$ORIGIN/../external/lib/linux']
-    petsc_extra_link_args = None
-    petsc_compile_args = None
-
     # CGAL
     cgal_dirs = [os.path.join(os.environ['CONDA_PREFIX'], 'lib')]
     cgal_libs = ['mpfr', 'gmp', 'z', 'tbb', 'tbbmalloc', 'pthread']
@@ -105,7 +80,7 @@ elif sys.platform == 'linux':
         np.get_include(),
         os.path.join(os.environ['CONDA_PREFIX'], 'include','eigen3'),
     ]
-    cgal_runtime = ['$ORIGIN/../../external/lib/linux']
+    cgal_runtime = None
     # Add -Os -flto for much smaller binaries
     cgal_compile_args = [
         '-Os', '-flto',
@@ -125,20 +100,8 @@ elif sys.platform == 'linux':
     ]
 
 elif sys.platform == 'darwin':
-    # PETSC
-    petsc_libs = ['petsc']
-    petsc_include = [
-        np.get_include(),
-        'simnibs/external/include/osx/petsc'
-    ]
-    petsc_dirs = ['simnibs/external/lib/osx']
-    petsc_runtime = None
-    # add RPATH as the _runtime argument does not work in MacOS, likely bug in setuptools
-    petsc_extra_link_args = ['-Wl,-rpath,@loader_path/../external/lib/osx']
-    petsc_compile_args = None
-
     # CGAL
-    cgal_dirs = None
+    cgal_dirs = [os.path.join(os.environ['CONDA_PREFIX'], 'lib')]
     cgal_libs = ['mpfr', 'gmp', 'z']
     cgal_include = [
         np.get_include(),
@@ -150,10 +113,7 @@ elif sys.platform == 'darwin':
         '-stdlib=libc++',
     ]
     cgal_mesh_macros += [('NOMINMAX', None)]
-    cgal_link_args = [
-        '-stdlib=libc++',
-        '-Wl,-rpath,@loader_path/../../external/lib/osx'
-    ]
+    cgal_link_args = ['-stdlib=libc++']
 
     # CAT
     cat_compile_args = None
@@ -182,17 +142,7 @@ thickness = Extension(
     ["simnibs/segmentation/_thickness.pyx"],
     include_dirs=[np.get_include()]
 )
-petsc_solver = Extension(
-    'simnibs.simulation.petsc_solver',
-    sources=["simnibs/simulation/petsc_solver.pyx"],
-    depends=["simnibs/simulation/_solver.c"],
-    include_dirs=petsc_include,
-    library_dirs=petsc_dirs,
-    libraries=petsc_libs,
-    runtime_library_dirs=petsc_runtime,
-    extra_compile_args=petsc_compile_args,
-    extra_link_args=petsc_extra_link_args,
-)
+
 # I separated the CGAL functions into several files for two reasons
 # 1. Reduce memory consumption during compilation in Linux
 # 2. Fix some compilation problems in Windows
@@ -252,7 +202,6 @@ extensions = [
     marching_cubes_lewiner_cy,
     cat_c_utils,
     thickness,
-    petsc_solver,
     create_mesh_surf,
     create_mesh_vol,
     cgal_misc,

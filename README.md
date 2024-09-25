@@ -1,6 +1,6 @@
 # SimNIBS
 
-![SimNIBS Fronpage](docs/_static/gallery/simnibs_workflow.png)
+![SimNIBS Frontpage](docs/_static/gallery/simnibs_workflow.png)
 The main goal of SimNIBS is to calculate electric fields caused by Transcranial Electrical Stimulation (TES) and Transcranial Magnetic Stimulation (TMS).
  
 The pipeline is divided in three parts:
@@ -30,23 +30,10 @@ python -m pip install --editable .
 python simnibs/cli/link_external_progs.py
 ```
 
-## Authors
-Please see [the SimNIBS website](./docs/contributors.rst) for a complete list of contributors.
-
 ## 3rd Party Files
-We have included code or binaries from the following project to this repository:
-* [Gmsh](https://www.gmsh.info)
-* [meshfix](https://github.com/MarcoAttene/MeshFix-V2.1)
-* [CAT12](http://www.neuro.uni-jena.de/cat/)
-* [PETSc](https://www.mcs.anl.gov/petsc/)
-* [HYPRE](https://github.com/hypre-space/hypre)
-* [MPICH](https://www.mpich.org/)
-* [MSMPI](https://github.com/Microsoft/Microsoft-MPI)
-* [CYGWIN](https://www.cygwin.com/)
-* [pygpc](https://github.com/konstantinweise/pygpc)
-* [PyPardiso](https://github.com/haasad/PyPardisoProject)
-* [CGAL](https://www.cgal.org/)
-* [Mmg](https://www.mmgtools.org/)
-* [FMM3D](https://github.com/flatironinstitute/FMM3D)
+SimNIBS includes open-source and free code and binaries from several projects and research groups. Please see the [3RD-PARTY.md](3RD-PARTY.md) file for details.
 
-For a full list of files and licenses, please see the [3RD-PARTY.md](3RD-PARTY.md) file
+## Copyright and license
+Copyright (c) SimNIBS developers 2024 under the [GPL v3 license](LICENSE.txt)
+
+Please see [the SimNIBS website](./docs/contributors.rst) for a complete list of contributors.

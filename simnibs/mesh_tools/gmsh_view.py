@@ -33,11 +33,11 @@ class Visualization:
     merge: list
         Files to be merged
     '''
-    def __init__(self, mesh, cond=None):
+    def __init__(self, mesh, cond=None,add_logo=False):
         if isinstance(mesh, str):
             if not mesh.endswith('.msh'):
                 raise ValueError('mesh file name should end with .msh')
-        self.General = General()
+        self.General = General(add_logo)
         self.Mesh = Mesh()
         self.View = View()
         self.PhysicalNames = PhysicalNames(mesh, cond)
@@ -271,7 +271,7 @@ class General(object):
     ------------
      `Gmsh documentation <http://gmsh.info/doc/texinfo/gmsh.html>`_
     '''
-    def __init__(self, **kwargs):
+    def __init__(self, add_logo = False, **kwargs):
         self.FieldWidth = 449
         self.MaxX = 15.0
         self.MaxY = 150.0
@@ -296,6 +296,12 @@ class General(object):
         self.VisibilityPositionY = 443
         self.VectorType = 1
         self.SmallAxes = 1
+        if add_logo:
+            self.BackgroundImageFileName = ".lg.png";
+            self.BackgroundImageWidth = 160;
+            self.BackgroundImageHeight = 27;
+            self.BackgroundImagePositionX = -180;
+            self.BackgroundImagePositionY = 20;
         self.__dict__.update(kwargs)
 
     def __str__(self):
@@ -308,7 +314,11 @@ class General(object):
         from . import gmsh
         for k, v in self.__dict__.items():
             name = 'General.{0}'.format(k)
-            gmsh.option.setNumber(name, v)
+            if isinstance(v, str):
+                gmsh.option.setString(name, v)
+            else:
+                gmsh.option.setNumber(name, v)
+            
 
 class Mesh(object):
     ''' Mesh Gmsh visualization options.

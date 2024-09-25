@@ -21,7 +21,7 @@ opt.e_postproc = 'magn';                                 % postprocessing of e-f
 electrode_layout = opt_struct('ElectrodeArrayPair');     % Pair of TES electrode arrays (here: 1 electrode per array)
 electrode_layout.length_x = [70];                        % x-dimension of electrodes
 electrode_layout.length_y = [50];                        % y-dimension of electrodes
-electrode_layout.dirichlet_correction_detailed = false;  % account for inhomogenous current distribution at electrode-skin interface (slow)
+electrode_layout.dirichlet_correction_detailed = false;  % account for inhomogenous current distribution at electrode-skin interface (slow, but "true" is recommended for focality optimization for large electrodes)
 electrode_layout.current = [0.002, -0.002];              % electrode currents
 opt.electrode = electrode_layout;
 

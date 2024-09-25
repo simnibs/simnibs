@@ -2,6 +2,9 @@ import os
 import time
 import copy
 import logging
+import platform
+import warnings
+
 import numpy as np
 from scipy import sparse
 
@@ -84,19 +87,20 @@ class OnlineFEM:
         # True: interpolate the dadt field using positions (coordinates) of elements centroids
         # False: interpolate the dadt field using positions (coordinates) of nodes
         self.useElements = useElements
-        
-        if solver_options == "mumps" or solver_options == "pardiso":
-            self.solver_options = solver_options
-        else:
-            self.solver_options = "" # "" will use PETsc with DEFAULT_SOLVER_OPTIONS from fem.py
-            
+
+        if platform.system() == "Darwin" and solver_options == "pardiso":
+            warnings.warn("solver `pardiso` was specified but MKL PARDISO is not available for Darwin systems; falling back to MUMPS.")
+            solver_options = "mumps"
+
+        self.solver_options = solver_options
+
         # creating logger
         if fn_logger is not None:
             self._logging = True
             self._set_logger(fn_logger)
         else:
             self._logging = False
-            
+
         self.solver_loglevel = solver_loglevel
 
         if not cpus is None:
@@ -114,7 +118,7 @@ class OnlineFEM:
             set_num_threads(int(cpus))
             from numba import get_num_threads
             logger.info(f"Numba reports {get_num_threads()} threads available")
-        
+
         # read mesh or store in self
         if type(mesh) is str:
             self.mesh = mesh_io.read_msh(mesh)
@@ -148,7 +152,7 @@ class OnlineFEM:
 
             if coil is None:
                 self.coil = TmsCoil.from_file(self.fn_coil)
-                
+
                 if self._logging:
                     logger.info(f'Loaded coil from file: {self.fn_coil}')
 
@@ -160,7 +164,7 @@ class OnlineFEM:
     def _set_logger(self,log_fn):
         """
         Set-up loggger to write to a file
-    
+
         Parameters
         ----------
         log_fn: str, or bool
@@ -307,7 +311,7 @@ class OnlineFEM:
 
             #reshaped_node_numbers=self.reshaped_node_numbersT,
             #useElements=self.useElements
-            
+
             # isotropic
             if self.cond.ndim == 1:
                 b = sumf2(x=self.force_integrals, y=self.dadt, w=self.reshaped_node_numbers)
@@ -494,7 +498,7 @@ class OnlineFEM:
         denom_factor = 100
         n_wrong_current_signs = [0]
 
-        while maxrelerr > th_maxrelerr or n_wrong_current_signs[-1] / n_nodes_total > th_wrong_current_sign:    
+        while maxrelerr > th_maxrelerr or n_wrong_current_signs[-1] / n_nodes_total > th_wrong_current_sign:
             if self._logging:
                 if j == 0:
                     logger.debug(
@@ -756,7 +760,7 @@ class OnlineFEM:
             # # set the force integrals. We use the force integrals to assemble the right hand side force vector
             if self.cond.ndim == 1:
                 self.force_integrals = get_force_integrals(self.volume, self.gradient, self.cond)
-            
+
             self.fem = TMSFEM(mesh=self.mesh,
                               cond=self.cond,
                               solver_options=self.solver_options,
@@ -1133,15 +1137,15 @@ class FemTargetPointCloud:
 
             self.gradient = gradient[self.idx]
             self.node_index_list = mesh_cropped.elm.node_number_list[self.idx] - 1
-            self.n_center = self.center.shape[0]      
+            self.n_center = self.center.shape[0]
         else:
             # determine sF matrix for fast interpolation
             # compute sF matrix
             self._get_sF_matrix(mesh_cropped, self.center, out_fill)
             self.gradient = gradient[self.idx]
             self.node_index_list = mesh_cropped.elm.node_number_list[self.idx] - 1
-            self.n_center = self.center.shape[0]      
-        
+            self.n_center = self.center.shape[0]
+
 
     def calc_fields(self, v, dadt=None, dataType=0):
         """

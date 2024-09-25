@@ -27,7 +27,7 @@ Ernie Extended is an MRI- and CT-derived head model for simulations of extraceph
 
   When using this dataset in a publication, please cite
 
-  Van Hoornweder, S., Cappozzo V., De Herde, L., Puonti, O., Siebner H. R., Meesen, L. J. R., Thielscher, A.,  Head And Shoulders: The Impact Of An Extended Head Model On Transcranial Electric Stimulation Simulation And Optimization
+  Van Hoornweder, S., Cappozzo V., De Herde, L., Puonti, O., Siebner H. R., Meesen, L. J. R., Thielscher, A.,  Head And Shoulders - The Impact Of An Extended Head Model On The Simulation And Optimization Of Transcranial Electric Stimulation, biorxiv, doi: 10.1101/2024.08.29.610251 
 
   The dataset is shared under the CC BY-NC 4.0 license
   

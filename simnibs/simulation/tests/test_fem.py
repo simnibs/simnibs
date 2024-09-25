@@ -12,10 +12,7 @@ import scipy.sparse as sparse
 from ... import SIMNIBSDIR
 from .. import fem
 from .. import analytical_solutions
-from .. import petsc_solver
 from ...mesh_tools import mesh_io
-
-fem._initialize_petsc()
 
 @pytest.fixture
 def sphere3_msh():
@@ -225,26 +222,32 @@ class TestDirichlet:
 
 
 class TestSolve:
-    def test_solve_petsc_diagonal(self):
+    @pytest.mark.parametrize("ksp_type", ["cg"])
+    @pytest.mark.parametrize("pc_type", ["ilu"])
+    def test_solve_petsc_diagonal(self, ksp_type, pc_type):
         n = 5
         A = sparse.diags(2 * np.ones(n)).tocsr()
         b = np.ones(n)
-        options = '-ksp_type cg -pc_type ilu -ksp_rtol 1e-10'
-        x = petsc_solver.petsc_solve(options, A, b).squeeze()
+        ksp = fem.KSPSolver(A, ksp_type, pc_type)
+        x = ksp.solve(b).squeeze()
         assert np.allclose(A.dot(x), b)
 
-    def test_solve_petsc_random(self):
+    @pytest.mark.parametrize("ksp_type", ["gmres"])
+    @pytest.mark.parametrize("pc_type", ["ilu"])
+    def test_solve_petsc_random(self, ksp_type, pc_type):
         np.random.seed(0)
         n = 5
         A = np.random.random((5, 5))
         A += A.T
         A = sparse.csr_matrix(A)
         b = np.ones(n)
-        options = '-ksp_type gmres -pc_type ilu -ksp_rtol 1e-10'
-        x = petsc_solver.petsc_solve(options, A, b).squeeze()
+        ksp = fem.KSPSolver(A, ksp_type, pc_type)
+        x = ksp.solve(b).squeeze()
         assert np.allclose(A.dot(x), b)
 
-    def test_multiple_rhs(self):
+    @pytest.mark.parametrize("ksp_type", ["gmres"])
+    @pytest.mark.parametrize("pc_type", ["ilu"])
+    def test_multiple_rhs(self, ksp_type, pc_type):
         np.random.seed(0)
         n = 5
         A = np.random.random((n, n))
@@ -252,8 +255,8 @@ class TestSolve:
         A = sparse.csr_matrix(A)
         b = np.random.random((n, 3))
         #b = np.ones((n, 3))
-        options = '-ksp_type gmres -pc_type ilu -ksp_rtol 1e-10'
-        x = petsc_solver.petsc_solve(options, A, b)
+        ksp = fem.KSPSolver(A, ksp_type, pc_type)
+        x = ksp.solve(b).squeeze()
         assert np.allclose(A.dot(x), b)
 
 

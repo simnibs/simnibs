@@ -15,6 +15,16 @@ Leadfield-free TES Optimization
 ''''''''''''''''''''''''''''''''
 * TODO
 
+Extended Head Model "Ernie Extended"
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+* `Van Hoornweder, S., Cappozzo V., De Herde, L., Puonti, O., Siebner H. R., Meesen, L. J. R., Thielscher, A.,  Head And Shoulders - The Impact Of An Extended Head Model On The Simulation And Optimization Of Transcranial Electric Stimulation, biorxiv <https://doi.org/10.1101/2024.08.29.610251>`_
+
+Non-Human Primate Models
+''''''''''''''''''''''''''''''''
+* `Mantell KE, Perera ND, Shirinpour S, Puonti O, Xu T, Zimmermann J, Falchier A, Heilbronner SR, Thielscher A, Opitz A (2023)
+  Anatomical details affect electric field predictions for non-invasive brain stimulation in non-human primates. 
+  Neuroimage 279:120343. <https://doi.org/10.1016/j.neuroimage.2023.120343>`_
+
 Version 4.1
 -----------
 

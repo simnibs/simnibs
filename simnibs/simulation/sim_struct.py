@@ -195,10 +195,10 @@ class SESSION(object):
         if not self.tissues_in_niftis:
             self.tissues_in_niftis = [2]
 
-        logger.info('Head Mesh: {0}'.format(self.fnamehead))
-        logger.info('Subject Path: {0}'.format(self.subpath))
         self.pathfem = os.path.abspath(os.path.expanduser(self.pathfem))
-        logger.info('Simulation Folder: {0}'.format(self.pathfem))
+        logger.info(f'Head Mesh:          {self.fnamehead}')
+        logger.info(f'Subject Path:       {self.subpath}')
+        logger.info(f'Simulation Folder:  {self.pathfem}')
 
         if os.path.isfile(self.fnamehead):
             mesh = mesh_io.read_msh(self.fnamehead)
@@ -1349,16 +1349,16 @@ class POSITION(object):
         """
         # Generate dict from instance variables (excluding variables starting with _ or __)
         settings = {
-            key:value for key, value in self.__dict__.items() 
+            key:value for key, value in self.__dict__.items()
             if not key.startswith('__')
             and not key.startswith('_')
-            and not callable(value) 
+            and not callable(value)
             and not callable(getattr(value, "__get__", None))
             and value is not None
         }
 
         return settings
-    
+
     def from_dict(self, settings: dict) -> "POSITION":
         """ Reads parameters from a dict
 
@@ -1740,7 +1740,8 @@ class TDCSLIST(SimuList):
         v = m.view(
             visible_tags=_surf_preferences(m),
             visible_fields=_field_preferences(self.postprocess),
-            cond_list=self.cond)
+            cond_list=self.cond,
+            add_logo=True)
         v.add_merge(el_geo_fn)
         v.add_view(ColormapNumber=10, ColormapAlpha=.5,
                    Visible=1)  # el_currents
@@ -2174,7 +2175,7 @@ class LEADFIELD():
         self.name = ''  # This is here only for leagacy reasons, it doesnt do anything
         self._log_handlers = []
 
-        self.solver_options = ''
+        self.solver_options = None
         if matlab_struct:
             self.read_mat_struct(matlab_struct)
 
@@ -2212,7 +2213,7 @@ class LEADFIELD():
 
         self.fnamehead = os.path.abspath(os.path.expanduser(self.fnamehead))
         if not os.path.isfile(self.fnamehead):
-            raise IOError('Cannot locate head mesh file: %s' % self.fnamehead)
+            raise IOError(f'Cannot locate head mesh file: {self.fnamehead}')
 
         if not os.path.isdir(self.subpath):
             logger.warning('Cannot locate subjects m2m folder')
@@ -2222,10 +2223,10 @@ class LEADFIELD():
         if not self.fname_tensor:
             self.fname_tensor = sub_files.tensor_file
 
-        logger.info('Head Mesh: {0}'.format(self.fnamehead))
-        logger.info('Subject Path: {0}'.format(self.subpath))
         self.pathfem = os.path.abspath(os.path.expanduser(self.pathfem))
-        logger.info('Simulation Folder: {0}'.format(self.pathfem))
+        logger.info(f'Head Mesh:          {self.fnamehead}')
+        logger.info(f'Subject Path:       {self.subpath}')
+        logger.info(f'Simulation Folder:  {self.pathfem}')
 
         self.mesh = mesh_io.read_msh(self.fnamehead)
 
