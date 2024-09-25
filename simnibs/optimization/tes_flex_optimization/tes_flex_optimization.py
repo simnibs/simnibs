@@ -1698,6 +1698,113 @@ class TesFlexOptimization:
             List [n_channel_stim] containing dicts with electrode channel IDs as keys and node indices.
         """
 
+        # determine node coords on skin surface of electrodes
+        # afterwards, this is a good entry point to determine the distance to the outer boundary of the valid
+        # skin region and between the electrodes in order to quantify the "distance" to the constrained region
+        node_coords_list, node_idx_dict, electrode_pos_valid = self.get_node_coords_from_electrode_pos(
+            electrode_pos=electrode_pos
+        )
+
+        if type(node_coords_list) is str:
+            return node_coords_list, electrode_pos_valid
+
+        # check if distance between electrodes is sufficient
+        valid_str, electrode_pos_valid = check_electrode_distance(
+            node_coords_list=node_coords_list,
+            electrode_pos_valid=electrode_pos_valid,
+            n_ele_free=self.n_ele_free,
+            n_channel_stim=self.n_channel_stim,
+            min_electrode_distance=self.min_electrode_distance
+        )
+
+        if type(valid_str) is str:
+            return valid_str, electrode_pos_valid
+
+        # save electrode_pos in ElectrodeArray instances
+        for i_channel_stim in range(self.n_channel_stim):
+            for i_array, _electrode_array in enumerate(
+                    self.electrode[i_channel_stim]._electrode_arrays
+            ):
+                _electrode_array.electrode_pos = electrode_pos[i_channel_stim][i_array]
+
+        # estimate optimal electrode currents from previous simulations
+        for i_channel_stim in range(self.n_channel_stim):
+            if self.electrode[i_channel_stim]._current_estimator is not None:
+
+                # estimate optimal currents electrode wise
+                currents_estimate = self.electrode[i_channel_stim].estimate_currents(
+                    electrode_pos[i_channel_stim]
+                )
+
+                # write currents in electrodes
+                if currents_estimate is not None:
+                    currents_estimate = currents_estimate.flatten()
+                    for _electrode_array in self.electrode[
+                        i_channel_stim
+                    ]._electrode_arrays:
+                        for _ele in _electrode_array.electrodes:
+                            mask_estimator = (
+                                                     self.electrode[i_channel_stim]._current_estimator.ele_id
+                                                     == _ele.ele_id
+                                             ) * (
+                                                     self.electrode[
+                                                         i_channel_stim
+                                                     ]._current_estimator.channel_id
+                                                     == _ele.channel_id
+                                             )
+                            _ele.ele_current = currents_estimate[mask_estimator]
+            else:
+                # reset to original currents
+                for _electrode_array in self.electrode[i_channel_stim]._electrode_arrays:
+                    for _ele in _electrode_array.electrodes:
+                        _ele.ele_current = _ele.ele_current_init
+
+                self.electrode[i_channel_stim].compile_node_arrays()
+
+        # compile node arrays
+        for i_channel_stim in range(self.n_channel_stim):
+            self.electrode[i_channel_stim].compile_node_arrays()
+
+        if plot:
+            fn_electrode_txt = os.path.join(
+                self._detailed_results_folder,
+                f"electrode_coords_nodes_subject_{i_channel_stim}.txt",
+            )
+            np.savetxt(
+                fn_electrode_txt,
+                np.hstack(
+                    (
+                        self.electrode[i_channel_stim]._node_coords,
+                        self.electrode[i_channel_stim]._node_current[
+                        :, np.newaxis
+                        ],
+                    )
+                ),
+            )
+
+        return node_idx_dict
+
+    def get_node_coords_from_electrode_pos(self, electrode_pos):
+        """
+        Determine coordinates of skin surface nodes given the electrode positions
+
+        Parameter
+        ---------
+        electrode_pos : list of list of np.ndarray of float [2 or 3] of length [n_channel_stim][n_ele_free]
+            Spherical coordinates (beta, lambda) and orientation angle (alpha) for each electrode array.
+                      electrode array 1                        electrode array 2
+            [ np.array([beta_1, lambda_1, alpha_1]),   np.array([beta_2, lambda_2, alpha_2]) ]
+
+        Returns
+        -------
+        node_coords_list : list of ndarray [n_array_global_total][n_nodes x 3]
+            List containing arrays of coordinates of nodes for each electrode array
+        node_idx_dict : list of dict
+            List [n_channel_stim] containing dicts with electrode channel IDs as keys and node indices.
+        electrode_pos_valid : list of list containing ndarray of float of len (2) or (3) [n_channel][n_array]
+            List of list containing the ellipsoid position and orientation parameters of the electrode arrays
+        """
+
         electrode_coords_subject = [0 for _ in range(self.n_channel_stim)]
         electrode_pos_valid = [
             [None for _ in range(len(self.electrode[i_channel_stim]._electrode_arrays))]
@@ -1711,6 +1818,9 @@ class TesFlexOptimization:
         cx = []
         cy = []
 
+        # determine electrode coords on ellipsoid
+        ################################################################################################################
+        # loop over channels
         for i_channel_stim in range(self.n_channel_stim):
             # collect all parameters
             start = np.zeros((self.n_ele_free[i_channel_stim], 3))
@@ -1723,61 +1833,68 @@ class TesFlexOptimization:
             distance = []
             alpha = []
 
+            # loop over arrays in channel
             for i_array, _electrode_array in enumerate(
-                self.electrode[i_channel_stim]._electrode_arrays
+                    self.electrode[i_channel_stim]._electrode_arrays
             ):
-                start[i_array, :] = self._ellipsoid.jacobi2cartesian(
-                    coords=electrode_pos[i_channel_stim][i_array][:2]
-                )
-
-                c0, n_tmp[i_array, :] = self._ellipsoid.jacobi2cartesian(
+                # electrode center on ellipsoid (start point for geodesic)
+                start[i_array, :], n_tmp[i_array, :] = self._ellipsoid.jacobi2cartesian(
                     coords=electrode_pos[i_channel_stim][i_array][:2],
                     return_normal=True,
                 )
+
+                # vector in direction of angle beta on ellipsoid (constant lambda)
                 a[i_array, :] = (
-                    self._ellipsoid.jacobi2cartesian(
-                        coords=np.array(
-                            [
-                                electrode_pos[i_channel_stim][i_array][0] - 1e-2,
-                                electrode_pos[i_channel_stim][i_array][1],
-                            ]
+                        self._ellipsoid.jacobi2cartesian(
+                            coords=np.array(
+                                [
+                                    electrode_pos[i_channel_stim][i_array][0] - 1e-2,
+                                    electrode_pos[i_channel_stim][i_array][1],
+                                ]
+                            )
                         )
-                    )
-                    - c0
+                        - start[i_array, :]
                 )
+
+                # vector in direction of angle lambda on ellipsoid (constant beta)
                 b[i_array, :] = (
-                    self._ellipsoid.jacobi2cartesian(
-                        coords=np.array(
-                            [
-                                electrode_pos[i_channel_stim][i_array][0],
-                                electrode_pos[i_channel_stim][i_array][1] - 1e-2,
-                            ]
+                        self._ellipsoid.jacobi2cartesian(
+                            coords=np.array(
+                                [
+                                    electrode_pos[i_channel_stim][i_array][0],
+                                    electrode_pos[i_channel_stim][i_array][1] - 1e-2,
+                                ]
+                            )
                         )
-                    )
-                    - c0
+                        - start[i_array, :]
                 )
                 a[i_array, :] /= np.linalg.norm(a[i_array, :])
                 b[i_array, :] /= np.linalg.norm(b[i_array, :])
 
+                # determine target point from start point (electrode center) into y-direction of electrode
+                # according to selected orientation of array with respect to vector of constant lambda
                 if len(electrode_pos[i_channel_stim][i_array]) > 2:
-                    start_shifted_[i_array, :] = c0 + (
-                        1e-3
-                        * (
-                            (a[i_array, :])
-                            * np.cos(electrode_pos[i_channel_stim][i_array][2])
-                            + (b[i_array, :])
-                            * np.sin(electrode_pos[i_channel_stim][i_array][2])
-                        )
+                    start_shifted_[i_array, :] = start[i_array, :] + (
+                            1e-3
+                            * (
+                                    (a[i_array, :])
+                                    * np.cos(electrode_pos[i_channel_stim][i_array][2])
+                                    + (b[i_array, :])
+                                    * np.sin(electrode_pos[i_channel_stim][i_array][2])
+                            )
                     )
                 else:
-                    start_shifted_[i_array, :] = c0 + 1e-3 * a[i_array, :]
+                    start_shifted_[i_array, :] = start[i_array, :] + 1e-3 * a[i_array, :]
 
+                # vector of array y-direction
                 cy[i_channel_stim][i_array, :] = (
-                    start_shifted_[i_array, :] - start[i_array, :]
+                        start_shifted_[i_array, :] - start[i_array, :]
                 )
                 cy[i_channel_stim][i_array, :] /= np.linalg.norm(
                     cy[i_channel_stim][i_array, :]
                 )
+
+                # vector of array x-direction
                 cx[i_channel_stim][i_array, :] = np.cross(
                     cy[i_channel_stim][i_array, :], -n_tmp[i_array, :]
                 )
@@ -1785,7 +1902,10 @@ class TesFlexOptimization:
                     cx[i_channel_stim][i_array, :]
                 )
 
+                # distances of electrodes in array wrt to center of array for geodesic
                 distance.append(_electrode_array.distance)
+
+                # direction angles of single electrodes wrt array orientation for geodesic
                 if _electrode_array.optimize_alpha:
                     alpha.append(
                         electrode_pos[i_channel_stim][i_array][2]
@@ -1807,8 +1927,8 @@ class TesFlexOptimization:
                 [
                     np.tile(start[i_array, :], (_electrode_array.n_ele, 1))
                     for i_array, _electrode_array in enumerate(
-                        self.electrode[i_channel_stim]._electrode_arrays
-                    )
+                    self.electrode[i_channel_stim]._electrode_arrays
+                )
                 ]
             )
 
@@ -1816,16 +1936,16 @@ class TesFlexOptimization:
                 [
                     i_array * np.ones(_electrode_array.n_ele)
                     for i_array, _electrode_array in enumerate(
-                        self.electrode[i_channel_stim]._electrode_arrays
-                    )
+                    self.electrode[i_channel_stim]._electrode_arrays
+                )
                 ]
             )
 
-            # determine electrode center on ellipsoid
+            # determine electrode center on ellipsoid (run geodesics for each electrode)
             if not (distance == 0.0).all():
                 if sys.platform == 'win32' and self._n_cpu != 1:
                     n_cpu = 1
-                    logger.debug("Restricting geodesic destination calculatoins on Windows to one CPU core.")
+                    logger.debug("Restricting geodesic destination calculations on Windows to one CPU core.")
                 else:
                     n_cpu = self._n_cpu
                 electrode_coords_eli_cart = self._ellipsoid.get_geodesic_destination(
@@ -1834,6 +1954,7 @@ class TesFlexOptimization:
             else:
                 electrode_coords_eli_cart = start
 
+            # normal vector at destinations (electrode locations on ellipsoid)
             n.append(self._ellipsoid.get_normal(coords=electrode_coords_eli_cart))
 
             # transform to ellipsoidal coordinates
@@ -1841,11 +1962,12 @@ class TesFlexOptimization:
                 coords=electrode_coords_eli_cart
             )
 
-            # project coordinates to subject
+            # project electrode coordinates from ellipsoid to subject and stencil out the nodes on the skin surface
+            ############################################################################################################
             tmp_arrays = []
             i_ele = 0
             for i_array, _electrode_array in enumerate(
-                self.electrode[i_channel_stim]._electrode_arrays
+                    self.electrode[i_channel_stim]._electrode_arrays
             ):
                 ele_idx, tmp = ellipsoid2subject(
                     coords=electrode_coords_eli_eli[electrode_array_idx == i_array, :],
@@ -1857,6 +1979,7 @@ class TesFlexOptimization:
                 if len(ele_idx) != len(alpha[electrode_array_idx == i_array]):
                     return (
                         "Electrode position: invalid (not all electrodes in valid skin region)",
+                        node_idx_dict,
                         electrode_pos_valid,
                     )
                 else:
@@ -1867,85 +1990,32 @@ class TesFlexOptimization:
 
                 electrode_coords_subject[i_channel_stim] = np.vstack(tmp_arrays)
 
-                # loop over electrodes and determine node indices
+                # loop over electrodes and determine skin node indices of electrodes
                 for _electrode in _electrode_array.electrodes:
                     if _electrode.type == "spherical":
-                        # mask with a sphere
-                        mask = (
-                            np.linalg.norm(
-                                self._skin_surface.nodes
-                                - electrode_coords_subject[i_channel_stim][i_ele, :],
-                                axis=1,
-                            )
-                            < _electrode.radius
+                        mask, posmat = get_node_mask_spherical_electrode(
+                            node_coords_skin=self._skin_surface.nodes,
+                            ele_coords_center=electrode_coords_subject[i_channel_stim][i_ele, :],
+                            ele_radius=_electrode.radius
                         )
-
-                        # save position of electrode in subject space to posmat field
-                        _electrode.posmat[:3, 3] = electrode_coords_subject[
-                            i_channel_stim
-                        ][i_ele, :]
 
                     elif _electrode.type == "rectangular":
-                        cx_local = np.cross(
-                            n[i_channel_stim][i_ele, :], cy[i_channel_stim][i_array, :]
+                        mask, posmat = get_node_mask_rectangular_electrode(
+                            node_coords_skin=self._skin_surface.nodes,
+                            ele_coords_center=electrode_coords_subject[i_channel_stim][i_ele, :],
+                            ele_dir_y=cy[i_channel_stim][i_array, :],
+                            ele_dir_n=n[i_channel_stim][i_ele, :],
+                            ele_len_x=_electrode.length_x,
+                            ele_len_y=_electrode.length_y
                         )
 
-                        # rotate skin nodes to normalized electrode space
-                        rotmat = np.array(
-                            [
-                                [
-                                    cx_local[0],
-                                    cy[i_channel_stim][i_array, 0],
-                                    n[i_channel_stim][i_ele, 0],
-                                ],
-                                [
-                                    cx_local[1],
-                                    cy[i_channel_stim][i_array, 1],
-                                    n[i_channel_stim][i_ele, 1],
-                                ],
-                                [
-                                    cx_local[2],
-                                    cy[i_channel_stim][i_array, 2],
-                                    n[i_channel_stim][i_ele, 2],
-                                ],
-                            ]
-                        )
-                        center = np.array(
-                            [
-                                electrode_coords_subject[i_channel_stim][i_ele, 0],
-                                electrode_coords_subject[i_channel_stim][i_ele, 1],
-                                electrode_coords_subject[i_channel_stim][i_ele, 2],
-                            ]
-                        )
-
-                        # save position of electrode in subject space to posmat field
-                        _electrode.posmat = np.vstack(
-                            (
-                                np.hstack((rotmat, center[:, np.newaxis])),
-                                np.array([0, 0, 0, 1]),
-                            )
-                        )
-
-                        skin_nodes_rotated = (self._skin_surface.nodes - center) @ rotmat
-
-                        # mask with a box
-                        mask_x = np.logical_and(
-                            skin_nodes_rotated[:, 0] > -_electrode.length_x / 2,
-                            skin_nodes_rotated[:, 0] < +_electrode.length_x / 2,
-                        )
-                        mask_y = np.logical_and(
-                            skin_nodes_rotated[:, 1] > -_electrode.length_y / 2,
-                            skin_nodes_rotated[:, 1] < +_electrode.length_y / 2,
-                        )
-                        mask_z = np.logical_and(
-                            skin_nodes_rotated[:, 2] > -30,
-                            skin_nodes_rotated[:, 2] < +30,
-                        )
-                        mask = np.logical_and(np.logical_and(mask_x, mask_y), mask_z)
                     else:
                         raise AssertionError(
                             "Electrodes have to be either 'spherical' or 'rectangular'"
                         )
+
+                    # save position of electrode in subject space to posmat field
+                    _electrode.posmat = posmat
 
                     # node areas
                     _electrode.node_area = self._skin_surface.nodes_areas[mask]
@@ -1959,7 +2029,9 @@ class TesFlexOptimization:
                         # print("Electrode position: invalid (partly overlaps with invalid skin region)")
                         return (
                             "Electrode position: invalid (partly overlaps with invalid skin region)",
-                            electrode_pos_valid,
+                            node_idx_dict,
+                            electrode_pos_valid
+
                         )
 
                     # save node indices (referring to global mesh)
@@ -1995,115 +2067,7 @@ class TesFlexOptimization:
                 )
                 i_array_global += 1
 
-        # check if electrode distance is sufficient
-        invalid = False
-        i_array_global_lst = np.hstack(
-            [
-                np.arange(self.n_ele_free[i_channel_stim])
-                for i_channel_stim in range(self.n_channel_stim)
-            ]
-        ).astype(int)
-        i_channel_stim_global_lst = np.hstack(
-            [
-                i_channel_stim * np.ones(self.n_ele_free[i_channel_stim])
-                for i_channel_stim in range(self.n_channel_stim)
-            ]
-        ).astype(int)
-        if self.min_electrode_distance is not None and self.min_electrode_distance >= 0:
-            i_array_test_start = 1
-            # start with first array and test if all node coords are too close to other arrays
-            for i_array_global in range(np.sum(self.n_ele_free)):
-                for node_coord in node_coords_list[i_array_global]:
-                    for i_array_test in range(
-                        i_array_test_start, np.sum(self.n_ele_free)
-                    ):
-                        # calculate euclidean distance between node coords
-                        min_dist = np.min(
-                            np.linalg.norm(
-                                node_coords_list[i_array_test] - node_coord, axis=1
-                            )
-                        )
-                        # stop testing if an electrode is too close
-                        if min_dist <= self.min_electrode_distance:
-                            # remove tested array from valid list
-                            electrode_pos_valid[
-                                i_channel_stim_global_lst[i_array_test]
-                            ][i_array_global_lst[i_array_test]] = None
-                            # print("Electrode position: invalid (minimal distance between electrodes too small)")
-                            invalid = True
-
-                i_array_test_start += 1
-
-        if invalid:
-            return (
-                "Electrode position: invalid (minimal distance between electrodes too small)",
-                electrode_pos_valid,
-            )
-
-        # save electrode_pos in ElectrodeArray instances
-        for i_channel_stim in range(self.n_channel_stim):
-            for i_array, _electrode_array in enumerate(
-                self.electrode[i_channel_stim]._electrode_arrays
-            ):
-                _electrode_array.electrode_pos = electrode_pos[i_channel_stim][i_array]
-
-        # estimate optimal electrode currents from previous simulations
-        for i_channel_stim in range(self.n_channel_stim):
-            if self.electrode[i_channel_stim]._current_estimator is not None:
-
-                # estimate optimal currents electrode wise
-                currents_estimate = self.electrode[i_channel_stim].estimate_currents(
-                    electrode_pos[i_channel_stim]
-                )
-
-                # write currents in electrodes
-                if currents_estimate is not None:
-                    currents_estimate = currents_estimate.flatten()
-                    for _electrode_array in self.electrode[
-                        i_channel_stim
-                    ]._electrode_arrays:
-                        for _ele in _electrode_array.electrodes:
-                            mask_estimator = (
-                                self.electrode[i_channel_stim]._current_estimator.ele_id
-                                == _ele.ele_id
-                            ) * (
-                                self.electrode[
-                                    i_channel_stim
-                                ]._current_estimator.channel_id
-                                == _ele.channel_id
-                            )
-                            _ele.ele_current = currents_estimate[mask_estimator]
-            else:
-                # reset to original currents
-                for _electrode_array in self.electrode[i_channel_stim]._electrode_arrays:
-                    for _ele in _electrode_array.electrodes:
-                        _ele.ele_current = _ele.ele_current_init
-
-                self.electrode[i_channel_stim].compile_node_arrays()
-
-        # compile node arrays
-        for i_channel_stim in range(self.n_channel_stim):
-            self.electrode[i_channel_stim].compile_node_arrays()
-
-        if plot:
-            fn_electrode_txt = os.path.join(
-                self._detailed_results_folder,
-                f"electrode_coords_nodes_subject_{i_channel_stim}.txt",
-            )
-            np.savetxt(
-                fn_electrode_txt,
-                np.hstack(
-                    (
-                        self.electrode[i_channel_stim]._node_coords,
-                        self.electrode[i_channel_stim]._node_current[
-                            :, np.newaxis
-                        ],
-                    )
-                ),
-            )
-                    
-        return node_idx_dict
-
+        return node_coords_list, node_idx_dict, electrode_pos_valid
 
     def update_field(self, electrode_pos, plot=False):
         """
@@ -2628,3 +2592,193 @@ def write_visualization(folder_path, base_file_name, roi_list, results_list, e_p
     
     return fn_vis, m_head, m_surf
 
+
+def get_node_mask_spherical_electrode(node_coords_skin, ele_coords_center, ele_radius):
+    """
+    Return mask of skin nodes included in the spherical electrode.
+
+    Parameters
+    ----------
+    node_coords_skin : ndarray of float (n_node_coords_skin, 3)
+        Coordinates of skin nodes
+    ele_coords_center : ndarray of float (3)
+        Coordinates (x,y,z) of electrode center
+    ele_radius : float
+        Radius of electrode
+
+    Returns
+    -------
+    mask : ndarray of bool (node_coords_skin.shape[0]])
+        Node mask of spherical electrode for node_coords_skin
+    posmat : ndarray of float (4, 4)
+        Matrix containing the position and orientation of the electrode
+    """
+
+    # mask with a sphere
+    mask = (
+            np.linalg.norm(
+                node_coords_skin - ele_coords_center,
+                axis=1,
+            )
+            < ele_radius
+    )
+
+    posmat = np.eye(4)
+    posmat[:3, 3] = ele_coords_center
+
+    return mask, posmat
+
+
+def get_node_mask_rectangular_electrode(node_coords_skin, ele_coords_center,
+                                        ele_dir_y, ele_dir_n,
+                                        ele_len_x, ele_len_y
+                                        ):
+    """
+    Return mask of skin nodes included in a rectangular electrode.
+
+    Parameters
+    ----------
+    node_coords_skin : ndarray of float (n_node_coords_skin, 3)
+        Coordinates of skin nodes
+    ele_coords_center : ndarray of float (3)
+        Coordinates (x,y,z) of electrode center
+    ele_dir_y : ndarray of float (3)
+        Direction vector of electrode y-direction
+    ele_dir_n : ndarray of float (3)
+        Direction vector of electrode pointing into normal direction wrt skin surface
+    ele_len_x : float
+        Dimension of electrode in x-direction
+    ele_len_y : float
+        Dimension of electrode in y-direction
+
+    Returns
+    -------
+    mask : np.array of bool [node_coords_skin.shape[0]]
+        Node mask of spherical electrode for node_coords_skin
+    posmat :
+    """
+    n = ele_dir_n
+    cy = ele_dir_y
+    center = ele_coords_center
+
+    cx_local = np.cross(n, cy)
+
+    # rotate skin nodes to normalized electrode space
+    rotmat = np.array(
+        [
+            [
+                cx_local[0],
+                cy[0],
+                n[0],
+            ],
+            [
+                cx_local[1],
+                cy[1],
+                n[1],
+            ],
+            [
+                cx_local[2],
+                cy[2],
+                n[2],
+            ],
+        ]
+    )
+
+    # save position of electrode in subject space to posmat field
+    posmat = np.vstack(
+        (
+            np.hstack((rotmat, center[:, np.newaxis])),
+            np.array([0, 0, 0, 1]),
+        )
+    )
+
+    skin_nodes_rotated = (node_coords_skin - center) @ rotmat
+
+    # mask with a box
+    mask_x = np.logical_and(
+        skin_nodes_rotated[:, 0] > -ele_len_x / 2,
+        skin_nodes_rotated[:, 0] < +ele_len_x / 2,
+    )
+    mask_y = np.logical_and(
+        skin_nodes_rotated[:, 1] > -ele_len_y / 2,
+        skin_nodes_rotated[:, 1] < +ele_len_y / 2,
+    )
+    mask_z = np.logical_and(
+        skin_nodes_rotated[:, 2] > -30,
+        skin_nodes_rotated[:, 2] < +30,
+    )
+    mask = np.logical_and(np.logical_and(mask_x, mask_y), mask_z)
+
+    return mask, posmat
+
+
+def check_electrode_distance(node_coords_list, electrode_pos_valid, n_ele_free, n_channel_stim,
+                             min_electrode_distance):
+    """
+    Checks if the distance between electrode positions is sufficient.
+
+    Parameter
+    ---------
+    node_coords_list : list of ndarray [n_array_global_total][n_nodes x 3]
+        List containing arrays of coordinates of nodes for each electrode array
+    electrode_pos_valid : list of list containing ndarray of float of len (2) or (3) [n_channel][n_array]
+        List of list containing the ellipsoid position and orientation parameters of the electrode arrays
+    n_ele_free : list of int [n_channel_stim]
+        Number of free moveable electrode arrays per channel
+    n_channel_stim : int
+        Number of stimulation channels
+    min_electrode_distance : float
+        Minimum allowable distance between electrodes
+
+    Returns
+    -------
+    str or bool:
+        Error message in case of invalid electrode position
+    electrode:pos_valid : list of list of ndarrays of float of len (2) or (3) [n_channel][n_array]
+        Updated electrode_pos_valid list. Contains None at identified invalid electrode positions.
+    """
+    invalid = False
+    i_array_global_lst = np.hstack(
+        [
+            np.arange(n_ele_free[i_channel_stim])
+            for i_channel_stim in range(n_channel_stim)
+        ]
+    ).astype(int)
+    i_channel_stim_global_lst = np.hstack(
+        [
+            i_channel_stim * np.ones(n_ele_free[i_channel_stim])
+            for i_channel_stim in range(n_channel_stim)
+        ]
+    ).astype(int)
+    if min_electrode_distance is not None and min_electrode_distance >= 0:
+        i_array_test_start = 1
+        # start with first array and test if all node coords are too close to other arrays
+        for i_array_global in range(np.sum(n_ele_free)):
+            for node_coord in node_coords_list[i_array_global]:
+                for i_array_test in range(
+                        i_array_test_start, np.sum(n_ele_free)
+                ):
+                    # calculate euclidean distance between node coords
+                    min_dist = np.min(
+                        np.linalg.norm(
+                            node_coords_list[i_array_test] - node_coord, axis=1
+                        )
+                    )
+                    # stop testing if an electrode is too close
+                    if min_dist <= min_electrode_distance:
+                        # remove tested array from valid list
+                        electrode_pos_valid[
+                            i_channel_stim_global_lst[i_array_test]
+                        ][i_array_global_lst[i_array_test]] = None
+                        # print("Electrode position: invalid (minimal distance between electrodes too small)")
+                        invalid = True
+
+            i_array_test_start += 1
+
+    if invalid:
+        return (
+            "Electrode position: invalid (minimal distance between electrodes too small)",
+            electrode_pos_valid,
+        )
+    else:
+        return True, electrode_pos_valid
