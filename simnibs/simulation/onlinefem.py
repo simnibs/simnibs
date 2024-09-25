@@ -681,8 +681,8 @@ class OnlineFEM:
                     mask = (electrode._node_channel_id == _channel_id) * (electrode._node_ele_id == _ele_id)
                     I_ele.append(np.sum(electrode._node_current[mask] * electrode._node_area[mask] / np.sum(electrode._node_area[mask])))
 
-            electrode.current_estimator.add_training_data(electrode_pos=np.hstack(electrode_pos),
-                                                          current=np.hstack(I_ele))
+            electrode._current_estimator.add_training_data(electrode_pos=np.hstack(electrode_pos),
+                                                           current=np.hstack(I_ele))
 
         if fn_electrode_txt is not None:
             np.savetxt(fn_electrode_txt, np.hstack((electrode._node_coords, electrode._node_current[:, np.newaxis])))
