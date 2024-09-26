@@ -596,7 +596,7 @@ def run(
 
         logger.info("Writing mesh")
         write_msh(final_mesh, sub_files.fnamehead)
-        v = final_mesh.view(cond_list=cond_utils.standard_cond())
+        v = final_mesh.view(cond_list=cond_utils.standard_cond(), add_logo=True)
         v.write_opt(sub_files.fnamehead)
 
         logger.info("Transforming EEG positions")
