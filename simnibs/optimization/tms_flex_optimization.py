@@ -809,7 +809,7 @@ def _get_fast_intersection_penalty(
             )
             voxel_volume1 = element_voxel_volumes[intersection_pair[1]]
             intersections = scipy.ndimage.map_coordinates(
-                voxel_volume1, indexes_in_vox2, order=order, prefilter=False
+                voxel_volume1.astype(np.float32), indexes_in_vox2, order=order, prefilter=False
             )
             self_intersection_quibic_mm += np.sum(intersections * dither_factors)
 
