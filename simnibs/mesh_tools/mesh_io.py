@@ -2554,7 +2554,7 @@ class Msh:
         directions[:,2] = 1
 
         if pts.ndim == 1:
-            pts = points[None, :]
+            pts = pts[None, :]
         if directions.ndim == 1:
             directions = directions[None, :]
         if not (pts.shape[1] == 3 and directions.shape[1] == 3):
@@ -2881,29 +2881,16 @@ class Msh:
             focality = f.get_focality(focality_cutoffs, 99.9)
             focality_table.append([fn] + [f'{fv:.2e}{units_mesh}' for fv in focality])
 
-        def format_table(table):
-            entry_sizes = np.array([[len(e) for e in row] for row in table])
-            col_sizes = np.max(entry_sizes, axis=0)
-            align_string = ['{:<' + str(cs) + '}' for cs in col_sizes]
-            t = ''
-            for i, row in enumerate(table):
-                t += '|'
-                t += ' |'.join(a_s.format(col) for a_s, col in zip(align_string, row))
-                t += ' |\n'
-                if i == 0:
-                    t += '|' + '|'.join((cs+1) * '-' for cs in col_sizes) + '|\n'
-            return t
-
         string = ''
         string += 'Field Percentiles\n'
         string += '-----------------\n'
         string += 'Top percentiles of the field (or field magnitude for vector fields)\n'
-        string += format_table(percentiles_table)
+        string += _format_table(percentiles_table)
         string += '\n'
         string += 'Field Focality\n'
         string += '---------------\n'
         string += 'Mesh volume or area with a field >= X% of the 99.9th percentile\n'
-        string += format_table(focality_table)
+        string += _format_table(focality_table)
 
         return string
 
@@ -7189,3 +7176,22 @@ def split(m: Msh, iterations: int = 1, hierarchy: tuple[int] = None, skin_tag: i
     tmp_file.close()
 
     return m
+
+
+def _format_table(table):
+    """helper function for Msh.fields_summary and 
+    tes_flex_optimization.get_summary_text
+    
+    converts a table into a string for printing
+    """    
+    entry_sizes = np.array([[len(e) for e in row] for row in table])
+    col_sizes = np.max(entry_sizes, axis=0)
+    align_string = ['{:<' + str(cs) + '}' for cs in col_sizes]
+    t = ''
+    for i, row in enumerate(table):
+        t += '|'
+        t += ' |'.join(a_s.format(col) for a_s, col in zip(align_string, row))
+        t += ' |\n'
+        if i == 0:
+            t += '|' + '|'.join((cs+1) * '-' for cs in col_sizes) + '|\n'
+    return t

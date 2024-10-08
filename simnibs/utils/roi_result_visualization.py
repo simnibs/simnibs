@@ -493,7 +493,11 @@ class RoiResultVisualization:
                 pattern = r"General\.([A-Za-z0-9_\.]+) = ([^;]+);"
                 match = re.search(pattern, line)
                 if match is not None:
-                    setattr(opt.General, match.group(1), match.group(2))
+                    if match.group(1).startswith('Color.'):
+                        hlpKey = match.group(1).split('Color.')[1]
+                        opt.General.Color[hlpKey] = match.group(2)
+                    else:
+                        setattr(opt.General, match.group(1), match.group(2))
                 else:
                     raise IOError()
 

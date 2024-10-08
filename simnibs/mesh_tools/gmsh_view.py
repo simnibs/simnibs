@@ -296,7 +296,7 @@ class General(object):
         self.Color = {'Background': 'White',
                       'Foreground': 'Black'
                       }
-        self.BackgroundGradient = 0;
+        self.BackgroundGradient = 0
         self.FieldWidth = 449
         self.MaxX = 15.0
         self.MaxY = 150.0

@@ -10,7 +10,7 @@ from simnibs.optimization.tes_flex_optimization.tes_flex_optimization import Tes
 from simnibs.utils.matlab_read import dict_from_matlab
 from simnibs.mesh_tools.mesh_io import read_msh
 from simnibs.mesh_tools import surface, mesh_io, gmsh_view
-from simnibs.optimization.tes_flex_optimization.tes_flex_optimization import valid_skin_region, write_visualization
+from simnibs.optimization.tes_flex_optimization.tes_flex_optimization import valid_skin_region, write_visualization, make_summary_text
 from simnibs.optimization.tes_flex_optimization.ellipsoid import Ellipsoid
 from simnibs.utils.file_finder import Templates
 from simnibs.utils.region_of_interest import RegionOfInterest
@@ -634,4 +634,126 @@ class Test_Write_Visualization:
             assert 'E' not in field_names
             assert 'magnE' not in field_names
             assert len(set(field_names_ref).difference(field_names)) == 0
-            
+
+
+class Test_Make_Summary_Text:
+    def test_m_head(self, sphere3_msh: mesh_io.Msh):
+        m_head = sphere3_msh.crop_mesh(elm_type=4)
+        m_head.elm.tag1[m_head.elm.tag1 == 4] = 2
+        m_head.elm.tag2 = m_head.elm.tag1
+        
+        m_surf = None
+        
+        m_head.add_element_field(
+            np.tile(np.arange(m_head.elm.nr),3).reshape((m_head.elm.nr,3)), "E"
+        )
+        m_head.add_element_field(
+            np.ones(m_head.elm.nr), "max_TO"
+        )  
+        m_head.add_element_field(
+            np.ones(m_head.elm.nr), "magnE"
+        )
+        m_head.add_element_field(
+            np.ones(m_head.elm.nr), "average__magnE"
+        )
+        m_head.add_element_field(
+            m_head.elm.tag1 == 2, "ROI"
+        )
+        m_head.add_element_field(
+            np.ones(m_head.elm.nr), "ROI_1"
+        )
+        m_head.add_element_field(
+            np.ones(m_head.elm.nr), "non-ROI"
+        )
+        m_head.add_element_field(
+            np.ones(m_head.elm.nr), " ROI_2"
+        )
+
+        summary_txt = make_summary_text(m_surf, m_head)
+        
+        assert summary_txt.count('|magnE') == 3
+        assert summary_txt.count('|average__magnE') == 3
+        assert summary_txt.count('|E') == 0
+        assert summary_txt.count('max_TO') == 0
+        
+        assert summary_txt.count('|ROI_1 ') == 1
+        assert summary_txt.count('|non-ROI ') == 1
+        assert summary_txt.count('|ROI ') == 1
+        assert summary_txt.count('ROI_2 ') == 0
+    
+    def test_m_surf(self, sphere3_msh: mesh_io.Msh, tmp_path):
+        m_head = None        
+        m_surf = sphere3_msh.crop_mesh(elm_type=2)
+                
+        m_surf.add_node_field(
+            np.tile(np.arange(m_surf.nodes.nr),3).reshape((m_surf.nodes.nr,3)), "E"
+        )
+        m_surf.add_node_field(
+            np.ones(m_surf.nodes.nr), "max_TO"
+        )  
+        m_surf.add_node_field(
+            np.ones(m_surf.nodes.nr), "magnE"
+        )
+        m_surf.add_node_field(
+            np.ones(m_surf.nodes.nr), "average__magnE"
+        )
+        m_surf.add_node_field(
+            np.ones(m_surf.nodes.nr), "ROI"
+        )
+        m_surf.add_node_field(
+            np.ones(m_surf.nodes.nr), "ROI_1"
+        )
+        m_surf.add_node_field(
+            np.ones(m_surf.nodes.nr), "non-ROI"
+        )
+        m_surf.add_node_field(
+            np.ones(m_surf.nodes.nr), " ROI_2"
+        )
+
+        summary_txt = make_summary_text(m_surf, m_head)
+        
+        assert summary_txt.count('|magnE') == 3
+        assert summary_txt.count('|average__magnE') == 3
+        assert summary_txt.count('|E') == 0
+        assert summary_txt.count('max_TO') == 0
+        
+        assert summary_txt.count('|ROI_1 ') == 1
+        assert summary_txt.count('|non-ROI ') == 1
+        assert summary_txt.count('|ROI ') == 1
+        assert summary_txt.count('ROI_2 ') == 0
+           
+    def test_m_head_and_m_surf(self, sphere3_msh: mesh_io.Msh):
+        m_head = sphere3_msh.crop_mesh(elm_type=4)
+        m_head.elm.tag1[m_head.elm.tag1 == 4] = 2
+        m_head.elm.tag2 = m_head.elm.tag1
+        
+        m_surf = sphere3_msh.crop_mesh(elm_type=2)
+        
+        m_head.add_element_field(
+            np.tile(np.arange(m_head.elm.nr),3).reshape((m_head.elm.nr,3)), "E"
+        )
+        m_head.add_element_field(
+            np.ones(m_head.elm.nr), "max_TO"
+        )  
+        m_head.add_element_field(
+            np.ones(m_head.elm.nr), "magnE"
+        )
+        m_head.add_element_field(
+            np.ones(m_head.elm.nr), "ROI_1"
+        )
+        m_surf.add_node_field(
+            np.ones(m_surf.nodes.nr), "average__magnE"
+        )
+        m_surf.add_node_field(
+            np.ones(m_surf.nodes.nr), "non-ROI"
+        )
+        
+        summary_txt = make_summary_text(m_surf, m_head)
+        
+        assert summary_txt.count('|magnE') == 3
+        assert summary_txt.count('|average__magnE') == 3
+        assert summary_txt.count('|E') == 0
+        assert summary_txt.count('max_TO') == 0
+        assert summary_txt.count('|ROI_1 ') == 1
+        assert summary_txt.count('|non-ROI ') == 1
+                 

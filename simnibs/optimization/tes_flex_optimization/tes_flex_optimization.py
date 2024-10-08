@@ -31,6 +31,7 @@ from simnibs.utils.transformations import (
     subject2mni_coords,
     create_new_connectivity_list_point_mask,
 )
+from simnibs.utils.mesh_element_properties import ElementTags, tissue_names
 
 from .ellipsoid import Ellipsoid, subject2ellipsoid, ellipsoid2subject
 from .measures import AUC, integral_focality, ROC
@@ -599,7 +600,6 @@ class TesFlexOptimization:
                 return " "
             return ""        
         
-        logger.log(26, " ")
         logger.log(26, "Electrode array infos:")
         logger.log(26, "=" * 100)
         for i_stim in range(len(self.electrode_pos_opt)):
@@ -1232,13 +1232,14 @@ class TesFlexOptimization:
                                                          self.fn_final_sim,
                                                          self.e_postproc,
                                                          self.goal)
+            
+            # extract key metrics from m_head, m_surf and add to summary log
+            logger.log(26, make_summary_text(m_surf, m_head))
+            
             if self.open_in_gmsh:
                 for i in fn_vis:
                     mesh_io.open_in_gmsh(i, True)
                         
-            # TODO: extract key metrics from m_head, m_surf (field in roi, focality)
-            #       and add to summary log (AT)
-
         # append optimization results to summary
         self._log_summary_postopt()
         
@@ -2591,6 +2592,61 @@ def write_visualization(folder_path, base_file_name, roi_list, results_list, e_p
     fn_vis = roi_result_vis.write_visualization() 
     
     return fn_vis, m_head, m_surf
+
+
+def make_summary_text(m_surf, m_head, tissues_m_head = [ElementTags.GM]):
+    """generates a summary text with peak fields, focality, median fields in ROIs
+
+    Args:
+        m_surf (mesh_io.Msh): surface mesh created by write_visualization
+        m_head (mesh_io.Msh): volume mesh created by write_visualization
+        tissues_m_head (list of ElementTags): optional, standard: [ElementTags.GM]
+                        tissue types included in evaluation of summary metrics for m_head
+        
+    Returns:
+        summary text (str)
+    """
+    def summary_for_mesh(m):
+        # get fields with final results
+        result_field_names = {'max_TI', 'dir_TI', 'magnE', 'E__normal', 'E__tangential', 
+                            'average__magnE', 'average__normal', 'average__tangential'}
+        result_fields = m.field.keys() & result_field_names
+
+        # get ROI fields
+        roi_field_names = {'ROI', 'non-ROI'}
+        roi_fields = m.field.keys() & roi_field_names
+        for key in m.field:
+            if key.startswith('ROI_'):
+                roi_fields.add(key)
+
+        # get medians per ROI
+        arr_medians=np.ndarray((len(result_fields)+1,len(roi_fields)+1),dtype=object)
+        arr_medians[0,0] = ''
+        for idx_r, r in enumerate(roi_fields):
+            arr_medians[0,idx_r+1] = r
+            idx=np.argwhere(m.field[r].value>0)+1
+            for idx_f, f in enumerate(result_fields):
+                arr_medians[idx_f+1,0] = f
+                arr_medians[idx_f+1,idx_r+1] = f'{m.field[f].get_percentiles(percentile=[50], roi=idx)[0]: .2e}' 
+
+        # assemble summary text
+        summary_text = '======================\n'
+        summary_text += m.fields_summary(fields=result_fields, percentiles=[99.9, 50], focality_cutoffs=[75, 50])
+        summary_text += '\nMedian fields per ROI\n----------------------\n'
+        summary_text += mesh_io._format_table(arr_medians)
+        return summary_text
+
+    summary_text = '\n'
+    hlpStr = 'head_mesh (included tissues: '+' '.join(tissue_names[k] for k in tissues_m_head)+')'
+    m_hlp = None
+    if m_head is not None:
+        m_hlp = m_head.crop_mesh(tags=tissues_m_head)
+    for m, name in [[m_surf, 'surface_mesh'],
+                    [m_hlp, hlpStr]]:
+        if m is not None:
+            summary_text += f'Results for {name}:\n'
+            summary_text += summary_for_mesh(m) + '\n\n'
+    return summary_text
 
 
 def get_node_mask_spherical_electrode(node_coords_skin, ele_coords_center, ele_radius):
