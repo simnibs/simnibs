@@ -29,7 +29,7 @@ dependencies:
   - setuptools-scm
   - pip:
     - fmm3dpy==1.0.0
-    - charm_gems==1.3.3
+    - https://github.com/oulap/samseg_wheels/releases/download/dev/samseg-0+untagged.1.g136b181-cp311-cp311-win_amd64.whl
     - pygpc==0.3.9
     - PyQt5
     - https://github.com/jduemose/simple-petsc4py/releases/download/v3.21.5/petsc4py-3.21.5-cp311-cp311-win_amd64.whl

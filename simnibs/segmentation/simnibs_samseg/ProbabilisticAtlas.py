@@ -1,5 +1,5 @@
 import numpy as np
-import charm_gems as gems
+from samseg import gems
 from .warp_mesh import kvlWarpMesh
 from .utilities import requireNumpyArray
 import logging

@@ -5,7 +5,7 @@ from .utilities import icv
 from .io import kvlReadCompressionLookupTable, kvlReadSharedGMMParameters
 from .figures import initVisualizer
 from .utilities import requireNumpyArray
-import charm_gems as gems
+from samseg import gems
 
 
 def getModelSpecifications(atlasDir, userModelSpecifications={}):

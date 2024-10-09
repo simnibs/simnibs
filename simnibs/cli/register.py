@@ -26,7 +26,7 @@ import sys
 import argparse
 import nibabel
 import numpy as np
-from simnibs.segmentation.samseg import gems
+from samseg import gems
 from simnibs import __version__
 
 

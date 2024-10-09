@@ -1,4 +1,4 @@
-import charm_gems as gems
+from samseg import gems
 from .ProbabilisticAtlas import ProbabilisticAtlas
 from .SamsegUtility import undoLogTransformAndBiasField, writeImage, maskOutBackground, logTransform, readCroppedImages
 from .GMM import GMM
@@ -6,7 +6,7 @@ import numpy as np
 import nibabel as nib
 import gc
 from simnibs.segmentation._cat_c_utils import cat_vbdist
-from simnibs.segmentation.samseg.utilities import requireNumpyArray
+from simnibs.segmentation.simnibs_samseg.utilities import requireNumpyArray
 
 def writeBiasCorrectedImagesAndSegmentation(output_names_bias,
                                             output_name_segmentation,

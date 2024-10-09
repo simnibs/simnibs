@@ -3,7 +3,7 @@ import os
 import pickle
 from .Samseg import Samseg
 from .SamsegUtility import writeImage
-import charm_gems as gems
+import samseg.gems as gems
 eps = np.finfo(float).eps
 
 class SamsegWholeHead(Samseg):

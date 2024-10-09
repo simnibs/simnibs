@@ -1,6 +1,6 @@
 import scipy
 import numpy as np
-from charm_gems import KvlMeshCollection, KvlTransform, KvlOptimizer, KvlCostAndGradientCalculator, KvlImage
+from samseg.gems import KvlMeshCollection, KvlTransform, KvlOptimizer, KvlCostAndGradientCalculator, KvlImage
 
 
 def kvlWarpMesh(sourceMeshCollectionFileName, sourceDeformation, targetMeshCollectionFileName):

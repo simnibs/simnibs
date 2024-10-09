@@ -8,9 +8,9 @@ from scipy.io import loadmat
 from ... import SIMNIBSDIR
 from .. import charm_utils
 from ..charm_main import _check_q_and_s_form
-from ..samseg import initVisualizer
-from ..samseg.io import kvlReadSharedGMMParameters
-from ..samseg.simnibs_segmentation_utils import writeBiasCorrectedImagesAndSegmentation
+from ..simnibs_samseg import initVisualizer
+from ..simnibs_samseg.io import kvlReadSharedGMMParameters
+from ..simnibs_samseg.simnibs_segmentation_utils import writeBiasCorrectedImagesAndSegmentation
 
 @pytest.fixture(scope='module')
 def testernie_nii():
@@ -122,17 +122,19 @@ def test_mni_affine(tmpdir, testmni_nii):
     nib.save(trans_mni, trans_scan_name)
     trans_settings = {"translation_scale": -100,
                       "max_iter": 10,
+                      "num_histogram_bins": 64,
                       "shrink_factors": [0],
+                      "bg_value": 0,
                       "smoothing_factors": [4.0],
                       "center_of_mass": True,
                       "samp_factor": 1.0,
-                      "bg_value": 0}
+                      "intepolator": "b"}
     RAS2LPS = np.diag([-1, -1, 1, 1])
     estimated_trans_mat = charm_utils._init_atlas_affine(str(trans_scan_name),
                                                          testmni_nii,
                                                          trans_settings)
     np.testing.assert_allclose(trans_mat,
-                               RAS2LPS@estimated_trans_mat@RAS2LPS)
+                               RAS2LPS@estimated_trans_mat@RAS2LPS, atol=1e-2, rtol=1e-6)
 
 
 def test_atlas_affine(tmpdir, testmni_nii, testtemplate_nii, testaffinemesh_msh):

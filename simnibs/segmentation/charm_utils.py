@@ -11,7 +11,7 @@ from scipy.ndimage import affine_transform
 from scipy.ndimage import label
 from scipy.io import loadmat
 
-from . import samseg
+from . import simnibs_samseg
 from ._thickness import _calc_thickness
 from ._cat_c_utils import sanlm
 from .brain_surface import mask_from_surface
@@ -49,9 +49,9 @@ def _register_atlas_to_input_affine(
     neck_search_bounds = init_atlas_settings["neck_search_bounds"]
     ds_factor = init_atlas_settings["downsampling_factor_affine"]
 
-    affine = samseg.AffineWholeHead(T1, affine_mesh_collection_name, template_file_name)
+    affine = simnibs_samseg.AffineWholeHead(T1, affine_mesh_collection_name, template_file_name)
 
-    init_options = samseg.initializationOptions(
+    init_options = simnibs_samseg.initializationOptions(
         pitchAngles=thetas_rad,
         scales=scales,
         scalingCenter=scaling_center,
@@ -126,9 +126,10 @@ def _denoise_input_and_save(input_name, output_name):
 
 def _init_atlas_affine(t1_scan, mni_template, affine_settings):
 
-    registerer = samseg.gems.KvlAffineRegistration(
+    registerer = simnibs_samseg.gems.KvlAffineRegistration(
         affine_settings["translation_scale"],
         affine_settings["max_iter"],
+        affine_settings["num_histogram_bins"],
         affine_settings["shrink_factors"],
         affine_settings["bg_value"],
         affine_settings["smoothing_factors"],
@@ -166,7 +167,7 @@ def _estimate_parameters(
     bg_mask_th = segment_settings["background_mask_threshold"]
     stiffness = segment_settings["mesh_stiffness"]
     covariances = segment_settings["diagonal_covariances"]
-    shared_gmm_parameters = samseg.io.kvlReadSharedGMMParameters(gmm_parameters)
+    shared_gmm_parameters = simnibs_samseg.io.kvlReadSharedGMMParameters(gmm_parameters)
 
     if user_optimization_options is None:
         user_optimization_options = {
@@ -216,7 +217,7 @@ def _estimate_parameters(
     )
 
     logger.info("Starting segmentation.")
-    samsegment = samseg.SamsegWholeHead(**samseg_kwargs)
+    samsegment = simnibs_samseg.SamsegWholeHead(**samseg_kwargs)
     samsegment.preProcess()
     samsegment.process()
 
@@ -255,7 +256,7 @@ def _post_process_segmentation(
 
     # Next we need to reconstruct the segmentation with the upsampled data
     # and map it into the simnibs tissues
-    upsampled_tissues, upper_part = samseg.simnibs_segmentation_utils.segmentUpsampled(
+    upsampled_tissues, upper_part = simnibs_samseg.simnibs_segmentation_utils.segmentUpsampled(
         upsampled_image_names,
         tissue_settings,
         parameters_and_inputs,
@@ -752,7 +753,7 @@ def _get_largest_components(vol, se, vol_limit=0, num_limit=-1, return_sizes=Fal
 
 
 def _registerT1T2(fixed_image, moving_image, output_image):
-    registerer = samseg.gems.KvlRigidRegistration()
+    registerer = simnibs_samseg.gems.KvlRigidRegistration()
     # linear interpolation
     # registerer = samseg.gems.KvlRigidRegistration(
     #     translationScale=-100.,

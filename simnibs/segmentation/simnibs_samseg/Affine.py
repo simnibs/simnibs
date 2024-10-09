@@ -3,7 +3,7 @@ import scipy.io
 import scipy.ndimage
 import numpy as np
 
-import charm_gems as gems
+from samseg import gems
 from .ProbabilisticAtlas import ProbabilisticAtlas
 
 from .utilities import requireNumpyArray

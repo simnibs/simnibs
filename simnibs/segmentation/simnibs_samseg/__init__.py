@@ -1,5 +1,5 @@
 from .SamsegUtility import *
-from charm_gems import setGlobalDefaultNumberOfThreads
+from samseg.gems import setGlobalDefaultNumberOfThreads
 from .utilities import Specification, icv
 from .GMM import GMM
 from .BiasField import BiasField

@@ -12,7 +12,7 @@ from .GMM import GMM
 from .Affine import Affine
 from .SamsegUtility import *
 from .merge_alphas import kvlMergeAlphas, kvlGetMergingFractionsTable
-import charm_gems as gems
+from samseg import gems
 import logging
 
 eps = np.finfo(float).eps
