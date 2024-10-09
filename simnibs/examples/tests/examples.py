@@ -509,7 +509,7 @@ class TestCoils:
         shutil.rmtree('coil_example')
         assert ret.returncode == 0
 
-    def test_roi_definition(self, example_dataset, replace_gmsh):
+    def test_tms_multi_stimulator_simulation(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
         ret = self.run_script('coils', 'tms_multi_stimulator_simulation.py', 'tms_simu')
         assert ret.returncode == 0
