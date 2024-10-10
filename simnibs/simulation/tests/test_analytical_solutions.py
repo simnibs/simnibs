@@ -34,10 +34,10 @@ def quadrant_points():
 
 
 class Testlpmn:
-    @pytest.mark.parametrize(m, [1, 10])
-    @pytest.mark.parametrize(n, [10, 100])
+    @pytest.mark.parametrize("m", [1, 10])
+    @pytest.mark.parametrize("n", [10, 100])
     def test_lpmn_scipy(self, n, m):
-        """Test our lpmn against the one in scipy.special."""
+        """Test lpmn against the one in scipy.special."""
 
         x = np.linspace(-1, 1, 100)
         A = np.stack([scipy.special.lpmn(m, n, j)[0] for j in x], axis=2)
