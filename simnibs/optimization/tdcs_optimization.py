@@ -885,8 +885,9 @@ class TDCStarget:
     indexes: Nx1 ndarray of ints
         Indexes (1-based) of elements/nodes for optimization. Overwrites positions
     directions: Nx3 ndarray
-        List of Electric field directions to be optimized for each mesh point, the string
-        'normal' or None (for magnitude optimization), Default: 'normal'
+        List of Electric field directions to be optimized for each mesh point,
+        the strings `normal` or `negative normal`, or None (for magnitude
+        optimization), Default: 'normal'.
     intensity: float (optional)
         Target intensity of the electric field component in V/m. Default: 0.2
     max_angle: float (optional)
@@ -911,15 +912,14 @@ class TDCStarget:
         self,
         positions=None,
         indexes=None,
-        directions="normal",
-        intensity=0.2,
-        max_angle=None,
-        radius=2,
+        directions: list[float] | None | str = "normal",
+        intensity: float = 0.2,
+        max_angle: float | None = None,
+        radius: float = 2.0,
         tissues=None,
         mesh=None,
         lf_type=None,
     ):
-
         self.lf_type = lf_type
         self.mesh = mesh
         self.radius = radius
@@ -931,23 +931,67 @@ class TDCStarget:
         self.directions = directions
 
     @property
+    def intensity(self):
+        return self._intensity
+
+    @intensity.setter
+    def intensity(self, value):
+        assert value > 0, "Please provide a positive target intensity (if a negative intensity is desired, please invert the target direction)."
+        self._intensity = value
+
+    @property
     def directions(self):
         return self._directions
 
     @directions.setter
     def directions(self, value):
-        if value == "normal":
-            pass
-        elif value == "none":
-            value = None
-        elif isinstance(value, str):
-            raise ValueError(
-                "Invalid value for directions: f{directions} "
-                'valid arguments are "normal", "none" or an array'
-            )
-        if value is None and self.max_angle is not None:
-            raise ValueError("Can't constrain angle in magnitude optimizations")
+        value = None if value == "none" else value
+        if isinstance(value, str):
+            assert value in {"normal", "negative normal"}, f"Invalid value for `directions`. If a string, it must be 'none', 'normal', or 'negative normal' (got {value})"
+        elif value is None:
+            if self.max_angle is not None:
+                raise ValueError("Cannot constrain angle in magnitude optimizations.")
+        else:
+            value = np.atleast_2d(value)
+            assert value.shape[1] == 3, f"If `directions` is an array, it must be Nx3 (got {value.shape})"
+
         self._directions = value
+
+    def _get_normal(self, indices):
+        if 4 in np.unique(self.mesh.elm.elm_type):
+            raise ValueError("Can't define a normal direction for volumetric data!")
+        if self.lf_type == "node":
+            directions = -self.mesh.nodes_normals()[indices]
+        elif self.lf_type == "element":
+            directions = -self.mesh.triangle_normals()[indices]
+        return directions
+
+    def _find_directions(self, indices, mapping=None):
+        match self.directions:
+            case None:
+                return None
+            case str():
+                match self.directions:
+                    case "normal":
+                        return self._get_normal(indices)
+                    case "negative normal":
+                        return -self._get_normal(indices)
+            case _:
+                n = len(self.directions)
+                m = len(indices)
+                if mapping is None:
+                    if n == m:
+                        mapping = np.arange(m)
+                    else:
+                        raise ValueError(
+                            "Different number of indexes and directions and no "
+                            "mapping defined"
+                        )
+                elif n == 1:
+                    mapping = np.zeros(m, dtype=int)
+
+                directions = self.directions / np.linalg.norm(self.directions, axis=1, keepdims=True)
+                return directions[mapping]
 
     @classmethod
     def read_mat_struct(cls, mat):
@@ -1035,9 +1079,7 @@ class TDCStarget:
             radius=self.radius,
         )
 
-        directions = _find_directions(
-            self.mesh, self.lf_type, self.directions, indexes, mapping
-        )
+        directions = self._find_directions(indexes, mapping)
 
         return indexes - 1, directions
 
@@ -1087,9 +1129,7 @@ class TDCStarget:
         if self.directions is None:
             field[indexes - 1] = self.intensity
         else:
-            directions = _find_directions(
-                self.mesh, self.lf_type, self.directions, indexes, mapping
-            )
+            directions = self._find_directions(indexes, mapping)
             field[indexes - 1] = directions * self.intensity
 
         return field_type(field, name, mesh=self.mesh)
@@ -1127,10 +1167,7 @@ class TDCStarget:
             components = np.linalg.norm(f, axis=1)
 
         else:
-            directions = _find_directions(
-                self.mesh, self.lf_type, self.directions, indexes, mapping
-            )
-
+            directions = self._find_directions(indexes, mapping)
             components = np.sum(f * directions, axis=1)
 
         if self.lf_type == "node":
@@ -1176,9 +1213,7 @@ class TDCStarget:
             radius=self.radius,
         )
 
-        directions = _find_directions(
-            self.mesh, self.lf_type, self.directions, indexes, mapping
-        )
+        directions = self._find_directions(indexes, mapping)
         if self.intensity < 0:
             directions *= -1
         f = field[indexes]
@@ -2108,36 +2143,6 @@ def _find_indexes(
         return mesh_indexes[indexes], np.arange(len(indexes))
 
 
-def _find_directions(mesh, lf_type, directions, indexes, mapping=None):
-    if directions is None:
-        return None
-    if directions == "normal":
-        if 4 in np.unique(mesh.elm.elm_type):
-            raise ValueError("Can't define a normal direction for volumetric data!")
-        if lf_type == "node":
-            directions = -mesh.nodes_normals()[indexes]
-        elif lf_type == "element":
-            directions = -mesh.triangle_normals()[indexes]
-        return directions
-    else:
-        directions = np.atleast_2d(directions)
-        if directions.shape[1] != 3:
-            raise ValueError("directions must be the string 'normal' or a Nx3 array")
-        if mapping is None:
-            if len(directions) == len(indexes):
-                mapping = np.arange(len(indexes))
-            else:
-                raise ValueError(
-                    "Different number of indexes and directions and no "
-                    "mapping defined"
-                )
-        elif len(directions) == 1:
-            mapping = np.zeros(len(indexes), dtype=int)
-
-        directions = directions / np.linalg.norm(directions, axis=1)[:, None]
-        return directions[mapping]
-
-
 class TESConstraints:
     def __init__(self, n, max_total_current, max_el_current):
         self.max_total_current = max_total_current
@@ -2933,12 +2938,6 @@ def _linear_constrained_tes_opt(
         b_eq=b_,
         bounds=(0, max_el_current),
         method="highs",
-        options=dict(
-            # Sets the primal/dual feasibility tolerances for `highs-ds`;
-            # `highs-ipm` uses the minimum of the two
-            dual_feasibility_tolerance=1e-8,
-            primal_feasibility_tolerance=1e-8,
-        ),
     )
     if sol.status != 0:
         raise RuntimeError(sol.message)
@@ -3284,20 +3283,16 @@ def _norm_opt_x0(
     extra_eq=None,
     log_level=20,
 ):
-
     x = x0.copy()
-
-    scale = max_total_current
-
-    # not necessary to rescale Q and Qnorm
-    x = x / scale
-    target_norm = target_norm / scale
-    max_el_current = max_el_current / scale
-    max_total_current = max_total_current / scale
 
     n = len(x)
     n_eqs = Qnorm.shape[0]
 
+    # Scale the variables
+    # Important: do the norm scaling before applying `scale`
+    scale = max_total_current
+
+    # Norm scaling
     l1norm_x0 = np.linalg.norm(x, 1)
     if l1norm_x0 > max_total_current * 2:
         x *= (max_total_current * 2) / l1norm_x0
@@ -3310,14 +3305,17 @@ def _norm_opt_x0(
     if np.any(lqnorm_x0 > target_norm):
         x *= np.min(target_norm / lqnorm_x0)
 
-    x_init = x.copy()
-    # First pass: Tries to maximize the quatratic
-    # This is used just to evaluate feasibility
+    # Manual scaling
+    x = x / scale
+    target_norm = target_norm / scale
+    max_el_current = max_el_current / scale
+    max_total_current = max_total_current / scale
+    # it is not necessary to rescale Q and Qnorm
 
     tes_constraints = TESConstraints(n, max_total_current, max_el_current)
-
     C_, d_ = tes_constraints._l1_constraint()
     A_, b_ = tes_constraints._kirchhoff_constraint()
+    C_b, d_b = tes_constraints._bound_contraints()
 
     # Extra constraints
     if extra_ineq is not None:
@@ -3328,50 +3326,10 @@ def _norm_opt_x0(
         A_ = np.vstack([A_, extra_eq[0]])
         b_ = np.hstack([b_, extra_eq[1] / scale])
 
-    # First of all, see if the norm can be reached
-    n_iter = 0
-    max_iter = 100
-    cur_min = np.inf
-    while n_iter < max_iter:
-        l = x.dot(Qnorm)
-        l_ = np.hstack([l, -l])
-        sol = scipy.optimize.linprog(
-            c=-np.average(l_, axis=0),
-            A_ub=np.vstack([C_, l_]),
-            b_ub=np.hstack([d_, target_norm**2]),
-            # constraints due to Kirchhoff's law
-            A_eq=A_,
-            b_eq=b_,
-            bounds=(0, max_el_current),
-            method="highs",
-            options=dict(
-                # Sets the primal/dual feasibility tolerances for `highs-ds`;
-                # `highs-ipm` uses the minimum of the two
-                dual_feasibility_tolerance=1e-8,
-                primal_feasibility_tolerance=1e-8,
-            ),
-        )
-        if sol.status != 0:
-            raise RuntimeError(sol.message)
+    # concatenate L1 and bound constraints
+    C_ = np.vstack([C_, C_b])
+    d_ = np.hstack([d_, d_b])
 
-        if (delta := cur_min - sol.fun) > 0:
-            x = sol.x[:n] - sol.x[n:]
-            if delta < 1e-3 * np.abs(sol.fun):
-                break
-            else:
-                cur_min = sol.fun
-                n_iter += 1
-        else:
-            break
-
-    # If the target norm cannot be reached, exit
-    if np.any(np.sqrt(x.dot(Qnorm).dot(x)) < target_norm * 0.9):
-        logger.log(log_level, "Target norm could not be reached")
-        x *= scale
-        return x, x.dot(Q).dot(x), np.sqrt(x.dot(Qnorm).dot(x))
-
-    # notice, I reset x on purpose
-    x = x_init
     # Slack term penalty
     tau = 1e-2 * x.dot(Q).dot(x) / np.sum(x.dot(Qnorm).dot(x))
     # How much tau gets multiplied per iteration
@@ -3385,11 +3343,6 @@ def _norm_opt_x0(
 
     # Preparations for the QPs
     Q_ = np.block([[Q, -Q], [-Q, Q]])
-
-    # Bound constraints
-    C_b, d_b = tes_constraints._bound_contraints()
-    C_ = np.vstack([C_, C_b])
-    d_ = np.hstack([d_, d_b])
 
     # Add slack variables
     x_ = np.hstack([x, -x, np.zeros(n_eqs)])
@@ -3407,6 +3360,8 @@ def _norm_opt_x0(
     d_ = np.hstack([d_, np.zeros(2 * n_eqs)])
     # Equality
     A_ = np.hstack([A_, np.zeros((A_.shape[0], n_eqs))])
+
+    max_iter = 100
 
     while n_iter < max_iter:
         l = -2 * x.dot(Qnorm)
@@ -3581,7 +3536,7 @@ def _active_set_QP(
     active = np.abs(C.dot(x) - d) < tol_feasibility_x0
 
     # Check feasibility of x0
-    assert np.all(C.dot(x) <= d + tol_feasibility_x0), f"Infeasible start ({C.dot(x)} > {d})"
+    assert np.all(C.dot(x) <= d + tol_feasibility_x0), f"Infeasible start ({C.dot(x)} > {d}) [{C.dot(x) <= d + tol_feasibility_x0}]"
     if A is not None and b is not None:
         assert np.allclose(A.dot(x), b, atol=tol_feasibility_x0), f"Infeasible start ({A.dot(x)} != {b})"
 

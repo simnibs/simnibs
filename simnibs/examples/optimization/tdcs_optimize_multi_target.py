@@ -18,6 +18,7 @@ target_left.intensity = 0.2
 # Target in the right motor cortex
 target_right = opt.add_target()
 target_right.positions = [36.0, 2.5, 72.6]
-target_right.intensity = -0.2 # negative value reverses direction
+target_right.intensity = 0.2
+target_right.directions = "negative normal" # reverse direction
 
 simnibs.run_simnibs(opt)

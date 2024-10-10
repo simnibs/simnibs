@@ -8,47 +8,72 @@ import numpy as np
 import nibabel
 import h5py
 import scipy.io
+from scipy.spatial import ConvexHull
 
-from ... import SIMNIBSDIR
-from ...mesh_tools import mesh_io
-from ...simulation import sim_struct
-from ...simulation import analytical_solutions
-from .. import opt_struct
-from .. import tdcs_optimization
+from simnibs import SIMNIBSDIR
+from simnibs.mesh_tools import mesh_io
+from simnibs.simulation import sim_struct
+from simnibs.simulation import analytical_solutions
+from simnibs.optimization import opt_struct
+from simnibs.optimization import tdcs_optimization
 
 NUM_TOL = 1e-8
 
+@pytest.fixture()
+def sphere_surf(sphere3_msh):
+    return sphere3_msh.crop_mesh([1003, 1004])
 
 @pytest.fixture()
-def sphere_surf():
-    fn = os.path.join(
-        SIMNIBSDIR, '_internal_resources', 'testing_files', 'sphere3.msh')
-    return mesh_io.read_msh(fn).crop_mesh([1003, 1004])
-
-
-@pytest.fixture()
-def sphere_vol():
-    fn = os.path.join(
-        SIMNIBSDIR, '_internal_resources', 'testing_files', 'sphere3.msh')
-    return mesh_io.read_msh(fn).crop_mesh([4, 5])
-
-@pytest.fixture()
-def sphere_msh():
-    fn = os.path.join(
-        SIMNIBSDIR, '_internal_resources', 'testing_files',  'sphere3.msh')
-    return mesh_io.read_msh(fn)
+def sphere_vol(sphere3_msh):
+    return sphere3_msh.crop_mesh([4, 5])
 
 @pytest.fixture
-def sphere_elec():
-    fn = os.path.join(
-        SIMNIBSDIR, '_internal_resources', 'testing_files',
-        'sphere_w_electrodes.msh')
-    return mesh_io.read_msh(fn).crop_mesh([1005, 1100, 1101])
+def sphere_w_elec_msh():
+    fn = os.path.join(SIMNIBSDIR, '_internal_resources', 'testing_files', 'sphere_w_electrodes.msh')
+    return Msh(fn=fn)
+
+@pytest.fixture
+def sphere_elec(sphere_w_elec_msh):
+    return sphere_w_elec_msh.crop_mesh([1005, 1100, 1101])
 
 @pytest.fixture()
 def leadfield_surf(sphere_surf):
     np.random.seed(0)
     return np.random.random((4, sphere_surf.nodes.nr, 3))
+
+@pytest.fixture()
+def sphere_surf_real():
+    n_dip = 201
+    vertices = analytical_solutions.fibonacci_sphere(n_dip, R=75)
+    faces = ConvexHull(vertices).simplices
+    return mesh_io.make_surface_mesh(vertices, faces + 1)
+
+@pytest.fixture()
+def leadfield_surf_real(sphere_surf_real):
+
+    n_sens = 21
+    radii = [80, 86, 92]
+    cond_brain_scalp = 0.3
+    cond_skull = 0.006
+
+    dip_pos = sphere_surf_real.nodes.node_coord
+    n_dip = sphere_surf_real.nodes.nr
+
+    sens_pos = analytical_solutions.fibonacci_sphere(n_sens, R=radii[-1])
+
+    pot = np.zeros((n_sens, n_dip, 3))
+    dip_mom = np.array([[1, 0, 0],
+                        [0, 1, 0],
+                        [0, 0, 1]])
+
+    pot = np.zeros((n_sens, n_dip, 3))
+    for j,dm in enumerate(dip_mom):
+        pot[..., j] = analytical_solutions.potential_dipole_3layers(
+            radii, cond_brain_scalp, cond_skull, dip_pos, dm, sens_pos
+        )
+
+    pot = pot[1:] - pot[0]
+    return pot
 
 @pytest.fixture()
 def leadfield_vol(sphere_vol):
@@ -71,6 +96,18 @@ def fn_surf(sphere_surf, leadfield_surf):
     dset = '/mesh_leadfield/leadfields/tdcs_leadfield'
     with h5py.File(fn_leadfield, 'a') as f:
         f.create_dataset(dset, data=leadfield_surf)
+    yield fn_leadfield
+    os.remove(fn_leadfield)
+
+@pytest.fixture()
+def fn_surf_real(sphere_surf_real, leadfield_surf_real):
+    fn_leadfield = 'tmp_surf_leadfied.hdf5'
+    if os.path.isfile(fn_leadfield):
+        os.remove(fn_leadfield)
+    sphere_surf_real.write_hdf5(fn_leadfield, 'mesh_leadfield')
+    dset = '/mesh_leadfield/leadfields/tdcs_leadfield'
+    with h5py.File(fn_leadfield, 'a') as f:
+        f.create_dataset(dset, data=leadfield_surf_real)
     yield fn_leadfield
     os.remove(fn_leadfield)
 
@@ -135,9 +172,9 @@ def rdm(a, b):
     )
 
 class TestTMSOpt:
-    def test_get_coil_positions(self, sphere_msh):
+    def test_get_coil_positions(self, sphere3_msh):
         tms_opt = opt_struct.TMSoptimize()
-        tms_opt.mesh = sphere_msh
+        tms_opt.mesh = sphere3_msh
         tms_opt.centre = np.array([95, 0, 0])
         tms_opt.distance = 5.
         tms_opt.pos_ydir = None
@@ -157,23 +194,23 @@ class TestTMSOpt:
                 np.rad2deg(np.arccos(np.sum(y_dirs[i::12]*y_dirs[i+1::12], axis=1))),
                 30)
 
-    def test_get_target_region(self, sphere_msh):
+    def test_get_target_region(self, sphere3_msh):
         tms_opt = opt_struct.TMSoptimize()
-        tms_opt.mesh = sphere_msh
+        tms_opt.mesh = sphere3_msh
         tms_opt.target = np.array([85, 0, 0])
         tms_opt.target_size = 10
         tms_opt.tissues = [3]
         target_region = tms_opt._get_target_region()
-        bar = sphere_msh.elements_baricenters()
+        bar = sphere3_msh.elements_baricenters()
         assert np.all(
             np.linalg.norm(tms_opt.target - bar[target_region], axis=1) <= 10
         )
-        assert np.all(sphere_msh.elm.tag1[target_region - 1] == 3)
+        assert np.all(sphere3_msh.elm.tag1[target_region - 1] == 3)
 
-    def test_direct(self, sphere_msh, simple_coil_ccd):
+    def test_direct(self, sphere3_msh, simple_coil_ccd):
         tms_opt = opt_struct.TMSoptimize()
         tms_opt.fnamecoil = simple_coil_ccd
-        tms_opt.mesh = sphere_msh
+        tms_opt.mesh = sphere3_msh
         tms_opt.didt = 1e6
         fn_hdf5 = tempfile.mktemp(".hdf5")
         tms_opt._name_hdf5 = MagicMock(return_value=fn_hdf5)
@@ -199,9 +236,9 @@ class TestTMSOpt:
             p[:3, 3] = cc
             pos_matrices.append(p)
 
-        target_pos, target_region = sphere_msh.find_closest_element(
+        target_pos, target_region = sphere3_msh.find_closest_element(
             [85, 0, 0],
-            elements_of_interest=sphere_msh.elm.tetrahedra,
+            elements_of_interest=sphere3_msh.elm.tetrahedra,
             return_index=True
         )
         cond_field = sim_struct.SimuList.cond2elmdata(tms_opt)
@@ -226,10 +263,10 @@ class TestTMSOpt:
 
 
     @patch('simnibs.optimization.tms_optimization.get_opt_grid_ADM')
-    def test_reciprocal(self, get_opt_grid_mock, sphere_msh, simple_coil_ccd):
+    def test_reciprocal(self, get_opt_grid_mock, sphere3_msh, simple_coil_ccd):
         tms_opt = opt_struct.TMSoptimize()
         tms_opt.fnamecoil = simple_coil_ccd
-        tms_opt.mesh = sphere_msh
+        tms_opt.mesh = sphere3_msh
         tms_opt.didt = 1e6
 
         coil_centers = [
@@ -262,9 +299,9 @@ class TestTMSOpt:
                 coil_dir.T
         )
 
-        target_pos, target_region = sphere_msh.find_closest_element(
+        target_pos, target_region = sphere3_msh.find_closest_element(
             [85, 0, 0],
-            elements_of_interest=sphere_msh.elm.tetrahedra,
+            elements_of_interest=sphere3_msh.elm.tetrahedra,
             return_index=True
         )
         cond_field = sim_struct.SimuList.cond2elmdata(tms_opt)
@@ -376,45 +413,40 @@ class TestFindDirections:
     @pytest.mark.parametrize('idx', [np.array([1]), np.array([1, 2])])
     @pytest.mark.parametrize('lf_type', ['node', 'element'])
     def test_find_directions_normal(self, idx, lf_type, sphere_surf):
-        directions = tdcs_optimization._find_directions(
-            sphere_surf, lf_type, 'normal', idx
+        t = tdcs_optimization.TDCStarget(
+            directions="normal", mesh=sphere_surf, lf_type=lf_type
         )
+        directions = t._find_directions(idx)
         if lf_type == 'node':
             normals = sphere_surf.nodes_normals()[idx]
         elif lf_type == 'element':
             normals = sphere_surf.triangle_normals()[idx]
         assert np.allclose(directions, -normals)
 
-
     def test_find_directions_defined_1d(self):
-        directions = tdcs_optimization._find_directions(
-            None, None, [1, 0, 0], [1]
-        )
+        t = tdcs_optimization.TDCStarget(directions=[1,0,0])
+        directions = t._find_directions([1])
         assert directions.shape == (1, 3)
         assert np.allclose(directions, [[1, 0, 0]])
 
     def test_find_directions_defined_2d(self):
-        directions = tdcs_optimization._find_directions(
-            None, None, [[1, 0, 0], [0, 1, 0]], [1, 2]
-        )
+        t = tdcs_optimization.TDCStarget(directions=[[1, 0, 0], [0, 1, 0]])
+        directions = t._find_directions([1, 2])
         assert directions.shape == (2, 3)
         assert np.allclose(directions, [[1, 0, 0], [0, 1, 0]])
 
     def test_find_directions_defined_1_to_2(self):
-        directions = tdcs_optimization._find_directions(
-            None, None, [1, 0, 0], [1, 2], [1, 2]
-        )
+        t = tdcs_optimization.TDCStarget(directions=[1,0,0])
+        directions = t._find_directions([1,2], [1,2])
         assert directions.shape == (2, 3)
         assert np.allclose(directions, [[1, 0, 0], [1, 0, 0]])
 
 
     def test_find_directions_defined_map(self):
-        directions = tdcs_optimization._find_directions(
-            None, None, [[1, 0, 0], [0, 1, 0]], [1, 2, 3, 4], [0, 0, 1, 1]
-        )
+        t = tdcs_optimization.TDCStarget(directions=[[1, 0, 0], [0, 1, 0]])
+        directions = t._find_directions([1, 2, 3, 4], [0, 0, 1, 1])
         assert directions.shape == (4, 3)
         assert np.allclose(directions, [[1, 0, 0], [1, 0, 0], [0, 1, 0], [0, 1, 0]])
-
 
 
 class TestTDCStarget:
@@ -540,7 +572,7 @@ class TestTDCStarget:
         assert np.allclose(dir_, directions_)
 
     @pytest.mark.parametrize('lf_type', ['node', 'element'])
-    @pytest.mark.parametrize('intensity', [0.2, -0.2])
+    @pytest.mark.parametrize('intensity', [0.2, 1.0])
     def test_as_field(self, intensity, lf_type, sphere_surf):
         t = tdcs_optimization.TDCStarget(
             indexes=[1, 2], directions=[[1, 0, 0], [0, 2, 0]],
@@ -849,19 +881,36 @@ class TestTDCSoptimize:
         assert p.name == 'aaa'
 
     # angle constraints cannot be used when n_targets > 1
-    @pytest.mark.parametrize('intensity', [3e-4, -3e-4])
-    @pytest.mark.parametrize('max_ac', [None, 3])
+    @pytest.mark.parametrize('intensity', [0.2])
+    @pytest.mark.parametrize("direction_sign", [1.0, -1.0])
+    @pytest.mark.parametrize('max_ac', [None, 4])
     @pytest.mark.parametrize(["max_el_c","max_tot_c"], [(1e-3, 2e-3), (2e-3, 4e-3)])
-    @pytest.mark.parametrize(["max_angle", "n_targets"], [(None, 1), (None, 3), (30.0, 1)])
-    def test_optimize(self, intensity, max_el_c, max_tot_c, max_ac,
-                      max_angle, n_targets, fn_surf, leadfield_surf):
+    @pytest.mark.parametrize(
+        ["max_angle", "n_targets"],
+        [(None, 1), (None, 3), (20.0, 1)],
+    )
+    def test_optimize(
+        self,
+        intensity,
+        direction_sign,
+        max_el_c,
+        max_tot_c,
+        max_ac,
+        max_angle,
+        n_targets,
+        fn_surf_real
+    ):
 
-        p = opt_struct.TDCSoptimize(fn_surf, max_tot_c, max_el_c, max_ac)
+        direction = direction_sign * np.array([1.0, 1.0, 0.0])
+        direction /= np.linalg.norm(direction)
+        direction = direction.tolist()
+
+        p = opt_struct.TDCSoptimize(fn_surf_real, max_tot_c, max_el_c, max_ac)
 
         for i in range(n_targets):
             t = p.add_target()
             t.indexes = i + 1
-            t.directions = [1., 0., 0.]
+            t.directions = direction
             t.intensity = intensity
             t.max_angle = max_angle
 
@@ -871,27 +920,34 @@ class TestTDCSoptimize:
         assert np.linalg.norm(currents, 1) < 2 * max_tot_c * 1.05
         if max_ac is not None:
             assert np.linalg.norm(currents, 0) <= max_ac
-        for i in range(n_targets):
-            field = currents[1:].dot(leadfield_surf[:, i, :])
-            assert np.sign(field[0]) == np.sign(intensity)
+        field = p.field(currents)
+        for t in p.target:
+            achieved_intensity = t.mean_intensity(field)
+            assert np.isclose(intensity, achieved_intensity, atol=1e-3)
+            if max_angle is not None:
+                angle = t.mean_angle(field)
+                assert angle <= max_angle
 
+
+    @pytest.mark.parametrize('intensity', [0.02, 0.2]) # e.g., 2.0 cannot be achieved
     @pytest.mark.parametrize(["max_el_c","max_tot_c"], [(1e-3, 2e-3), (2e-3, 4e-3)])
-    @pytest.mark.parametrize('max_ac', [None, 3])
+    @pytest.mark.parametrize('max_ac', [None, 4])
     @pytest.mark.parametrize('n_targets', [1, 3])
     def test_optimize_norm(
-        self, max_el_c, max_tot_c, max_ac, n_targets, fn_surf,
+        self, intensity, max_el_c, max_tot_c, max_ac, n_targets, fn_surf_real,
     ):
+        # min/max acceptable intensity
+        min_acc = 0.95 * intensity
+        max_acc = intensity + NUM_TOL
 
-        intensity = 3e-5
-        # 0.75 is completely heuristic: I simply looked at how well the
-        # intensities were achieved at the time of writing and set the cutoff
-        # so that the tests would pass. However, most were close to 3e-5. In
-        # any case this should catch significantly degraded performance!
-        min_acceptable_intensity = 0.75 * intensity
+        p = opt_struct.TDCSoptimize(fn_surf_real, max_tot_c, max_el_c, max_ac)
 
-        p = opt_struct.TDCSoptimize(fn_surf, max_tot_c, max_el_c, max_ac)
+        # arbitrary seed target selection index = 0
+        indices = np.linalg.norm(
+            p.mesh.nodes.node_coord - p.mesh.nodes.node_coord[0], axis=1
+        ).argsort()[:n_targets]
 
-        for i in range(n_targets):
+        for i in indices:
             t = p.add_target()
             t.indexes = i + 1
             t.directions = None
@@ -908,12 +964,7 @@ class TestTDCSoptimize:
 
         # check that we reached meaningful target intensities
         field = p.field(currents)
-        assert all(
-            [t.mean_intensity(field) >= min_acceptable_intensity for t in p.target]
-        )
-        assert all(
-            [t.mean_intensity(field) <= intensity + NUM_TOL for t in p.target]
-        )
+        assert all([min_acc <= t.mean_intensity(field) <= max_acc for t in p.target])
 
     def test_field_node(self, leadfield_surf, fn_surf):
         p = opt_struct.TDCSoptimize(leadfield_hdf=fn_surf)
@@ -1144,7 +1195,7 @@ class TestTDCSDistributedoptimize:
     @pytest.mark.parametrize('intensity', [3e-5, -2e-5])
     @pytest.mark.parametrize(["max_el_c","max_tot_c"], [(1e-3, 2e-3), (2e-3, 4e-3)])
     @pytest.mark.parametrize('max_ac', [None, 3])
-    def test_optimize(self, intensity, max_el_c, max_tot_c, max_ac, fn_surf):
+    def test_optimize(self, intensity, max_el_c, max_tot_c, max_ac, fn_surf_real):
 
         target_img = np.random.rand(100, 100, 100)
         affine = np.eye(4)
@@ -1152,7 +1203,7 @@ class TestTDCSDistributedoptimize:
         affine[:3, :3] *= 2
 
         p = opt_struct.TDCSDistributedOptimize(
-            fn_surf,
+            fn_surf_real,
             max_tot_c,
             max_el_c,
             max_ac,

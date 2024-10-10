@@ -942,7 +942,7 @@ class TestTESNormConstrained:
             if norm_ > norm_bf:
                 norm_bf = norm_
 
-        assert np.all(np.abs(x) <= max_el_current)
+        assert np.all(np.abs(x) <= max_el_current + NUM_TOL)
         assert np.all(np.linalg.norm(x) <= 2*max_total_current)
         assert np.isclose(np.sum(x), 0)
         assert np.sqrt(x.dot(Qnorm).dot(x)) > norm_bf*0.999

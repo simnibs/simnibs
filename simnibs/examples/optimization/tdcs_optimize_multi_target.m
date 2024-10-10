@@ -14,7 +14,8 @@ opt.target(1).positions = [-30.3, 5.4, 71.6];
 opt.target(1).intensity = 0.2;
 % Target in the right motor cortex
 opt.target(2).positions  = [36.0, 2.5, 72.6];
-opt.target(2).intensity = -0.2;
+opt.target(2).intensity = 0.2;
+opt.target(2).directions = 'negative normal'; % reverse direction
 
 
 run_simnibs(opt);
