@@ -2250,9 +2250,9 @@ class TESOptimizationProblem(TESConstraints):
         weights = weights[target_indices]
         leadfield = self.leadfield[:, target_indices] * weights[:, None]
 
-        l = np.tensordot(leadfield, target_direction, axes=2) / weights.sum()
+        l_vec = np.tensordot(leadfield, target_direction, axes=2) / weights.sum()
 
-        return l @ self.P  # add a reference channel
+        return l_vec @ self.P  # add a reference channel
 
     def _calc_Q_mat(
         self,
@@ -2363,9 +2363,9 @@ class TESLinearConstrained(TESOptimizationProblem):
         """
         target_weights = self.weights if target_weights is None else target_weights
 
-        l = self._calc_l_vec(target_indices, target_direction, target_weights)
-        l *= np.sign(target_mean)
-        self.l = np.vstack([self.l, l])
+        l_vec = self._calc_l_vec(target_indices, target_direction, target_weights)
+        l_vec *= np.sign(target_mean)
+        self.l = np.vstack([self.l, l_vec])
 
         self.target_means = np.hstack([self.target_means, np.abs(target_mean)])
 
@@ -2444,10 +2444,10 @@ class TESLinearElecConstrained(TESLinearConstrained):
         self.n_elec = n_elec
 
     def _solve_reduced(self, linear, quadratic, extra_ineq=None):
-        l = linear[0]
+        l_vec = linear[0]
         Q = quadratic[0]
         x = _linear_constrained_tes_opt(
-            l,
+            l_vec,
             self.target_means,
             Q,
             self.max_el_current,
@@ -2455,7 +2455,7 @@ class TESLinearElecConstrained(TESLinearConstrained):
             extra_ineq=extra_ineq,
             log_level=10,
         )
-        if np.any(l.dot(x) < self.target_means * 0.99):
+        if np.any(l_vec.dot(x) < self.target_means * 0.99):
             return x, 1e20
         else:
             return x, x.dot(Q).dot(x)
@@ -2536,12 +2536,12 @@ class TESLinearAngleElecConstrained(TESLinearAngleConstrained):
         self._feasible = True
 
     def _solve_reduced(self, linear, quadratic, extra_ineq=None):
-        l = linear[0]
+        l_vec = linear[0]
         Q = quadratic[0]
         Qnorm = quadratic[1]
 
         x = _linear_angle_constrained_tes_opt(
-            l,
+            l_vec,
             self.target_mean,
             Q,
             self.max_el_current,
@@ -2552,7 +2552,7 @@ class TESLinearAngleElecConstrained(TESLinearAngleConstrained):
             log_level=10,
         )
 
-        field = l.dot(x)
+        field = l_vec.dot(x)
         if not self._feasible:
             return x, -field
 
@@ -2777,26 +2777,26 @@ class TESDistributed(TESConstraints):
                 leadfield[..., i].dot((leadfield[..., i] * weights**2).T)
                 for i in range(leadfield.shape[2])
             )
-            l = -2 * np.einsum(
+            l_vec = -2 * np.einsum(
                 "ijk, jk -> i", leadfield, target_field * weights[:, None] ** 2
             )
 
         elif weights.ndim == 2 and weights.shape[1] == 3:
             A = np.einsum("ijk, jk -> ij", leadfield, weights)
             Q = A.dot(A.T)
-            l = -2 * np.sum(target_field * weights, axis=1).dot(A.T)
+            l_vec = -2 * np.sum(target_field * weights, axis=1).dot(A.T)
 
         else:
             raise ValueError("Invalid shape for weights")
 
         # For numerical reasons
-        P = np.linalg.pinv(np.vstack([-np.ones(len(l)), np.eye(len(l))]))
-        l = l.dot(P)
+        P = np.linalg.pinv(np.vstack([-np.ones(len(l_vec)), np.eye(len(l_vec))]))
+        l_vec = l_vec.dot(P)
         Q = P.T.dot(Q).dot(P)
 
-        l /= np.sum(weights**2)
+        l_vec /= np.sum(weights**2)
         Q /= np.sum(weights**2)
-        return l, Q
+        return l_vec, Q
 
     def solve(self, log_level=20):
         """Solves the optimization problem
@@ -2838,17 +2838,17 @@ class TESDistributedElecConstrained(TESDistributed):
         self.n_elec = n_elec
 
     def _solve_reduced(self, linear, quadratic, extra_ineq=None):
-        l = linear[0]
+        l_vec = linear[0]
         Q = quadratic[0]
         x = _least_squares_tes_opt(
-            l,
+            l_vec,
             Q,
             self.max_el_current,
             self.max_total_current,
             extra_ineq=extra_ineq,
             log_level=10,
         )
-        return x, l.dot(x) + x.dot(Q).dot(x)
+        return x, l_vec.dot(x) + x.dot(Q).dot(x)
 
     def solve(
         self, log_level=20, eps_bb=1e-1, max_bb_iter=500, init_strategy="compact"
@@ -2892,7 +2892,7 @@ class TESDistributedElecConstrained(TESDistributed):
 
 
 def _linear_constrained_tes_opt(
-    l,
+    l_vec,
     target_mean,
     Q,
     max_el_current,
@@ -2902,9 +2902,9 @@ def _linear_constrained_tes_opt(
     log_level=10,
 ):
     assert (
-        l.shape[0] == target_mean.shape[0]
+        l_vec.shape[0] == target_mean.shape[0]
     ), "Please specify one target mean per target"
-    assert l.shape[1] == Q.shape[0]
+    assert l_vec.shape[1] == Q.shape[0]
 
     scale = max_total_current
 
@@ -2912,10 +2912,10 @@ def _linear_constrained_tes_opt(
     max_el_current = max_el_current / scale
     max_total_current = max_total_current / scale
 
-    n = l.shape[1]
+    n = l_vec.shape[1]
     tes_constraints = TESConstraints(n, max_total_current, max_el_current)
     # First solve an LP to get a feasible starting point
-    l_ = np.hstack([l, -l])
+    l_ = np.hstack([l_vec, -l_vec])
 
     C_, d_ = tes_constraints._l1_constraint()
     A_, b_ = tes_constraints._kirchhoff_constraint()
@@ -2945,7 +2945,7 @@ def _linear_constrained_tes_opt(
     x_ = sol.x
 
     # Test if the objective can be reached
-    f = l.dot(x_[:n] - x_[n:])
+    f = l_vec.dot(x_[:n] - x_[n:])
 
     if np.any(np.abs(f - target_mean) >= np.abs(1e-2 * target_mean)):
         logger.log(log_level, "Could not reach target intensities")
@@ -2959,7 +2959,7 @@ def _linear_constrained_tes_opt(
     abs_x_max = np.abs(x_).max()
 
     x_ = _active_set_QP(
-        l=np.zeros(2 * n),
+        l_vec=np.zeros(2 * n),
         Q=Q_,
         C=np.vstack([C_b, C_]),
         d=np.hstack([d_b, d_]),
@@ -2974,13 +2974,13 @@ def _linear_constrained_tes_opt(
     return (x_[:n] - x_[n:]) * scale
 
 
-def _calc_angle(x, Qin, l):
-    tan = np.sqrt(np.abs(x.dot(Qin).dot(x) - l.dot(x) ** 2))
-    return np.abs(np.arctan2(tan, l.dot(x)))[0]
+def _calc_angle(x, Qin, l_vec):
+    tan = np.sqrt(np.abs(x.dot(Qin).dot(x) - l_vec.dot(x) ** 2))
+    return np.abs(np.arctan2(tan, l_vec.dot(x)))[0]
 
 
 def _linear_angle_constrained_tes_opt(
-    l,
+    l_vec,
     target_mean,
     Q,
     max_el_current,
@@ -3003,7 +3003,7 @@ def _linear_angle_constrained_tes_opt(
 
     # Check if the maximal focality solution alreay fulfills the constraint
     x = _linear_constrained_tes_opt(
-        l,
+        l_vec,
         target_mean,
         Q,
         max_el_current,
@@ -3013,7 +3013,7 @@ def _linear_angle_constrained_tes_opt(
         log_level=log_level - 10,
     )
 
-    if _calc_angle(x, Qin, l) <= max_angle:
+    if _calc_angle(x, Qin, l_vec) <= max_angle:
         logger.log(log_level, "Max focality solution fullfills angle constraint")
         return x
 
@@ -3022,7 +3022,7 @@ def _linear_angle_constrained_tes_opt(
     # calculate the smallest angle, given a fixed intensity
     def _minimize_angle(alpha):
         x_l = _linear_constrained_tes_opt(
-            l,
+            l_vec,
             alpha * target_mean,
             Qin,
             max_el_current,
@@ -3034,7 +3034,7 @@ def _linear_angle_constrained_tes_opt(
         return x_l
 
     x = _minimize_angle(1.0)
-    angle = _calc_angle(x, Qin, l)
+    angle = _calc_angle(x, Qin, l_vec)
 
     # if we cannot reduce the angle to the target while keeting l^t x at the target
     # intensity, reduce the target intensity untill it's achievable.
@@ -3051,7 +3051,7 @@ def _linear_angle_constrained_tes_opt(
                 below - above
             ) / (angle_below - angle_above)
             x = _minimize_angle(alpha)
-            angle = _calc_angle(x, Qin, l)
+            angle = _calc_angle(x, Qin, l_vec)
             logger.log(
                 log_level,
                 "{0} alpha: {1:.3e}, angle: {2:.2e}, max_angle: {3:.2e}".format(
@@ -3085,7 +3085,7 @@ def _linear_angle_constrained_tes_opt(
         angle_below = angle
         below = 1.0
         x_below = np.copy(x)
-        angle_above = _calc_angle(x_above, Qin, l)
+        angle_above = _calc_angle(x_above, Qin, l_vec)
         above = 0
 
         # Start the secant method
@@ -3097,7 +3097,7 @@ def _linear_angle_constrained_tes_opt(
             ) / (angle_below - angle_above)
 
             x = _linear_constrained_tes_opt(
-                l,
+                l_vec,
                 target_mean,
                 (1 - alpha) * Q + alpha * Qin,
                 max_el_current,
@@ -3106,7 +3106,7 @@ def _linear_angle_constrained_tes_opt(
                 extra_eq=extra_eq,
                 log_level=log_level - 10,
             )
-            angle = _calc_angle(x, Qin, l)
+            angle = _calc_angle(x, Qin, l_vec)
             logger.log(
                 log_level,
                 f"{it} alpha: {alpha:.2f}, angle: {angle:.2e}, max_angle: {max_angle:.2e}",
@@ -3159,7 +3159,7 @@ def _bb_bounds_tes_problem(state, max_l0, linear, quadratic, max_el_current, fun
         extra_ineq = None
 
     # Run problem in reduced system
-    linear_ac = [l[:, ac] for l in linear]
+    linear_ac = [l_vec[:, ac] for l_vec in linear]
     quadratic_ac = [Q[np.ix_(ac, ac)] for Q in quadratic]
     x_ac, objective_lb = func(linear_ac, quadratic_ac, extra_ineq=extra_ineq)
     x_lb = np.zeros(n)
@@ -3179,7 +3179,7 @@ def _bb_bounds_tes_problem(state, max_l0, linear, quadratic, max_el_current, fun
 
     # Select the active electrodes plus the largest unassigned electrodes
     s = state.active + selected_unasigned
-    linear_s = [l[:, s] for l in linear]
+    linear_s = [l_vec[:, s] for l_vec in linear]
     quadratic_s = [Q[np.ix_(s, s)] for Q in quadratic]
     x_s, objective_ub = func(linear_s, quadratic_s)
     x_ub = np.zeros(n)
@@ -3364,7 +3364,7 @@ def _norm_opt_x0(
     max_iter = 100
 
     while n_iter < max_iter:
-        l = -2 * x.dot(Qnorm)
+        l_vec = -2 * x.dot(Qnorm)
         x_ = np.hstack([x, -x, np.zeros(n_eqs)])
         x_[x_ < 0] = 0
         squared_norm = x.dot(Qnorm).dot(x)
@@ -3373,14 +3373,14 @@ def _norm_opt_x0(
         # Update the penalty
         a_[-n_eqs:] = tau
         # Inequalily Cx < d
-        C_[-n_eqs:, : 2 * n] = np.hstack([l, -l])
+        C_[-n_eqs:, : 2 * n] = np.hstack([l_vec, -l_vec])
         d_[-n_eqs:] = -squared_norm - (target_norm**2)
         # Run the QP
         # Sometimes due to numerical instabilities this can fail
         abs_x_max = np.abs(x).max()
         try:
             x_ = _active_set_QP(
-                l=a_,
+                l_vec=a_,
                 Q=Q_,
                 C=C_,
                 d=d_,
@@ -3420,7 +3420,7 @@ def _norm_opt_x0(
 
 
 def _least_squares_tes_opt(
-    l,
+    l_vec,
     Q,
     max_el_current,
     max_total_current,
@@ -3431,7 +3431,7 @@ def _least_squares_tes_opt(
     n = Q.shape[1]
     tes_constraints = TESConstraints(n, max_total_current, max_el_current)
     # First solve an LP to get a feasible starting point
-    l_ = np.hstack([l, -l])
+    l_ = np.hstack([l_vec, -l_vec])
 
     C_, d_ = tes_constraints._l1_constraint()
     A_, b_ = tes_constraints._kirchhoff_constraint()
@@ -3447,7 +3447,7 @@ def _least_squares_tes_opt(
 
     Q_ = np.block([[Q, -Q], [-Q, Q]])
 
-    x = _eq_constrained_QP(np.squeeze(l), Q, A_[:, :n], b_)
+    x = _eq_constrained_QP(np.squeeze(l_vec), Q, A_[:, :n], b_)
     x_ = np.hstack([x, -x])
     x_[x_ < 0] = 0
     # I leave some gap just so that I don't start with too many
@@ -3477,7 +3477,7 @@ def _least_squares_tes_opt(
 
 
 def _active_set_QP(
-        l: npt.NDArray,
+        l_vec: npt.NDArray,
         Q: npt.NDArray,
         C: npt.NDArray,
         d: npt.NDArray,
@@ -3565,7 +3565,7 @@ def _active_set_QP(
     Y = ZY[:, :n_active]
     Z = ZY[:, n_active:]
     while n_iter <= max_iter:
-        l_i = l + Q.dot(x)
+        l_i = l_vec + Q.dot(x)
         Y = ZY[:, :n_active]
         Z = ZY[:, n_active:]
         if n_active >= n:
@@ -3639,14 +3639,14 @@ def _active_set_QP(
     return x
 
 
-def _eq_constrained_QP(l, Q, A, b):
+def _eq_constrained_QP(l_vec, Q, A, b):
     Q_qr, _ = np.linalg.qr(A.T, "complete")
     m, n = A.shape
     Y = Q_qr[:, np.arange(m)]
     Z = Q_qr[:, np.arange(m, n)]
     w_y = np.linalg.solve(A.dot(Y), b)
     p = Y.dot(w_y)
-    w_z = np.linalg.solve(Z.T.dot(Q).dot(Z), -Z.T.dot(l + Q.dot(p)))
+    w_z = np.linalg.solve(Z.T.dot(Q).dot(Z), -Z.T.dot(l_vec + Q.dot(p)))
     x = p + Z.dot(w_z)
     x = np.squeeze(x.T)
     return x
