@@ -15,21 +15,28 @@ dynamic = ["version"]
 #version = v4.1
 requires-python = ">=3.11"
 
+# additional dependencies which should perhaps be added?
+# libwebp, freeglut
+# python-mumps - only works automatically via conda
+# mpfr, gmp - from conda
 dependencies =[
+    "fmm3dpy==1.0.0",
+    "h5py",
+    "jsonschema",
+    # "matplotlib",
+    "mkl ; sys_platform != 'darwin'",
+    "nibabel",
+    "numba",
     "numpy",
     "petsc4py",
-    "scipy",
-    "h5py",
-    "nibabel",
-    "jsonschema",
-    "tbb ; sys_platform != 'darwin'",
-    "numba",
-    "fmm3dpy==1.0.0",
-    "samseg",
-    "PyQt5",
-    "mkl ; sys_platform != 'darwin'",
+    "pillow",
     "pygpc==0.3.9",
-    "packaging"]
+    "PyQt5",
+    "requests",
+    "samseg",
+    "scipy",
+    "tbb ; sys_platform != 'darwin'",
+  ]
 
 [project.urls]  # Optional
 "Homepage" = "simnibs.org"
