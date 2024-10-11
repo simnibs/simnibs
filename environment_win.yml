@@ -2,30 +2,30 @@ name: simnibs_env
 channels:
   - conda-forge
 dependencies:
-  - python=3.11
-  - pyopengl
-  - pytest
-  - cython
-  - mock
-  - requests
-  - freeglut
-  - vs2015_runtime
-  - pip
+  - python=3.11.10
   - cgal-cpp=5.5.1
-  - libwebp
-  - pillow
-  - numpy < 2
-  - scipy
-  - h5py
-  - nibabel
-  - jsonschema
-  - tbb-devel
-  - numba
-  - mkl
-  - zlib
-  - matplotlib
-  - python-mumps
-  - setuptools-scm
+  - cython=3.0.11
+  - freeglut=3.2.2
+  - h5py=3.11.0
+  - jsonschema=4.23.0
+  - libwebp=1.4.0
+  - matplotlib=3.9.2
+  - mkl=2024.2.1
+  - mock=5.1.0
+  - nibabel=5.2.1
+  - numba=0.60.0
+  - numpy=1.26.4
+  - pillow=10.4.0
+  - pip=24.2
+  - pyopengl=3.1.6
+  - pytest=8.3.3
+  - python-mumps=0.0.2
+  - requests=2.32.3
+  - scipy=1.14.1
+  - setuptools-scm=8.1.0
+  - tbb-devel=2021.13.0
+  - vs2015_runtime=14.40.33810
+  - zlib=1.3.1
   - pip:
     - fmm3dpy==1.0.0
     - https://github.com/oulap/samseg_wheels/releases/download/dev/samseg-0+untagged.1.g136b181-cp311-cp311-win_amd64.whl
