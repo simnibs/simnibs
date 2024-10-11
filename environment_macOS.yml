@@ -25,6 +25,6 @@ dependencies:
   - setuptools-scm
   - pip:
     - simnibs/external/wheels/fmm3dpy-1.0.0-cp311-cp311-macosx_11_0_arm64.whl
-    - https://github.com/oulap/samseg_wheels/releases/download/dev/samseg-0+untagged.1.g136b181-cp311-cp311-macosx_14_0_arm64.whl
+    - samseg==0.4a0
     - pygpc==0.3.9
     - https://github.com/jduemose/simple-petsc4py/releases/download/v3.21.5/petsc4py-3.21.5-cp311-cp311-macosx_14_0_arm64.whl
