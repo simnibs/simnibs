@@ -19,7 +19,6 @@ dependencies:
   - jsonschema
   - numba
   - pyqt
-  - packaging
   - zlib
   - matplotlib
   - python-mumps

@@ -22,7 +22,6 @@ dependencies:
   - tbb-devel
   - numba
   - mkl
-  - packaging
   - zlib
   - matplotlib
   - python-mumps
