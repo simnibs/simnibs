@@ -31,4 +31,4 @@ dependencies:
     - samseg==0.4a0
     - pygpc==0.3.9
     - PyQt5
-    - https://github.com/jduemose/simple-petsc4py/releases/download/v3.21.5/petsc4py-3.21.5-cp311-cp311-win_amd64.whl
+    - https://github.com/simnibs/petsc4py/releases/download/v3.21.5/petsc4py-3.21.5-cp311-cp311-win_amd64.whl
