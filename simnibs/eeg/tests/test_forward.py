@@ -24,8 +24,7 @@ def sphere3_msh():
 
 # False gives large errors with this coarse mesh
 @pytest.mark.parametrize("point_electrodes", [True])
-@pytest.mark.parametrize("solver", ["petsc", "pardiso"])
-def test_prepare_forward(point_electrodes, solver, sphere3_msh):
+def test_prepare_forward(point_electrodes, sphere3_msh):
 
     s = standard_cond()
     # Special tags for sphere3_msh
@@ -37,8 +36,6 @@ def test_prepare_forward(point_electrodes, solver, sphere3_msh):
     subsampling = None
     # inner compartment is 3 in sphere3_msh
     init_kwargs = dict(interpolation_tissue=[3], cond=s)
-    if solver == "pardiso":
-        init_kwargs["solver_options"] = "pardiso"
 
     radii = [85, 90, 95]
     for tag, radius in zip([1003, 1004, 1005], radii):

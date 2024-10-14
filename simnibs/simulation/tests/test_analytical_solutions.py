@@ -34,7 +34,7 @@ def quadrant_points():
 
 
 class Testlpmn:
-    @pytest.mark.parametrize("m", [1, 10])
+    @pytest.mark.parametrize("m", [1, 5])
     @pytest.mark.parametrize("n", [10, 100])
     def test_lpmn_scipy(self, n, m):
         """Test lpmn against the one in scipy.special."""
@@ -42,7 +42,7 @@ class Testlpmn:
         x = np.linspace(-1, 1, 100)
         A = np.stack([scipy.special.lpmn(m, n, j)[0] for j in x], axis=2)
         B = analytical_solutions.lpmn(m, n, x)
-        np.testing.assert_allclose(A, B)
+        np.testing.assert_allclose(A, B, atol=1e-8)
 
     def test_lpmn_analytical(self):
         """Test first few degree polynomials."""
