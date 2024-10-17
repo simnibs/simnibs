@@ -1564,6 +1564,9 @@ def create_mesh(label_img, affine,
     if not 'standard' in facet_distances:
         raise ValueError('facet_distances needs a \"standard\" entry')
     
+    if label_img.dtype not in [np.uint8, np.uint16]:
+        raise MeshingError('Image must be of type uint8 or uint16')
+    
     label_img = label_img.astype(np.uint16)
 
     if apply_cream:
