@@ -56,7 +56,7 @@ def main():
     mesh = mesh_io.read_msh(args.fn_mesh)
     vol = image.dataobj
     if not np.issubdtype(vol.dtype, np.integer):
-        logger.warn('Volume is not an integer type, masking may fail')
+        logger.warning('Volume is not an integer type, masking may fail')
 
     affine = image.affine
 

@@ -1337,7 +1337,7 @@ def _fix_labels(m, label_img):
         idx_keep = np.argsort(label_counts)[::-1]
         idx_keep = idx_keep[:-n_dropped]
         indices_seg = np.sort(indices_seg[idx_keep])
-        logger.warn('{} small region(s) dropped during meshing. Check label numbers in mesh!'.format(n_dropped))
+        logger.warning('{} small region(s) dropped during meshing. Check label numbers in mesh!'.format(n_dropped))
     new_tags = np.copy(m.elm.tag1)
     for i, t in enumerate(indices_seg):
         new_tags[m.elm.tag1 == i+1] = t
@@ -1582,7 +1582,7 @@ def create_mesh(label_img, affine,
     thickness[thickness < .5] = 100 # set background thickness to some large value
     voxel_size = get_vox_size(affine) 
     if not np.allclose(np.diff(voxel_size), 0):
-        logger.warn('Anisotropic image, meshing may contain extra artifacts')
+        logger.warning('Anisotropic image, meshing may contain extra artifacts')
     thickness *= np.average(voxel_size) # Scale thickness with voxel size
     
     # Define size fields and distance field
@@ -2197,7 +2197,7 @@ def apply_cream_layer(label_img, size_field, distance_field, cream_thickness):
 #     thickness[thickness < .5] = 100 # set background thickness to some large value
 #     voxel_size = get_vox_size(affine) 
 #     if not np.allclose(np.diff(voxel_size), 0):
-#         logger.warn('Anisotropic image, meshing may contain extra artifacts')
+#         logger.warning('Anisotropic image, meshing may contain extra artifacts')
 #     thickness *= np.average(voxel_size) # Scale thickness with voxel size
     
 #     # Define size fields and distance field

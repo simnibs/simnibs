@@ -15,7 +15,7 @@ logging.addLevelName(25, 'SUMMARY')
 logging.addLevelName(26, 'SUMMARY')
 
 def log_warnings(message, category, filename, lineno, file=None, line=None):
-    logger.warn(warnings.formatwarning(message, category, filename, lineno))
+    logger.warning(warnings.formatwarning(message, category, filename, lineno))
 
 
 # This is causing errors in pytest
