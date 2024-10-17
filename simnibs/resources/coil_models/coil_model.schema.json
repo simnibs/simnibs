@@ -18,7 +18,7 @@
             "type": "string"
         },
         "limits": {
-            "description": "Used for expansion into NIfTI digitized files. This is in mm format and follows the structure [[min(x), max(x)],[min(y), max(y)],[min(z), max(z)]]",
+            "description": "Used for expansion into NIfTI digitized files or digitized grid elements. This is in mm format and follows the structure [[min(x), max(x)],[min(y), max(y)],[min(z), max(z)]]",
             "type": "array",
             "items": {
                 "type": "array",
@@ -32,7 +32,7 @@
             "maxItems": 3
         },
         "resolution": {
-            "description": "The sampling resolution (step width in mm) for expansion into NIfTI files. This follows the structure [rx,ry,rz] for x, y, and z directions",
+            "description": "The sampling resolution (step width in mm) for expansion into NIfTI files or digitized grid elements. This follows the structure [rx,ry,rz] for x, y, and z directions",
             "type": "array",
             "items": {
                 "type": "number",
@@ -86,7 +86,7 @@
                         ]
                     },
                     "points": {
-                        "description": "An array of 3D vectors, defining positions for line segments or dipoles",
+                        "description": "An array of 3D vectors, defining positions for line segments or dipoles in mm",
                         "oneOf": [
                             {
                                 "type": "array",
@@ -108,7 +108,7 @@
                         ]
                     },
                     "values": {
-                        "description": "An array of 3D vectors, defines dipole moments or direction definition for line elements",
+                        "description": "An array of 3D vectors, defines dipole moments in Am² or direction and magnitude in mm for line elements",
                         "oneOf": [
                             {
                                 "type": "array",
@@ -130,7 +130,7 @@
                         ]
                     },
                     "data": {
-                        "description": "An array of 3D grid values for every (x, y, z) coordinate in voxel space",
+                        "description": "Magnetic vector potential field (A-field) in Tm, for every (x, y, z) coordinate in voxel space",
                         "oneOf": [
                             {
                                 "type": "array",
@@ -160,7 +160,7 @@
                         ]
                     },
                     "affine": {
-                        "description": "Affine matrix (4x4) used to transform the digitized points data from voxel space into world space",
+                        "description": "Affine matrix (4x4 in mm) used to transform the magnetic vector potential field (A-field) from voxel space into world space",
                         "type": "array",
                         "items": {
                             "type": "array",
@@ -344,7 +344,7 @@
                         ]
                     },
                     "point1": {
-                        "description": "The x, y, z coordinates for the first point defining the rotation axis (in case of rot2p)",
+                        "description": "The x, y, z coordinates for the first point defining the rotation axis in mm (in case of rot2p)",
                         "type": "array",
                         "items": {
                             "type": "number"
@@ -353,7 +353,7 @@
                         "maxItems": 3
                     },
                     "point2": {
-                        "description": "The x, y, z coordinates for the second point defining the rotation axis (in case of rot2p)",
+                        "description": "The x, y, z coordinates for the second point defining the rotation axis in mm (in case of rot2p)",
                         "type": "array",
                         "items": {
                             "type": "number"
@@ -400,11 +400,11 @@
                 "type": "object",
                 "properties": {
                     "initial": {
-                        "description": "The initial value for the deformation",
+                        "description": "The initial value for the deformation (in degree for rotation or in mm for translation)",
                         "type": "number"
                     },
                     "range": {
-                        "description": "The allowable range for deformation parameter [minimum, maximum]",
+                        "description": "The allowable range for deformation parameter [minimum, maximum] (in degree for rotation or in mm for translation)",
                         "type": "array",
                         "items": {
                             "type": "number"
@@ -429,7 +429,7 @@
                 "type": "object",
                 "properties": {
                     "points": {
-                        "description": "A list of 3D vertex positions",
+                        "description": "A list of 3D vertex positions in mm",
                         "oneOf": [
                             {
                                 "type": "array",
@@ -474,7 +474,7 @@
                         ]
                     },
                     "minDistancePoints": {
-                        "description": "A list of 3D points used for the minimum distance optimization",
+                        "description": "A list of 3D points in mm used for the minimum distance optimization",
                         "oneOf": [
                             {
                                 "type": "array",
