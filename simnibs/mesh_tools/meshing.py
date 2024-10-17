@@ -1486,7 +1486,7 @@ def create_mesh(label_img, affine,
 
     Parameters
     ----------
-    label_img: 3D np.ndarray in uint8 format
+    label_img: 3D np.ndarray in uint8 or uint16 format
         Labeled image from segmentation
     affine: 4x4 np.ndarray
         Affine transformation from voxel coordinates to world coordinates
@@ -1563,6 +1563,8 @@ def create_mesh(label_img, affine,
         raise ValueError('elem_sizes needs a \"standard\" entry')
     if not 'standard' in facet_distances:
         raise ValueError('facet_distances needs a \"standard\" entry')
+    
+    label_img = label_img.astype(np.uint16)
 
     if apply_cream:
         if sizing_field is not None:

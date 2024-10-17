@@ -210,7 +210,7 @@ def test_smoothfill():
     unass[7:9, 6:8, 1:3] = True
     tissue_dict = {'bg': 0, 'first': 1, 'second': 2, 'WM': 3, 'fifth': 5}
     expected_array = test_array.copy()
-    test_array[unass] = -1
+    test_array[unass] = 65535
     charm_utils._smoothfill(test_array, unass, tissue_dict)
     assert (test_array == 65535).sum() == 0
     np.testing.assert_allclose(expected_array == 3, test_array == 3)
@@ -222,7 +222,7 @@ def test_fill_missing():
     unass[6,6,6] = True
     unass[7:9, 6:8, 1:3] = True
     expected_array = test_array.copy()
-    test_array[unass] = -1
+    test_array[unass] = 65535
     charm_utils._fill_missing(test_array, unass)
     assert (test_array == 65535).sum() == 0
     np.testing.assert_allclose(expected_array == 3, test_array == 3)

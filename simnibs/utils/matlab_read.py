@@ -23,6 +23,9 @@ def try_to_read_matlab_field(matlab_structure, field_name, field_type, alternati
     """
 
     try:
+        if isinstance(matlab_structure[field_name][0], np.ndarray) and len(matlab_structure[field_name][0]) == 1 and field_type is not list:
+            return field_type(matlab_structure[field_name][0][0])
+
         return field_type(matlab_structure[field_name][0])
     except (TypeError, KeyError, IndexError, ValueError):
         pass

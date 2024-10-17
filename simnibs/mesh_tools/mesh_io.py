@@ -6547,7 +6547,7 @@ def write_gifti_surface(msh, fn, ref_image=None):
         coordsys = nibabel.gifti.GiftiCoordSystem(0, 3, np.eye(4))
     # This metadata is needed for FreeView
     # NOT WORKING! I NEDD TO PUT THESE THINGS IN A CDATA FIELD SOMEHOW
-    metadata = nibabel.gifti.GiftiMetaData.from_dict({
+    metadata = nibabel.gifti.GiftiMetaData({
         'VolGeomWidth': '256', 'VolGeomHeight': '256', 'VolGeomWidth': '256',
         'VolGeomXsize': '1.0', 'VolGeomYsize': '1.0', 'VolGeomZsize': '1.0',
         'VolGeomX_R': '-1.0', 'VolGeomX_A': '0.0', 'VolGeomX_S': '0.0',
@@ -6926,7 +6926,7 @@ def _hash_rows(array, mult=1000003, dtype=np.uint64):
         hash_array = np.bitwise_xor(hash_array, sorted[:, i]) * mult
         mult += dtype(82520 + i + i)
     hash_array += dtype(97531)
-    hash_array[hash_array == -1] = -2
+    hash_array[hash_array == -1] = np.array(-2).astype(dtype)
     return hash_array
 
 
