@@ -1,0 +1,10 @@
+[run]
+omit = 
+    GUI/*
+    cli/*
+    simulation/pygpc/*
+    segmentation/_marching_cubes_lewiner_luts.py
+    utils/sitecustomize.py
+    utils/_system_path.py
+    **/test*
+    examples/*
