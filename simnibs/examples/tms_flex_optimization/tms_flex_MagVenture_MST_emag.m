@@ -36,7 +36,7 @@ tms_opt.roi.method = 'volume';
 tms_opt.roi.tissues = 2;
 % center of spherical ROI in MNI space (in mm)
 tms_opt.roi.roi_sphere_center_space = {'mni'};
-tms_opt.roi.roi_sphere_center = [0., 0., 64.8];
+tms_opt.roi.roi_sphere_center = [0., 40., 64.8];
 % radius of spherical ROI (in mm)
 tms_opt.roi.roi_sphere_radius = 50;
 % for visual control of the ROI before running the optimization:
@@ -53,6 +53,6 @@ tms_opt.method = 'emag';
 %
 % translations relative to initial position in [mm]
 tms_opt.global_translation_ranges = {[-30, 30], [-30, 30], [-30, 30]};
-tms_opt.global_rotation_ranges = {[-30, 30], [-30, 30], [-95, 95]};
+tms_opt.global_rotation_ranges = {[-30, 30], [-30, 30], [-30, 30]};
 
 run_simnibs(tms_opt)
