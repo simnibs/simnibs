@@ -15,6 +15,7 @@ import numpy as np
 import scipy.sparse as sparse
 from simnibs.mesh_tools import gmsh_view
 from simnibs.simulation.tms_coil.tms_coil import TmsCoil
+import simnibs.simulation
 
 from simnibs.utils.mesh_element_properties import ElementTags
 
@@ -24,10 +25,8 @@ import mumps
 from ..utils.simnibs_logger import logger
 
 from petsc4py import PETSc
+from simnibs.simulation import pardiso
 
-# import mkl
-# mkl.set_num_threads(4)
-# mkl.set_num_threads(mkl.get_max_threads())
 
 '''
     This program is part of the SimNIBS package.
@@ -50,10 +49,10 @@ from petsc4py import PETSc
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-VALID_SOLVER_OPTIONS = {"hypre", "pardiso", "mumps"}
+VALID_SOLVER_OPTIONS = {"hypre", "pardiso", "mumps", "petsc_pardiso"}
 
 class KSPSolver:
-    def __init__(self, A, ksp_type, pc_type, factor_solver_type=None, rtol=1e-10) -> None:
+    def __init__(self, A, ksp_type, pc_type, factor_solver_type=None, rtol=1e-10, log_level=20) -> None:
         """Simple interface to setup PETSc KSP object with very limited flexibility.
 
         when pc_type = hypre the, the following options are hardcoded:
@@ -63,6 +62,7 @@ class KSPSolver:
 
         """
 
+        self.log_level = log_level
         self.set_system_matrix(A)
         self.setup_ksp(ksp_type, pc_type, factor_solver_type, rtol)
         self.initialize_system_vectors()
@@ -114,7 +114,7 @@ class KSPSolver:
 
         start = time.perf_counter()
         ksp.setUp()
-        logger.info(f"Time to set up KSP: {time.perf_counter()-start:8.4f} s")
+        logger.log(self.log_level,f"Time to set up KSP: {time.perf_counter()-start:8.4f} s")
 
         self.ksp = ksp
 
@@ -122,7 +122,7 @@ class KSPSolver:
         start = time.perf_counter()
         self._b[:] = b
         self.ksp.solve(self._b, self._x)
-        logger.info(f"Time to solve: {time.perf_counter()-start:8.4f} s")
+        logger.log(self.log_level,f"Time to solve: {time.perf_counter()-start:8.4f} s")
         return self._x[:]
 
     def solve(self, b: np.ndarray):
@@ -699,15 +699,18 @@ class FEMSystem(object):
         dof_map = copy.deepcopy(self.dof_map)
         if self.dirichlet is not None:
             A, dof_map = self.dirichlet.apply_to_matrix(A, dof_map)
-
+            
         if self._solver_options == 'pardiso':
-            self._solver = KSPSolver(A, "preonly", "cholesky", "mkl_pardiso")
+            self._solver = pardiso.Solver(A, log_level=self.solver_loglevel)
+        elif self._solver_options == 'petsc_pardiso':
+            self._solver = KSPSolver(A, "preonly", "cholesky", "mkl_pardiso", 
+                                     log_level=self.solver_loglevel)
         elif self._solver_options == 'mumps':
             self._solver = MUMPS_Solver(A, isSymmetric=True, log_level=self.solver_loglevel)
             # or with PETSc (only on MacOS)
             # self._solver = KSPSolverSimple(A, "preonly", "cholesky", "mumps")
         elif self._solver_options == "hypre":
-            self._solver = KSPSolver(A, "cg", "hypre")
+            self._solver = KSPSolver(A, "cg", "hypre", log_level=self.solver_loglevel)
         else:
             raise ValueError(f"Invalid solver (got {self._solver_options})")
 
@@ -794,7 +797,8 @@ class TMSFEM(FEMSystem):
             solver_options=None,
             units='mm',
             store_G=True,
-            solver_loglevel=logging.INFO
+            solver_loglevel=logging.INFO,
+            dirichlet_node=None
         ):
         '''Set up a TMS problem.
 
@@ -806,8 +810,16 @@ class TMSFEM(FEMSystem):
             Conductivity of each element.
         solver_options: str
             Options to be used by the solver. Default: DEFAULT_SOLVER_OPTIONS
+        dirichlet_node: int
+            explicitly use this node number as dirichlet node,
+            refers to mesh.nodes.node_number, indexing starts at 1.
+            Default: None, this will use the node with the lowest z-coordinate
+            
         '''
-        dirichlet_bc = set_ground_at_nodes(mesh)
+        if dirichlet_node is None:
+            dirichlet_bc = set_ground_at_nodes(mesh)
+        else:
+            dirichlet_bc = set_ground_at_nodes(mesh, nodes=dirichlet_node)
         super().__init__(mesh, cond, dirichlet_bc, units, store_G, solver_options, solver_loglevel)
 
     def assemble_rhs(self, dadt):
