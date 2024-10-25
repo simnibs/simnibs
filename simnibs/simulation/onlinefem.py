@@ -54,12 +54,13 @@ class OnlineFEM:
     """
     def __init__(self, mesh, method, roi, anisotropy_type="scalar", solver_options="pardiso", fn_logger=None,
                  useElements=True, fn_coil=None, dataType=0, coil=None, electrode=None, dirichlet_node=None,
-                 solver_loglevel=logging.DEBUG, cpus=None):
+                 solver_loglevel=logging.DEBUG, cpus=None, cond=None):
         """
         Constructor of the OnlineFEM class
         """
         self.method = method                        # 'TES' or 'TMS'
         self.dataType = dataType                    # calc. magn. of e-field for dataType=0 otherwise return Ex, Ey, Ez
+        self.cond = cond
         self.anisotropy_type = anisotropy_type      # 'scalar', 'dir', 'vn', 'mc'
         self.A = None                               # stiffness matrix
         self.b = None                               # rhs
@@ -139,7 +140,7 @@ class OnlineFEM:
 
         # For TMS we use only tetrahedra (elm_type=4). The triangles (elm_type=3) are removed.
         if self.method == "TMS":
-            self.mesh = remove_triangles_from_mesh(self.mesh)
+            self.mesh = self.mesh.crop_mesh(elm_type=4)
 
         # prepare solver and set self.solver
         self._set_matrices_and_prepare_solver()
@@ -719,15 +720,17 @@ class OnlineFEM:
         """
         Set matrices and initialize the pardiso solver for update_position in self.solver.
         """
-
-        # prepare FEM
-        self.simulist = SimuList(mesh=self.mesh)
-
-        # prepare conductivity (scalar or anisotropic)
-        self.simulist.anisotropy_type = self.anisotropy_type
-        self.simulist.fn_tensor_nifti = self.fn_tensor_nifti
-        self.cond = self.simulist.cond2elmdata()
-
+        
+        if self.cond is None:    
+            # prepare FEM
+            self.simulist = SimuList(mesh=self.mesh)
+    
+            # prepare conductivity (scalar or anisotropic)
+            self.simulist.anisotropy_type = self.anisotropy_type
+            self.simulist.fn_tensor_nifti = self.fn_tensor_nifti
+            self.cond = self.simulist.cond2elmdata()
+        
+        
         # TODO: also use the new TMSFEM class here for TMS but implement the fast RHS calculations from here in it
         if self.method == "TMS":
             self.cond = self.cond.value.squeeze()
@@ -770,6 +773,7 @@ class OnlineFEM:
             
             self.fem.prepare_solver()
             self.solver = self.fem._solver
+
 
         elif self.method == "TES":
             self.fem = TDCSFEMNeumann(mesh=self.mesh,
@@ -918,82 +922,6 @@ def get_coordinates(node_coordinates, node_numbers, useElements):
         coordinates = node_coordinates
 
     return coordinates
-
-
-def remove_triangles_from_mesh(mesh):
-    """
-    Load the mesh file. For the E field calculation, we use only tetrahedra (elm_type=4).
-    The triangles (elm_type=3) are removed.
-
-    Parameters
-    ----------
-    mesh : Msh object
-        Mesh object
-
-    Returns
-    -------
-    mesh : Msh object
-        Mesh object without triangles
-    """
-
-    # keep the tetrahedra in the mesh file (triangles are removed)
-    mesh = mesh.crop_mesh(elm_type=4)
-
-    assert mesh.elm.node_number_list.max() == mesh.nodes.nr
-
-    # get the nodal index and value with dirichlet boundary condition
-    index_naught = mesh.nodes.node_coord[:, 2].argmin()
-
-    # switch the node with dirichlet bc and the last node
-    mesh.nodes.node_coord[[index_naught, -1]] = mesh.nodes.node_coord[[-1, index_naught]]
-
-    # update the node_number_list
-    mask1 = np.nonzero(mesh.elm.node_number_list == index_naught + 1)
-    mask2 = np.nonzero(mesh.elm.node_number_list == mesh.nodes.nr)
-    mesh.elm.node_number_list[mask1] = mesh.nodes.nr
-    mesh.elm.node_number_list[mask2] = index_naught + 1
-
-    return mesh
-
-
-def get_mesh_with_tetrahedra(mesh_file, logger=None):
-    """
-    Load the mesh file. For the E field calculation, we use only tetrahedra (elm_type=4).
-    The triangles (elm_type=3) are removed.
-
-    Parameters
-    ----------
-    mesh_file : str
-        Filename (incl. path) to .msh file.
-    logger : logger object
-        Logger
-
-    Returns
-    -------
-    mesh : Msh object
-        Mesh object
-    """
-    # read_mesh: load the mesh file; crop_mesh: keep the tetrahedra in the mesh file (triangles are removed)
-    mesh = read_msh(mesh_file).crop_mesh(elm_type=4)
-
-    assert mesh.elm.node_number_list.max() == mesh.nodes.nr
-
-    # get the nodal index and value with dirichlet boundary condition
-    index_naught = mesh.nodes.node_coord[:, 2].argmin()
-
-    # switch the node with dirichlet bc and the last node
-    mesh.nodes.node_coord[[index_naught, -1]] = mesh.nodes.node_coord[[-1, index_naught]]
-
-    # update the node_number_list
-    mask1 = np.nonzero(mesh.elm.node_number_list == index_naught + 1)
-    mask2 = np.nonzero(mesh.elm.node_number_list == mesh.nodes.nr)
-    mesh.elm.node_number_list[mask1] = mesh.nodes.nr
-    mesh.elm.node_number_list[mask2] = index_naught + 1
-
-    if logger is not None:
-        logger.info('Loaded mesh file: ' + mesh_file)
-
-    return mesh
 
 
 def delete_row_csr(mat, i):
