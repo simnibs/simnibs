@@ -24,14 +24,21 @@ class OnlineFEM:
     """
     OnlineFEM class for fast FEM calculations using the Pardiso solver of the MKL library
 
+    !!! NOTE !!!
+    TMS:
+        The mesh used in the OnlineFem and in the FemTargetPointCloud have to have the same node coordinates and the same node ordering. 
+        They also have to have the same elements and the same element ordering. 
+    TES:
+        The mesh used in the OnlineFem and in the FemTargetPointCloud have to have the same node coordinates and the same node ordering. 
+
     Parameters
     ----------
     mesh : Msh object or str
         Head mesh or path to it.
     method : str
         Specify simulation type ('TMS' or 'TES')
-    roi : list of RegionOfInterest object [n_roi]
-        Region of interests.
+    roi : list of FemTargetPointCloud object [n_roi]
+        Target coordinates for the E-field calculation.
     anisotropy_type : str
         Type of anisotropy for simulation ('scalar', 'vn', 'mc')
     solver_options : str
@@ -140,7 +147,12 @@ class OnlineFEM:
 
         # For TMS we use only tetrahedra (elm_type=4). The triangles (elm_type=3) are removed.
         if self.method == "TMS":
+            node_nr_before = self.mesh.nodes.nr
+            nodes_before = np.copy(self.mesh.nodes.node_coord)
             self.mesh = self.mesh.crop_mesh(elm_type=4)
+            # ensure that the nodes did not change
+            assert self.mesh.nodes.nr == node_nr_before, 'The mesh nodes changed when removing triangles! Please make sure the mesh is valid.'
+            assert (self.mesh.nodes.node_coord == nodes_before).all(), 'The mesh nodes changed when removing triangles! Please make sure the mesh is valid.'
 
         # prepare solver and set self.solver
         self._set_matrices_and_prepare_solver()
@@ -986,17 +998,23 @@ def delete_col_csr(mat, i):
 
 class FemTargetPointCloud:
     """
-    Region of interest class containing methods to compute the electric field from the electric potential (fast).
-    Either define ROI with nodes and con
+    Class containing methods to compute the electric field at point cloud points from the electric potential at nodes (fast).
+
+    !!! NOTE !!!
+    TMS:
+        The mesh used in the OnlineFem and in the FemTargetPointCloud have to have the same node coordinates and the same node ordering. 
+        They also have to have the same elements and the same element ordering. 
+    TES:
+        The mesh used in the OnlineFem and in the FemTargetPointCloud have to have the same node coordinates and the same node ordering. 
 
     Parameters
     ----------
     mesh : Msh object instance
         Head mesh
-    center : np.ndarray of flloat [n_roi_center x 3]
-        The point coordinates where the e-field is calculated, e.g. element center of triangles or tetrahedra.
+    center : np.ndarray of float [n_roi_center x 3]
+        The point coordinates where the e-field is calculated, e.g. element center of tetrahedra.
     gradient : np.array of float [n_tet_mesh_required x 4 x 3]
-        Gradient operator of the tetrahedral edges.
+        Pre-calculated gradient operator of the tetrahedral edges.
     nearest_neighbor : bool
         Weather to use SPR interpolation or nearest naigbor
     out_fill : float or None
@@ -1005,15 +1023,10 @@ class FemTargetPointCloud:
 
     Attributes
     ----------
-    center : np.ndarray of flloat [n_roi_center x 3]
+    center : np.ndarray of float [n_roi_center x 3]
         The point coordinates where the e-field is calculated, e.g. element center of triangles or tetrahedra.
-    center : np.ndarray of flloat [n_roi_center]
+    n_center : int
         Number of center points in the ROI.
-    nodes : np.ndarray of float [n_roi_points x 3]
-        Coordinates of points in the ROI
-    con : np.ndarray of float [n_ele x 3(4)], optional, default: None
-        Connectivity list of ROI (triangles or tetrahedra. Not requires by the algorithm. The electric field will
-        be calculated in the provided points only.
     gradient : np.array of float [n_tet_mesh_required x 4 x 3]
         Gradient operator of the tetrahedral edges.
     node_index_list :  [n_tet_mesh_required x 4]
@@ -1021,21 +1034,15 @@ class FemTargetPointCloud:
     sF : sparse matrix of float [n_points_ROI x n_tet_mesh_required ]
         Sparse matrix for SPR interpolation.
     inside : np.array of bool [n_points]
-        Indicator if points are lying inside model.
+        Indicator if points are lying inside the model.
     idx : np.array of int [n_tet_mesh_required]
-        Indices of tetrahedra, which are required for SPR
+        Indices of tetrahedra, in whcih the E-field is calculated
     n_tet_mesh : int
         Number of tetrahedra in the whole head mesh
-    vol : float
-        Volume or area of ROI elements
     """
     def __init__(self, mesh, center=None, gradient=None, nearest_neighbor=False, out_fill=0):
-        """
-        Initializes RegionOfInterest class instance
-        """
         self.center = center
         self.sF = None
-        self.triangles_normals = None
         self.n_center = None
         self.gradient = gradient
 
@@ -1044,10 +1051,9 @@ class FemTargetPointCloud:
 
         # crop mesh that only tetrahedra are included
         mesh_cropped: Msh = mesh.crop_mesh(elm_type=4)
-
         # ensure that the nodes did not change
-        assert mesh_cropped.nodes.nr == mesh.nodes.nr
-        assert (mesh_cropped.nodes.node_coord == mesh.nodes.node_coord).all()
+        assert mesh_cropped.nodes.nr == mesh.nodes.nr, 'The mesh nodes changed when removing triangles! Please make sure the mesh is valid.'
+        assert (mesh_cropped.nodes.node_coord == mesh.nodes.node_coord).all(), 'The mesh nodes changed when removing triangles! Please make sure the mesh is valid.'
 
         self.n_tet_mesh = mesh_cropped.elm.node_number_list.shape[0]
 
@@ -1078,21 +1084,34 @@ class FemTargetPointCloud:
 
     def calc_fields(self, v, dadt=None, dataType=0):
         """
-        Calculate electric field in ROI from v (and A)
+        Calculate electric field on target points from v (and A)
+
+        !!! NOTE !!!
+        TMS:
+            OnlineFem - Tetrahedra mesh
+            TargetPointCloud - Tetrahedra mesh
+            E calculated from:
+                1. v on the mesh nodes
+                2. da_dt on the mesh tetrahedra
+        TES:
+            OnlineFem - Tetrahedra and Triangle (surface) mesh
+            TargetPointCloud - Tetrahedra mesh
+            E calculated from:
+                1. v on the mesh nodes
 
         Parameters
         ----------
         v : np.ndarray of float [n_nodes_total]
             Electric potential in each node in the whole head model
         dadt : np.ndarray of float, optional, default: None
-            Magnetic vector potential in each node in the whole head model (for TMS)
+            Magnetic vector potential in each element in the whole head model (for TMS)
         dataType : int, optional, default: 0
             Return magnitude of electric field (dataType = 0) otherwise return x, y, z components
 
         Returns
         -------
-        e : np.ndarray of float
-            Electric field in ROI
+        e : np.ndarray of float [center]
+            Electric field in the target positions
         """
         # get the E field in all tetrahedra (v: (number_of_nodes, 1))
         ################################################################################################################
