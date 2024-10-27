@@ -192,7 +192,7 @@ class TestOnlineFEM:
                 "pardiso",
                 marks=pytest.mark.skipif(
                     sys.platform == "darwin",
-                    reason="MKL Pardiso is available on macos."
+                    reason="MKL Pardiso is not available on macos."
                 ),
             ),
             pytest.param(
@@ -253,9 +253,6 @@ class TestOnlineFEM:
         ofem.dataType = [1]
         #Solve the FEM
         E = ofem.update_field(matsimnibs=np.identity(4), didt=1e6)[0][0]        
-        
-        # print(f'RDM: {rdm(E, E_analytical)}')
-        # print(f'MAG: {mag(E, E_analytical)}')
         
         assert rdm(E[:-1,:], E_analytical) < .2
         assert np.abs(mag(E[:-1,:], E_analytical)) < np.log(1.1)
