@@ -39,32 +39,6 @@ def tms_sphere(sphere3_msh):
     return m, cond, dAdt, E_analytical, coil
 
 
-@pytest.mark.parametrize(
-    ["solver_type",],
-    [
-        pytest.param(
-            "petsc_pardiso",
-            marks=pytest.mark.skipif(
-                sys.platform == "darwin",
-                reason="PETSc is not built with Intel MKL on macos."
-            ),
-        ),
-        pytest.param(
-            "pardiso",
-            marks=pytest.mark.skipif(
-                sys.platform == "darwin",
-                reason="MKL Pardiso is available on macos."
-            ),
-        ),
-        pytest.param(
-            "mumps",
-            ),
-        pytest.param(
-            "hypre",
-            ),
-    ]
-)
-
 def rdm(a, b):
     return np.linalg.norm(a / np.linalg.norm(a) -
                           b / np.linalg.norm(b))
@@ -202,26 +176,80 @@ class TestOnlineFEM:
 
         assert (e.shape == np.array([np.sum(mesh.elm.tag1 == 3), 3])).all()
         assert (e != 0).all()
-
-    def test_tms_sphere(self, tms_sphere, solver_type):
+        
+    #loop over 4 solver types if available
+    @pytest.mark.parametrize(
+        "solver_type", 
+        [
+            pytest.param(
+                "petsc_pardiso",
+                marks=pytest.mark.skipif(
+                    sys.platform == "darwin",
+                    reason="PETSc is not built with Intel MKL on macos."
+                ),
+            ),
+            pytest.param(
+                "pardiso",
+                marks=pytest.mark.skipif(
+                    sys.platform == "darwin",
+                    reason="MKL Pardiso is available on macos."
+                ),
+            ),
+            pytest.param(
+                "mumps",
+                ),
+            pytest.param(
+                "hypre",
+                ),
+        ]
+    )
+    #loop over filling outside values with nearest neighbor or zero
+    @pytest.mark.parametrize(
+        "fill",
+        [
+            pytest.param(
+                False),
+            pytest.param(
+                True)
+        ]
+    )
+    #loop over nearest neighbor or SPR interpolation
+    @pytest.mark.parametrize(
+        "nearest",
+        [
+            pytest.param(
+                False),
+            pytest.param(
+                True)
+        ]
+    )
+    #loop over dadt in elements or nodes
+    @pytest.mark.parametrize(
+        "useElements",
+        [
+            pytest.param(
+                False),
+            pytest.param(
+                True)
+        ]
+    )
+    def test_tms_sphere(self, tms_sphere, solver_type, fill, nearest, useElements):
         # get analytical solution and dipole coil object
         m, cond, dAdt, E_analytical, coil = tms_sphere
 
         # create the ROI
         center_points = m.elements_baricenters().value
-        center_points = np.concatenate((center_points, np.array((0, 0, 100))), axis=0)
-        point_cloud = onlinefem.FemTargetPointCloud(m, center_points, nearest_neighbor=True)
+        out_point = np.array((0, 0, 100))[None]
+        center_points = np.concatenate((center_points, out_point), axis=0)
+        point_cloud = onlinefem.FemTargetPointCloud(m, center_points, nearest_neighbor=nearest, fill_nearest=fill)
         
         #set dummy mesh filename, not used but needed
         m.fn = 'temp.msh'
         
         #prepare and setup OnlineFEM
-        ofem = onlinefem.OnlineFEM(m, 'TMS', roi=[point_cloud], coil=coil, useElements=False, solver_options=solver_type, cond=cond)
+        ofem = onlinefem.OnlineFEM(m, 'TMS', roi=[point_cloud], coil=coil, useElements=useElements, solver_options=solver_type, cond=cond)
         
-        # v = fem.tms_dadt(m, cond, dAdt)
-        # E = -v.gradient().value * 1e3 - dAdt.node_data2elm_data().value
-        
-        #caluculate vector E-field
+        #calculate vector E-field
         ofem.dataType = [1]
         #Solve the FEM
         E = ofem.update_field(matsimnibs=np.identity(4), didt=1e6)[0][0]        
@@ -229,5 +257,17 @@ class TestOnlineFEM:
         # print(f'RDM: {rdm(E, E_analytical)}')
         # print(f'MAG: {mag(E, E_analytical)}')
         
-        assert rdm(E, E_analytical) < .2
-        assert np.abs(mag(E, E_analytical)) < np.log(1.1)
+        assert rdm(E[:-1,:], E_analytical) < .2
+        assert np.abs(mag(E[:-1,:], E_analytical)) < np.log(1.1)
+        
+        if fill:
+            #find nearest point to the extra one outside
+            nearest_idx = np.argmin(np.sqrt(((
+                m.elements_baricenters().value - out_point)**2).sum(axis=1)))
+            if nearest:
+                assert np.all(E[-1, :] == E[nearest_idx])
+            else:
+                assert ofem.roi[0].sF[-1, :].sum() == 1
+                assert ofem.roi[0].sF[-1, nearest_idx] == 1
+        else:
+            assert np.all(E[-1, :] == 0)

@@ -1149,7 +1149,7 @@ class FemTargetPointCloud:
             spmatmul(self.sF.data, self.sF.indptr, self.sF.indices, fields, e)
         else:
             e = fields
-            if self.fill_nearest and self.any_outside:
+            if not self.fill_nearest and self.any_outside:
                 e[~self.inside] = 0
         
         return e
