@@ -573,8 +573,9 @@ class TmsCoil(TcdElement):
                     ArrowSizeMax=65,
                     ArrowSizeMin=65,
                     RangeType=2,
-                    CustomMin=0.99999,
-                    CustomMax=3.00001,
+                    CustomMin=0.999,
+                    CustomMax=3.001,
+                    SaturateValues=1,
                     PointType=1, 
                     PointSize=8.0)
             mesh_io.write_geo_axis_vectors(

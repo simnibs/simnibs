@@ -136,8 +136,11 @@ class OnlineFEM:
             raise TypeError("'mesh' parameter has to be either path to .msh file or SimNIBS mesh object.")
 
         # get subject specific filenames
-        self.ff_subject = SubjectFiles(fnamehead=self.mesh.fn)
-        self.fn_tensor_nifti = self.ff_subject.tensor_file
+        if self.mesh.fn:
+            ff_subject = SubjectFiles(fnamehead=self.mesh.fn)
+            self.fn_tensor_nifti = ff_subject.tensor_file
+        else:
+            self.fn_tensor_nifti = None
 
         # get Dirichlet node index where V=0 (close to center of gravity of mesh but not on a surface)
         if dirichlet_node is None:
