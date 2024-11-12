@@ -410,7 +410,7 @@ class DirichletBC(object):
         dof_map: dofMap
             Mapping of node indexes to rows and columns in A and b, modified
         '''
-        if np.any(~np.in1d(self.nodes, dof_map.inverse)):
+        if np.any(~np.isin(self.nodes, dof_map.inverse)):
             raise ValueError('BC node indices not found in dof_map')
         stay = np.ones(A.shape[0], dtype=bool)
         stay[dof_map[self.nodes]] = False
@@ -438,7 +438,7 @@ class DirichletBC(object):
         dof_map: dofMap
             Mapping of node indexes to rows and columns in A and b, modified
         '''
-        if np.any(~np.in1d(self.nodes, dof_map.inverse)):
+        if np.any(~np.isin(self.nodes, dof_map.inverse)):
             raise ValueError('BC node indices not found in dof_map')
         stay = np.ones(b.shape[0], dtype=bool)
         stay[dof_map[self.nodes]] = False
@@ -472,7 +472,7 @@ class DirichletBC(object):
         dof_map: dofMap
             Mapping of node indexes to rows and columns in A and b, modified
         '''
-        if np.any(~np.in1d(self.nodes, dof_map.inverse)):
+        if np.any(~np.isin(self.nodes, dof_map.inverse)):
             raise ValueError('BC node indices not found in dof_map')
         stay = np.ones(A.shape[0], dtype=bool)
         stay[dof_map[self.nodes]] = False
@@ -516,7 +516,7 @@ class DirichletBC(object):
         dof_map: dofMap
             Mapping of node indexes to rows and columns in A and b, modified
         '''
-        if np.any(np.in1d(self.nodes, dof_map.inverse)):
+        if np.any(np.isin(self.nodes, dof_map.inverse)):
             raise ValueError('Found DOFs already defined')
         dof_inverse = np.hstack((dof_map.inverse, self.nodes))
         x = np.atleast_2d(x)
@@ -1425,7 +1425,7 @@ def tdcs(mesh, cond, currents, electrode_surface_tags, n_workers=1, units='mm',
         'there should be one channel for each current'
 
     surf_tags = np.unique(mesh.elm.tag1[mesh.elm.elm_type == 2])
-    assert np.all(np.in1d(electrode_surface_tags, surf_tags)),\
+    assert np.all(np.isin(electrode_surface_tags, surf_tags)),\
         'Could not find all the electrode surface tags in the mesh'
 
     assert np.isclose(np.sum(currents), 0),\
@@ -1490,14 +1490,14 @@ def _calc_flux_electrodes(v, cond, el_volume, scalp_tag=[ElementTags.SCALP, Elem
     m.elmdata = [cond]
     # Select mesh nodes wich are is in one electrode as well as the scalp
     # Triangles in scalp
-    tr_scalp = np.in1d(m.elm.tag1, scalp_tag) * (m.elm.elm_type == 2)
+    tr_scalp = np.isin(m.elm.tag1, scalp_tag) * (m.elm.elm_type == 2)
     if not np.any(tr_scalp):
         raise ValueError('Could not find skin surface')
     tr_scalp_nodes = m.elm.node_number_list[tr_scalp, :3]
     tr_index = m.elm.elm_number[tr_scalp]
 
     # Tetrahehedra in electrode
-    th_el = np.in1d(m.elm.tag1, el_volume) * (m.elm.elm_type == 4)
+    th_el = np.isin(m.elm.tag1, el_volume) * (m.elm.elm_type == 4)
     if not np.any(th_el):
         raise ValueError('Could not find electrode volume')
     th_el_nodes = m.elm.node_number_list[th_el]
@@ -1829,7 +1829,7 @@ def tdcs_leadfield(mesh, cond, electrode_surface, fn_hdf5, dataset,
     n_out = mesh.elm.nr
     # Separate out the part of the gradiend that is in the ROI
     if roi is not None:
-        roi = np.in1d(mesh.elm.tag1, roi)
+        roi = np.isin(mesh.elm.tag1, roi)
         D = [d.tocsc() for d in D]
         D = [d[roi] for d in D]
         n_out = np.sum(roi)
@@ -2046,7 +2046,7 @@ def tms_many_simulations(
     n_out = mesh.elm.nr
     # Separate out the part of the gradient that is in the ROI
     if roi is not None:
-        roi = np.in1d(mesh.elm.tag1, roi)
+        roi = np.isin(mesh.elm.tag1, roi)
         D = [d.tocsc() for d in D]
         D = [d[roi] for d in D]
         cond = cond.value[roi]

@@ -1185,7 +1185,7 @@ class FemTargetPointCloud:
         if tags is None:
             th_indices = msh.elm.elm_number
         else:
-            th_indices = msh.elm.elm_number[np.in1d(msh.elm.tag1, tags)]
+            th_indices = msh.elm.elm_number[np.isin(msh.elm.tag1, tags)]
 
         th_with_points, bar = msh.find_tetrahedron_with_points(center, compute_baricentric=True)
         inside = np.isin(th_with_points, th_indices)
@@ -1204,7 +1204,7 @@ class FemTargetPointCloud:
         if np.any(~inside):
             if fill_nearest:  # fill == 'nearest'
                 if tags is not None:
-                    is_in = np.in1d(msh.elm.elm_number, th_indices)
+                    is_in = np.isin(msh.elm.elm_number, th_indices)
                     elm_in_volume = msh.elm.elm_number[is_in]
                     m_in_volume = msh.crop_mesh(elements=elm_in_volume)
 
@@ -1312,7 +1312,7 @@ class FemTargetPointCloud:
 
         # Get the point in the outside surface
         points_outside = np.unique(msh.elm.get_outside_faces())
-        outside_points_mask = np.in1d(msh.elm[msh.elm.tetrahedra],
+        outside_points_mask = np.isin(msh.elm[msh.elm.tetrahedra],
                                       points_outside).reshape(-1, 4)
 
         th_indices = msh.elm.tetrahedra
