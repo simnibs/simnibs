@@ -3571,6 +3571,8 @@ class Data(object):
         reference_original: str
             Name of nifti file with reference in the original space. Used to determine
             the dimensions and affine transformation for the initial griding
+        binary: bool (optional)
+            If True, thresholds the image at 0.5 and converts to np.uint8. Default: False
 
         Returns
         --------

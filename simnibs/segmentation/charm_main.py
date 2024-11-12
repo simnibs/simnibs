@@ -630,6 +630,7 @@ def run(
             MNI_template,
             out=sub_files.final_labels_MNI,
             out_original=sub_files.final_labels,
+            order=0,
             method="assign",
             reference_original=sub_files.reference_volume,
         )
