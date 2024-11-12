@@ -3,26 +3,27 @@ import scipy.sparse as sp
 import numpy as np
 import pytest
 
-from simnibs.simulation.fem import KSPSolver, MUMPS_Solver
+from simnibs.simulation.fem import KSPSolver, MUMPS_Solver, pardiso
 
 def create_matrix(dim, alpha=0.95, smallest_coef=0.1, largest_coef=.9):
     ''' Based o scikit-learn make_sparse_spd_matrix'''
+    rng = np.random.default_rng(seed=42)
     chol = -np.eye(dim)
-    aux = np.random.rand(dim, dim)
+    aux = rng.random((dim, dim))
     aux[aux < alpha] = 0
     aux[aux > alpha] = (smallest_coef
                         + (largest_coef - smallest_coef)
-                        * np.random.rand(np.sum(aux > alpha)))
+                        * rng.random(np.sum(aux > alpha)))
     aux = np.tril(aux, k=-1)
 
     # Permute the lines: we don't want to have asymmetries in the final
     # SPD matrix
-    permutation = np.random.permutation(dim)
+    permutation = rng.permutation(dim)
     aux = aux[permutation].T[permutation]
     chol += aux
     A = sp.csc_matrix(np.dot(chol.T, chol))
 
-    x = np.random.rand(dim)
+    x = rng.random(dim)
     b = A.dot(x)
 
     return A,b,x
@@ -83,14 +84,14 @@ class TestPETScFactorSolver:
         A, b, x = create_matrix(1000, .99)
         solver = KSPSolver(A, ksp_type, pc_type, factor_solver_type)
         x_pd = solver.solve(b)
-        assert np.allclose(x, x_pd)
+        np.testing.assert_allclose(x, x_pd, atol=1e-12)
 
     def test_solve_csr(self, ksp_type, pc_type, factor_solver_type):
         A, b, x = create_matrix(1000, .99)
         A = A.tocsr()
         solver = KSPSolver(A, ksp_type, pc_type, factor_solver_type)
         x_pd = solver.solve(b)
-        assert np.allclose(x, x_pd)
+        np.testing.assert_allclose(x, x_pd, atol=1e-12)
 
     def test_love_many_rhs(self, ksp_type, pc_type, factor_solver_type):
         A, _, _ = create_matrix(1000, .99)
@@ -98,7 +99,7 @@ class TestPETScFactorSolver:
         b = A.dot(x)
         solver = KSPSolver(A, ksp_type, pc_type, factor_solver_type)
         x_pd = solver.solve(b)
-        assert np.allclose(x, x_pd)
+        np.testing.assert_allclose(x, x_pd, atol=1e-12)
 
 
 class TestPythonMUMPS:
@@ -106,14 +107,14 @@ class TestPythonMUMPS:
         A, b, x = create_matrix(1000, .99)
         solver = MUMPS_Solver(A)
         x_pd = solver.solve(b)
-        assert np.allclose(x, x_pd)
+        np.testing.assert_allclose(x, x_pd, atol=1e-12)
 
     def test_solve_csr(self):
         A, b, x = create_matrix(1000, .99)
         A = A.tocsr()
         solver = MUMPS_Solver(A)
         x_pd = solver.solve(b)
-        assert np.allclose(x, x_pd)
+        np.testing.assert_allclose(x, x_pd, atol=1e-12)
 
     def test_love_many_rhs(self):
         A, _, _ = create_matrix(1000, .99)
@@ -121,4 +122,26 @@ class TestPythonMUMPS:
         b = A.dot(x)
         solver = MUMPS_Solver(A)
         x_pd = solver.solve(b)
-        assert np.allclose(x, x_pd)
+        np.testing.assert_allclose(x, x_pd, atol=1e-12)
+
+class TestPythonPardiso:
+    def test_solve(self):
+        A, b, x = create_matrix(1000, .99)
+        solver = pardiso.Solver(A)
+        x_pd = solver.solve(b)
+        np.testing.assert_allclose(x, x_pd, atol=1e-12)
+
+    def test_solve_csr(self):
+        A, b, x = create_matrix(1000, .99)
+        A = A.tocsr()
+        solver = pardiso.Solver(A)
+        x_pd = solver.solve(b)
+        np.testing.assert_allclose(x, x_pd, atol=1e-12)
+
+    def test_love_many_rhs(self):
+        A, _, _ = create_matrix(1000, .99)
+        x = np.random.random((1000, 3))
+        b = A.dot(x)
+        solver = pardiso.Solver(A)
+        x_pd = solver.solve(b)
+        np.testing.assert_allclose(x, x_pd, atol=1e-12)
