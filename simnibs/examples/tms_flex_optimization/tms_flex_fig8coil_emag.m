@@ -5,6 +5,7 @@
 % The coil center will be placed to maximize the field strength in the ROI
 % while avoiding skin intersections
 %
+% Copyright (c) 2024 SimNIBS developers. Licensed under the GPL v3.
 
 % Initialize structure
 tms_opt = opt_struct('TmsFlexOptimization');

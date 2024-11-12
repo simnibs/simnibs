@@ -3,7 +3,7 @@
 
     simnibs_python TMS.py
 
-    Copyright (C) 2018 Guilherme B Saturnino
+    Copyright (c) 2018 SimNIBS developers. Licensed under the GPL v3.
 '''
 import os
 from simnibs import sim_struct, run_simnibs

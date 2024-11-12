@@ -1,4 +1,6 @@
 ''' Example on how to run a SimNIBS TMS simulation using a coil with multiple stimulators in Python
+
+Copyright (c) 2024 SimNIBS developers. Licensed under the GPL v3.
 '''
 import os
 from simnibs import sim_struct, run_simnibs, SIMNIBSDIR

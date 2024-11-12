@@ -7,7 +7,7 @@
 %
 % It plots the field on the GM surface and the extracted region of interest
 %
-% A. Thielscher, 11-Apr-2018; updated 13-Sep-2018
+% Copyright (c) 2018 SimNIBS developers. Licensed under the GPL v3.
 
 
 % load mesh

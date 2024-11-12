@@ -1,8 +1,8 @@
 %
 % script for simulating the TACS challenge montage
-% see @TACSchallenge on Twitter
+% see https://tacschallenge.github.io/
 % 
-% A. Thielscher, 2020
+% Copyright (c) 2020 SimNIBS developers. Licensed under the GPL v3.
 %
 
 %% General information

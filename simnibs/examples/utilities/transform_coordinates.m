@@ -1,9 +1,9 @@
-%%%
+%
 % Transform coordinates from MNI space to subject space and back
 %
-% Please add the SimNIBS "matlab" folder to your matlab path
-% and run from the "ernie" directory of the example dataset
-% visit www.simnibs.org for more information
+% run within the directory containing the m2m_ernie example datatset
+%
+% Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 
 % MNI position for M1 (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2034289/)
 mni_M1 = [-37, -21, 58];

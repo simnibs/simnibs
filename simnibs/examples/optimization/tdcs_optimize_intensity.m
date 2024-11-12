@@ -1,7 +1,6 @@
 % Example of optimization maximizing intensity in the target
 %
-% Copyright (C) 2019 Guilherme B Saturnino
-
+% Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 
 opt = opt_struct('TDCSoptimize');
 opt.leadfield_hdf = 'leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5';

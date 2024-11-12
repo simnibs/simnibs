@@ -1,7 +1,7 @@
 %
 % example script that runs a simulation for a Nx1 montage 
 % 
-% A. Thielscher, 2021
+% Copyright (c) 2021 SimNIBS developers. Licensed under the GPL v3.
 %
 
 %% General information

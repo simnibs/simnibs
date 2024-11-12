@@ -1,7 +1,9 @@
 '''
 Simple ROI analysis of the electric field from a simulation.
 
-We will calculate the mean electric field in a gray matter ROI defined around M1
+calculates the mean electric field in a gray matter ROI defined around M1
+
+Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 '''
 import os
 import numpy as np

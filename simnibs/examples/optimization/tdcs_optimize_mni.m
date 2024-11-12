@@ -1,3 +1,7 @@
+%  Example on how to set the target position using a MNI coordinate 
+%
+% Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
+
 opt = opt_struct('TDCSoptimize');
 opt.leadfield_hdf = 'leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5';
 opt.name = 'optimization/MNI_target';

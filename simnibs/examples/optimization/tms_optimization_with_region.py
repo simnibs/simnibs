@@ -2,7 +2,7 @@
     TMS optimization using grid-search to maximize the field
     strength in a ROI defined via a mask in fsaverage space
     
-    © SimNIBS developers 2024 under the GPL v3 license
+    Copyright (c) 2024 SimNIBS developers. Licensed under the GPL v3.
 """
 import os
 import simnibs

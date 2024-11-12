@@ -1,4 +1,6 @@
 ''' Automated testing of the examples
+
+Copyright (c) 2019-2024 SimNIBS developers. Licensed under the GPL v3.
 '''
 import sys
 import os

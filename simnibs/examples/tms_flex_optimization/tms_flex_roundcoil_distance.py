@@ -3,6 +3,8 @@
     
     The coil center will be placed as close as possible to position C1
     while avoiding skin intersections
+    
+    Copyright (c) 2024 SimNIBS developers. Licensed under the GPL v3.
 '''
 import os
 from simnibs import opt_struct

@@ -3,7 +3,7 @@
 
     simnibs_python tdcs_optimize.py
 
-    © SimNIBS developers 2024 under the GPL v3 license
+    Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 '''
 
 

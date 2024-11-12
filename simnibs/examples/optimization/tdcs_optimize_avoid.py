@@ -1,6 +1,6 @@
 ''' Example of an optimization punishing more the field in the eyes
 
-    Copyright (C) 2019 Guilherme B Saturnino
+    Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 '''
 import simnibs
 

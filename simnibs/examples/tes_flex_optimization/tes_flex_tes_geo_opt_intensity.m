@@ -2,7 +2,7 @@
 % Example to run TESoptimize with a standard TES montage including  optimization
 % of the electrode geometries to optimize the field intensity in the ROI
 %
-% © SimNIBS developers 2024 under the GPL v3 license
+% Copyright (c) 2024 SimNIBS developers. Licensed under the GPL v3.
 %
 
 % Initialize structure

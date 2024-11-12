@@ -6,7 +6,7 @@
 
     simnibs_python tDCS_advanced.py
 
-    Copyright (C) 2021 Axel Thielscher
+    Copyright (c) 2021 SimNIBS developers. Licensed under the GPL v3.
 '''
 from simnibs import sim_struct, run_simnibs
 

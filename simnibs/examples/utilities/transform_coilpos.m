@@ -2,6 +2,8 @@
 % Transform a coil position from MNI space to subject space
 % 
 % run within the directory containing the m2m_ernie example datatset
+%
+% Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 
 % coil center in MNI space (here: above left handknob)
 center_MNI = [-45.8, -19.1,  84.];

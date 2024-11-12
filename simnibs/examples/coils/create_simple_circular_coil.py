@@ -1,6 +1,8 @@
 """
 Example of how to create a simple parametric circular TMS coil and save it in the tcd format.
 The coil is constructed using line segments which reconstruct the windings of the coil.
+
+Copyright (c) 2024 SimNIBS developers. Licensed under the GPL v3.
 """
 
 import os

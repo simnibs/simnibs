@@ -1,7 +1,7 @@
 """
 Example to run TESoptimize with a standard TES montage to optimize the field focality in the ROI vs non-ROI
 
-© SimNIBS developers 2024 under the GPL v3 license
+Copyright (c) 2024 SimNIBS developers. Licensed under the GPL v3.
 """
 from simnibs import opt_struct
 

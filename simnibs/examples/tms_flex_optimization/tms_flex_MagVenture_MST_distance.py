@@ -4,6 +4,8 @@
     The coil center will be placed as close as possible (both in terms of 
     position and orientation) to the defined position while avoiding skin 
     intersections
+    
+    Copyright (c) 2024 SimNIBS developers. Licensed under the GPL v3.
 '''
 import os
 from simnibs import opt_struct, mni2subject_coilpos

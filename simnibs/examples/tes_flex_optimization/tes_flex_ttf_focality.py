@@ -3,7 +3,7 @@ Example to run TESoptimize for Tumor Treating Fields (TTF) to
 maximize the field in the ROI while at the same time making
 the field as unfocal as possible to cover most of the brain
 
-© SimNIBS developers 2024 under the GPL v3 license
+Copyright (c) 2024 SimNIBS developers. Licensed under the GPL v3.
 """
 from simnibs import opt_struct, ElementTags
 

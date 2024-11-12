@@ -1,4 +1,6 @@
-% Refining the TMS Optimization
+% Refining the TMS optimization (via grid search)
+%
+% Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 
 % Initialize structure
 tms_opt = opt_struct('TMSoptimize');

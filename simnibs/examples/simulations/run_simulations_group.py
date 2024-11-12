@@ -2,6 +2,8 @@
     This example runs tDCS simulations with a bipolar montage for five subjects
     The dataset with the five head models is avaliable at https://osf.io/ah5eu/
     please look at the "group_average" for how to do a simple analysis of the group data
+    
+    Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 '''
 import os
 from simnibs import sim_struct, run_simnibs

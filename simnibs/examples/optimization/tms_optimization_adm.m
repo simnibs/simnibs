@@ -1,3 +1,7 @@
+% Example script to run a TMS optimization using ADM
+%
+% Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
+
 tms_opt = opt_struct('TMSoptimize');
 % Subject folder
 tms_opt.subpath = 'm2m_ernie';

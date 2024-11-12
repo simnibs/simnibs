@@ -5,9 +5,9 @@ Please run with the command
 
     simnibs_python transform_coilpos.py
 
-from the directory containing the m2m_ernie example datatset
+from the directory containing the m2m_ernie example dataset
 
-visit www.simnibs.org for more information
+Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 '''
 
 import simnibs

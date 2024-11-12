@@ -5,6 +5,8 @@
     The coil center position and arrangement of the two coil halves will be 
     placed to maximize the field strength in the ROI while avoiding 
     skin and self intersections
+    
+    Copyright (c) 2024 SimNIBS developers. Licensed under the GPL v3.
 '''
 import os
 from simnibs import opt_struct, mni2subject_coilpos, ElementTags

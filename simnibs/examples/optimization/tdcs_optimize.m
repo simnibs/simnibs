@@ -1,7 +1,6 @@
 % Example of a SimNIBS tDCS optimization in MATLAB
 %
-% Copyright (C) 2019 Guilherme B Saturnino
-
+% Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 
 % Initialize structure
 opt = opt_struct('TDCSoptimize');

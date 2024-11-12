@@ -1,3 +1,9 @@
+''' 
+    example for setting up a gPC-based uncertainty quantification
+
+    Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
+'''
+
 import os
 
 import simnibs

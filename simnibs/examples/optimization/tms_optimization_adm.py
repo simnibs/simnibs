@@ -1,3 +1,9 @@
+"""
+    TMS optimization using ADM
+    
+    Copyright (c) 2020 SimNIBS developers. Licensed under the GPL v3.
+"""
+
 import os
 from simnibs import opt_struct, mni2subject_coords
 

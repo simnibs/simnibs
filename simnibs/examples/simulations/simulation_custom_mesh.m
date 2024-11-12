@@ -4,7 +4,7 @@
 %   Please see "How to create and use a custom mesh"
 %   in the SimNIBS tutorials for instructions to create the mesh
 %     
-%   Copyright (C) 2021 Axel Thielscher
+%   Copyright (c) 2021 SimNIBS developers. Licensed under the GPL v3.
 
 
 S = sim_struct('SESSION');

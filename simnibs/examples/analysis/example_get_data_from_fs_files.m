@@ -10,8 +10,7 @@
 %            of the left hemisphere
 %       (3) in a sphere of 10 mm radius around the peak position
 %
-% A. Thielscher, 06-Nov-2017; updated 08-Oct-2018
-% G. Saturnino, updated 18-SEP-2019
+% Copyright (c) 2018 SimNIBS developers. Licensed under the GPL v3.
 
 
 % get name of results mapped on fsaverage surface

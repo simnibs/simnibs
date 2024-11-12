@@ -1,7 +1,7 @@
 %
 % example script that runs a simple simnibs tDCS simulation
 % 
-% G. Saturnino, A. Thielscher, 2018
+% Copyright (c) 2018 SimNIBS developers. Licensed under the GPL v3.
 %
 
 %% General information

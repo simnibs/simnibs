@@ -5,6 +5,7 @@
 %  position and orientation) to the defined position while avoiding skin 
 %  intersections
 %
+% Copyright (c) 2024 SimNIBS developers. Licensed under the GPL v3.
 
 % Initialize structure for optimization
 tms_opt = opt_struct('TmsFlexOptimization');

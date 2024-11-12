@@ -1,5 +1,7 @@
 """
-Examples to define ROIs 
+Examples to define ROIs
+
+Copyright (c) 2024 SimNIBS developers. Licensed under the GPL v3.
 """
 import os
 import simnibs

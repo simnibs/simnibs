@@ -3,7 +3,7 @@
 
     simnibs_python tdcs_optimize_distributed.py
 
-    Copyright (C) 2020 Guilherme B Saturnino
+    Copyright (c) 2020 SimNIBS developers. Licensed under the GPL v3.
 '''
 import simnibs
 

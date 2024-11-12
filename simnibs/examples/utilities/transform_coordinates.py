@@ -3,10 +3,11 @@ Transform coordinates from MNI space to subject space and back
 
 Please run with the command
 
-simnibs_python transform_coordinates.py
+    simnibs_python transform_coordinates.py
 
-from the "ernie" directory of the example dataset
-visit www.simnibs.org for more information
+from the directory containing the m2m_ernie example dataset
+
+Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 '''
 
 import simnibs

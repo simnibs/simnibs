@@ -2,6 +2,8 @@
 Example of how to create a simple parametric TMS coil consisting of two figure of 8 coils stacked.
 The TMS coil is than saved in the tcd format.
 The coil is constructed using line segments which reconstruct the windings of the coil.
+
+Copyright (c) 2024 SimNIBS developers. Licensed under the GPL v3.
 """
 
 import os

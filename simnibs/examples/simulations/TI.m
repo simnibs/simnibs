@@ -2,7 +2,7 @@
 % example script that runs two simnibs tDCS simulations
 % and calculates maximal amplitude of the TI envelope from the E-fields 
 % 
-% A. Thielscher, 2020
+% Copyright (c) 2020 SimNIBS developers. Licensed under the GPL v3.
 %
 
 %% General information
