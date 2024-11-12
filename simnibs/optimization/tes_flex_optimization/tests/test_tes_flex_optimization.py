@@ -83,7 +83,7 @@ class TestToFromDict:
         opt.seed = 42                   # seed optimizer for reproducibility
 
         # output folder
-        opt.output_folder = "tes_optimize_ti_intensity"
+        opt.output_folder = os.path.join(tmp_path, "tes_optimize_ti_intensity")
 
         # type of goal function
         opt.goal = "mean"
@@ -149,7 +149,7 @@ class TestToFromDict:
         opt.subpath = os.path.join(example_dataset, 'm2m_ernie')
 
         # output folder
-        opt.output_folder = "tes_optimize_tes_intensity_org"
+        opt.output_folder = os.path.join(tmp_path, "tes_optimize_tes_intensity_org")
 
         # type of goal function
         opt.goal = "mean"
@@ -181,7 +181,7 @@ class TestToFromDict:
 
         # load .mat structure and initialize new opt instance
         tes_flex_opt_loaded = TesFlexOptimization(dict_from_matlab(scipy.io.loadmat(mat_path)))
-        tes_flex_opt_loaded.output_folder = "tes_optimize_tes_intensity_mat"
+        tes_flex_opt_loaded.output_folder = os.path.join(tmp_path, "tes_optimize_tes_intensity_mat")
 
         # prepare loaded opt instance
         tes_flex_opt_loaded._prepare()
@@ -206,7 +206,7 @@ class TestToFromDict:
         opt.subpath = os.path.join(example_dataset, 'm2m_ernie')
 
         # output folder
-        opt.output_folder = "tes_optimize_compute_goal"
+        opt.output_folder = os.path.join(tmp_path, "tes_optimize_compute_goal")
 
         # postprocessing function of e-fields
         opt.e_postproc = "magn"
