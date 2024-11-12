@@ -321,7 +321,7 @@ class Elements:
             axis=1)
 
         th_with_node = \
-            np.in1d(self.elm_number[elm_with_node], self.elm_number[self.elm_type == 4])
+            np.isin(self.elm_number[elm_with_node], self.elm_number[self.elm_type == 4])
 
         return self.elm_number[elm_with_node][th_with_node]
 
@@ -831,16 +831,16 @@ class Msh:
         elm_keep = np.zeros((self.elm.nr, ), dtype=bool)
 
         if tags is not None:
-            elm_keep += np.in1d(self.elm.tag1, tags)
+            elm_keep += np.isin(self.elm.tag1, tags)
 
         if elm_type is not None:
-            elm_keep += np.in1d(self.elm.elm_type, elm_type)
+            elm_keep += np.isin(self.elm.elm_type, elm_type)
 
         if nodes is not None:
-            elm_keep += np.any(np.in1d(self.elm.node_number_list, nodes).reshape(-1, 4), axis=1)
+            elm_keep += np.any(np.isin(self.elm.node_number_list, nodes).reshape(-1, 4), axis=1)
 
         if elements is not None:
-            elm_keep += np.in1d(self.elm.elm_number, elements)
+            elm_keep += np.isin(self.elm.elm_number, elements)
 
         if not np.any(elm_keep):
             raise ValueError("Could not find any element to crop!")
@@ -1003,21 +1003,21 @@ class Msh:
         elm_keep = np.ones((self.elm.nr, ), dtype=bool)
 
         if tags is not None:
-            elm_keep *= ~np.in1d(self.elm.tag1, tags)
+            elm_keep *= ~np.isin(self.elm.tag1, tags)
 
         if elm_type is not None:
-            elm_keep *= ~np.in1d(self.elm.elm_type, elm_type)
+            elm_keep *= ~np.isin(self.elm.elm_type, elm_type)
 
         if nodes is not None:
             elm_keep *= ~np.all(
-                np.in1d(
+                np.isin(
                     self.elm.node_number_list,
                     np.append(nodes, -1)
                 ).reshape(-1, 4), axis=1
             )
 
         if elements is not None:
-            elm_keep *= ~np.in1d(self.elm.elm_number, elements)
+            elm_keep *= ~np.isin(self.elm.elm_number, elements)
 
         keep = self.elm.elm_number[elm_keep]
         mesh = self.crop_mesh(elements=keep)
@@ -1165,12 +1165,12 @@ class Msh:
         if elm_type is not None:
             elements_to_return = np.logical_and(
                 elements_to_return,
-                np.in1d(self.elm.elm_type, elm_type))
+                np.isin(self.elm.elm_type, elm_type))
 
         if tag is not None:
             elements_to_return = np.logical_and(
                 elements_to_return,
-                np.in1d(self.elm.tag1, tag))
+                np.isin(self.elm.tag1, tag))
 
         tmp_node_coord = np.vstack((self.nodes.node_coord, [0, 0, 0]))
 
@@ -1804,7 +1804,7 @@ class Msh:
                 to_crop.append(t - 1600)
             # Select triangles and tetrahedra with tags
             th_of_interest = np.where((self.elm.elm_type == 4) *
-                                      np.in1d(self.elm.tag1, to_crop))[0]
+                                      np.isin(self.elm.tag1, to_crop))[0]
             if len(th_of_interest) == 0:
                 continue
             tr_of_interest = np.where((self.elm.elm_type == 2) *
@@ -1818,7 +1818,7 @@ class Msh:
             tr = self.elm.node_number_list[tr_of_interest, :3]
             tr_hash_array = _hash_rows(tr)
             # This will check if all triangles have a corresponding face
-            has_tetra = np.in1d(tr_hash_array, faces_hash_array)
+            has_tetra = np.isin(tr_hash_array, faces_hash_array)
             faces_argsort = faces_hash_array.argsort()
             faces_hash_array = faces_hash_array[faces_argsort]
             tr_search = np.searchsorted(faces_hash_array, tr_hash_array[has_tetra])
@@ -1975,7 +1975,7 @@ class Msh:
         if len(th_indices) > 0:
             M = scipy.sparse.csr_matrix((self.nodes.nr + 1, self.elm.nr))
             th_nodes = self.elm[th_indices] - 1
-            outside_points_mask = np.in1d(th_nodes, points_outside).reshape(-1, 4)
+            outside_points_mask = np.isin(th_nodes, points_outside).reshape(-1, 4)
             # This will map all points outside to the first position
             masked_th_nodes = np.copy(th_nodes)
             masked_th_nodes[outside_points_mask] = -1
@@ -2057,7 +2057,7 @@ class Msh:
 
             # Assigns the average value to the points in the outside surface
             tr_nodes = self.elm[tr_indices] - 1
-            only_surf_mask = np.in1d(tr_nodes, only_in_surf).reshape(-1, 4)
+            only_surf_mask = np.isin(tr_nodes, only_in_surf).reshape(-1, 4)
 
             masked_tr_nodes = np.copy(tr_nodes)
             masked_tr_nodes[~only_surf_mask] = -1
@@ -2132,7 +2132,7 @@ class Msh:
 
         else:
             # get the mask of elements in the volume defined by 'th_indices'
-            is_in = np.in1d(self.elm.elm_number, th_indices)
+            is_in = np.isin(self.elm.elm_number, th_indices)
 
             # get the 'elm_number' of the tetrahedra in 'self' which has 'is_in' == True
             elm_in_volume = self.elm.elm_number[is_in]
@@ -2955,7 +2955,7 @@ class Msh:
         if len(unique_tags) == 0:
             raise InvalidMeshError('Could not find any tetraheda in mesh')
         if tags is not None:
-            unique_tags = unique_tags[np.in1d(unique_tags, tags)]
+            unique_tags = unique_tags[np.isin(unique_tags, tags)]
         if len(unique_tags) == 0:
             raise ValueError('Could not find given tags in mesh')
 
@@ -3017,7 +3017,7 @@ class Msh:
     #         idx_keep[test_tri] = True
 
     #         other_tri = np.where((tag_tr != i) & np.logical_not(idx_done))[0]
-    #         idx_tricopies = np.in1d(hash_tr[other_tri], hash_tr[test_tri])
+    #         idx_tricopies = np.isin(hash_tr[other_tri], hash_tr[test_tri])
     #         idx_done[other_tri[idx_tricopies]] = True
 
     #     if np.sum(idx_done) != idx_done.shape[0]:
@@ -3142,7 +3142,7 @@ class Msh:
         # Surface nodes and surface node mask
         idx = self.elm.elm_type == 2
         if tags is not None:
-            idx *= np.in1d(self.elm.tag1, tags)
+            idx *= np.isin(self.elm.tag1, tags)
         surf_nodes = np.unique(self.elm.node_number_list[idx,:3]) - 1
         nodes_mask = np.zeros(self.nodes.nr, dtype=bool)
         nodes_mask[surf_nodes] = True
@@ -3256,7 +3256,7 @@ class Msh:
         # Surface nodes and surface node mask
         idx = self.elm.elm_type == 2
         if tags is not None:
-            idx *= np.in1d(self.elm.tag1, tags)
+            idx *= np.isin(self.elm.tag1, tags)
         surf_nodes = np.unique(self.elm.node_number_list[idx,:3]) - 1
 
         if nodes_mask is not None:
@@ -4079,7 +4079,7 @@ class ElementData(Data):
 
         # Get the point in the outside surface
         points_outside = np.unique(msh.elm.get_outside_faces())
-        outside_points_mask = np.in1d(msh.elm[msh.elm.tetrahedra],
+        outside_points_mask = np.isin(msh.elm[msh.elm.tetrahedra],
                                       points_outside).reshape(-1, 4)
         masked_th_nodes = np.copy(msh.elm[msh.elm.tetrahedra])
         masked_th_nodes[outside_points_mask] = -1
@@ -4298,7 +4298,7 @@ class ElementData(Data):
 
                     msh.add_element_field(self.value, self.field_name)
 
-                    is_in = np.in1d(msh.elm.elm_number, th_indices)
+                    is_in = np.isin(msh.elm.elm_number, th_indices)
                     elm_in_volume = msh.elm.elm_number[is_in]
                     msh_in_volume = msh.crop_mesh(elements=elm_in_volume)
 
@@ -4808,7 +4808,7 @@ class NodeData(Data):
 
                     msh.add_node_field(self.value, self.field_name)
 
-                    is_in = np.in1d(msh.elm.elm_number, th_indices)
+                    is_in = np.isin(msh.elm.elm_number, th_indices)
                     elm_in_volume = msh.elm.elm_number[is_in]
                     msh_in_volume = msh.crop_mesh(elements=elm_in_volume)
 

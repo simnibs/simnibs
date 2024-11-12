@@ -1056,7 +1056,7 @@ class RegionOfInterest:
 
         match self._mask_type:
             case "node":
-                node_indexes = np.unique(self._mesh.elm.node_number_list[np.in1d(self._mesh.elm.tag1, tissues)]) - 1
+                node_indexes = np.unique(self._mesh.elm.node_number_list[np.isin(self._mesh.elm.tag1, tissues)]) - 1
                 node_indexes = node_indexes[node_indexes >= 0]
                 self._mask = combine_mask(
                     self._mask,
@@ -1066,7 +1066,7 @@ class RegionOfInterest:
             case "elm_center":
                 self._mask = combine_mask(
                     self._mask,
-                    self._mesh.elm.elm_number[np.in1d(self._mesh.elm.tag1, tissues)] - 1,
+                    self._mesh.elm.elm_number[np.isin(self._mesh.elm.tag1, tissues)] - 1,
                     tissue_mask_operator,
                 )
             case _:
@@ -1101,7 +1101,7 @@ class RegionOfInterest:
 
         match self._mask_type:
             case "node":
-                node_indexes = np.unique(self._mesh.elm.node_number_list[np.in1d(self._mesh.elm.elm_type, element_types)]) - 1
+                node_indexes = np.unique(self._mesh.elm.node_number_list[np.isin(self._mesh.elm.elm_type, element_types)]) - 1
                 node_indexes = node_indexes[node_indexes >= 0]
                 self._mask = combine_mask(
                     self._mask,
@@ -1111,7 +1111,7 @@ class RegionOfInterest:
             case "elm_center":
                 self._mask = combine_mask(
                     self._mask,
-                    self._mesh.elm.elm_number[np.in1d(self._mesh.elm.elm_type, element_types)] - 1,
+                    self._mesh.elm.elm_number[np.isin(self._mesh.elm.elm_type, element_types)] - 1,
                     element_type_mask_operator,
                 )
             case _:

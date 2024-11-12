@@ -85,7 +85,7 @@ class TestPositionOptimization:
             )
         )
 
-        (before, after, affine_after, opt_ret) = optimize_distance(
+        (before, after, affine_after, opt_ret, penalties) = optimize_distance(
             coil, skin_surface, coil_affine
         )
 
@@ -126,7 +126,7 @@ class TestPositionOptimization:
             )
         )
 
-        (before, after, affine_after, opt_ret) = optimize_distance(
+        (before, after, affine_after, opt_ret, penalties) = optimize_distance(
             coil, skin_surface, coil_affine, dither_skip=0
         )
 
@@ -139,7 +139,7 @@ class TestPositionOptimization:
         )
 
         coil = deepcopy(small_functional_3_element_coil)
-        (before, after, affine_after, opt_ret) = optimize_distance(
+        (before, after, affine_after, opt_ret, penalties) = optimize_distance(
             coil, skin_surface, coil_affine, dither_skip=4
         )
 
@@ -172,7 +172,7 @@ class TestPositionOptimization:
             [[1, 0, 0, -4], [0, 1, 0, 3], [0, 0, 1, 110], [0, 0, 0, 1]]
         )
 
-        (before, after, affine_after, opt_ret) = optimize_distance(
+        (before, after, affine_after, opt_ret, penalties) = optimize_distance(
             small_functional_3_element_coil,
             sphere3_msh,
             coil_affine,
@@ -207,7 +207,7 @@ class TestPositionOptimization:
         del small_functional_3_element_coil_copy.elements[2].deformations[0]
         del small_functional_3_element_coil_copy.elements[1].deformations[0]
 
-        (before, after, affine_after, opt_ret) = optimize_distance(
+        (before, after, affine_after, opt_ret, penalties) = optimize_distance(
             small_functional_3_element_coil_copy,
             skin_surface,
             coil_affine,
@@ -247,7 +247,7 @@ class TestPositionOptimization:
             )
         )
 
-        (before, after, affine_after, opt_ret) = optimize_distance(
+        (before, after, affine_after, opt_ret, penalties) = optimize_distance(
             small_self_intersecting_2_element_coil,
             sphere3_msh,
             coil_affine,
@@ -329,7 +329,7 @@ class TestEMagOptimization:
             sphere3_msh,
             center=sphere3_msh.elements_baricenters()[sphere3_msh.elm.tag1 == 4],
         )
-        (before, after, affine_after, e_mag, opt_ret) = optimize_e_mag(
+        (before, after, affine_after, e_mag, opt_ret, penalties) = optimize_e_mag(
             small_functional_3_element_coil, sphere3_msh, roi, coil_affine
         )
 

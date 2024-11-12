@@ -2622,7 +2622,7 @@ class TDCSLEADFIELD(LEADFIELD):
         roi_msh = w_elec.crop_mesh(roi_fill)
 
         # 'roi':  the GM and eye surfaces ([self.tissues + [2])
-        in_roi = np.in1d(roi_msh.elm.tag1, roi)
+        in_roi = np.isin(roi_msh.elm.tag1, roi)
 
         # th_indices': the volume in the 'roi_msh'
         th_indices = roi_msh.elm.elm_number[in_roi]

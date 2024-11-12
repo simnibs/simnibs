@@ -827,7 +827,6 @@ class TestGetMesh:
         coil = deepcopy(small_functional_3_element_coil)
         coil.elements[2].deformations[0].deformation_range.current = 90
         element_mesh = coil.elements[2].get_mesh(np.eye(4), include_coil_element=False)
-        print(list(element_mesh.nodes.node_coord))
         np.testing.assert_allclose(
             element_mesh.nodes.node_coord,
             [
@@ -837,6 +836,7 @@ class TestGetMesh:
                 [20.0, 20.0, -40.0],
                 [0.0, 40.0, -20.0],
             ],
+            atol=1e-10
         )
 
     def test_dipole_element_mesh(self):

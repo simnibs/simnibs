@@ -264,12 +264,12 @@ class TmsFlexOptimization:
         if self.eeg_cap is None:
             self.eeg_cap = sub_files.eeg_cap_1010
 
-        logger.info(f"Head Mesh: {self.fnamehead}")
-        logger.info(f"Subject Path: {self.subpath}")
+        logger.log(26, f"Head Mesh: {self.fnamehead}")
+        logger.log(26, f"Subject Path: {self.subpath}")
         self.path_optimization = os.path.abspath(
             os.path.expanduser(self.path_optimization)
         )
-        logger.info(f"Optimization Folder: {self.path_optimization}")
+        logger.log(26, f"Optimization Folder: {self.path_optimization}")
 
         try:
             fnamecoil = os.path.expanduser(self.fnamecoil)
@@ -283,7 +283,7 @@ class TmsFlexOptimization:
                 self.fnamecoil = fnamecoil
             else:
                 raise IOError(f"Could not find coil file: {self.fnamecoil}")
-        logger.info(f"Coil Path: {self.fnamecoil}")
+        logger.log(26, f"Coil Path: {self.fnamecoil}")
         self._coil = TmsCoil.from_file(fnamecoil)
 
         if self.method is None:
@@ -356,7 +356,7 @@ class TmsFlexOptimization:
     def type(self):
         return self.__class__.__name__
 
-    def _set_logger(self, fname_prefix="simnibs_optimization"):
+    def _set_logger(self, fname_prefix="simnibs_optimization", summary=True):
         """
         Set-up logger to write to a file
 
@@ -379,6 +379,15 @@ class TmsFlexOptimization:
         logger = logging.getLogger("simnibs")
         logger.addHandler(fh)
         self._log_handlers += [fh]
+
+        if summary:
+            fn_summary = os.path.join(self.path_optimization, 'summary.txt')
+            fh_s = logging.FileHandler(fn_summary, mode='w')
+            fh_s.setFormatter(logging.Formatter('%(message)s'))
+            fh_s.setLevel(26) # 25 is used by normal FEM for summary; using 26 here to not induced those summaries
+            logger.addHandler(fh_s)
+            self._log_handlers += [fh_s]
+
         simnibs_logger.register_excepthook(logger)
 
     def _finish_logger(self):
@@ -402,9 +411,9 @@ class TmsFlexOptimization:
                     f"{os.linesep}Please run the simulation in a new directory or delete"
                     f" the simnibs_simulation*.mat files from the folder : {dir_name}"
                 )
-            logger.info(f"Running optimization in the directory: {dir_name}")
+            logger.log(26, f"Running optimization in the directory: {dir_name}")
         else:
-            logger.info(f"Running optimization on new directory: {dir_name}")
+            logger.log(26, f"Running optimization on new directory: {dir_name}")
             os.makedirs(dir_name)
 
         if not cpus is None:
@@ -428,12 +437,12 @@ class TmsFlexOptimization:
         if self.method == "emag" and self._roi.n_center == 0:
             raise ValueError("The region of interest contains no positions")
 
-        logger.info(f"Optimization options:{os.linesep}{self.to_str_formatted()}")
+        logger.log(26, f"Optimization options:{os.linesep}{self.to_str_formatted()}")
 
         logger.info(f"Running optimization ({self.method})")
         # Run simulations
         if self.method == "distance":
-            initial_cost, optimized_cost, opt_matsimnibs, direct = optimize_distance(
+            initial_cost, optimized_cost, opt_matsimnibs, direct, penalties = optimize_distance(
                 self._coil,
                 self._mesh,
                 self.pos.matsimnibs,
@@ -447,7 +456,7 @@ class TmsFlexOptimization:
                 self.l_bfgs_b_args,
             )
         elif self.method == "emag":
-            initial_cost, optimized_cost, opt_matsimnibs, optimized_e_mag, direct = (
+            initial_cost, optimized_cost, opt_matsimnibs, optimized_e_mag, direct, penalties = (
                 optimize_e_mag(
                     self._coil,
                     self._mesh,
@@ -472,7 +481,8 @@ class TmsFlexOptimization:
         logger.info(
             f"Optimization result:{os.linesep}{direct}{os.linesep}"
             f"Initial cost: {initial_cost}{os.linesep}"
-            f"Optimized cost: {optimized_cost}"
+            f"Optimized cost: {optimized_cost}{os.linesep}"
+            f"Optimized penalties: {penalties}"
         )
         if self.method == "emag":
             logger.info(
@@ -560,20 +570,26 @@ class TmsFlexOptimization:
                 )
             roi_result_vis.write_gmsh_options()
 
-            if self.open_in_gmsh:
-                for vis_msh_file_name in vis_msh_file_names:
-                    mesh_io.open_in_gmsh(vis_msh_file_name, True)
-
-        logger.info(
-            f"{os.linesep}===============SUMMARY==============={os.linesep}"
+        e_field_log = f"Optimized mean E-field magnitude in ROI: {np.mean(optimized_e_mag)}{os.linesep}" if self.method == "emag" else f""
+        logger.log(26,
+            (f"{os.linesep}===============RESULT SUMMARY==============={os.linesep}"
             f"Optimized coil path: {fn_optimized_coil}{os.linesep}"
             f"Initial cost: {initial_cost}{os.linesep}"
             f"Optimized cost: {optimized_cost}{os.linesep}"
-            f"Optimized mean E-field magnitude in ROI: {np.mean(optimized_e_mag)}{os.linesep}" if self.method == "emag" else ""
-            f"Optimized matsimnibs:{os.linesep}{opt_matsimnibs}"
+            f"{e_field_log}"
+            f"Optimized matsimnibs:{os.linesep}{opt_matsimnibs}")
         )
 
+        if penalties["intersection_penalty"] > 3:
+            logger.log(26, "Warning: Coil head intersection detected in final result. Try to rerun the optimization with relaxed constrains or a different starting position")
+        if penalties["self_intersection_penalty"] > 3:
+            logger.log(26, "Warning: Coil self intersection detected in final result. Try to rerun the optimization with relaxed constrains or a different starting position")
+
         self._finish_logger()
+
+        if self.run_simulation and self.open_in_gmsh:
+                for vis_msh_file_name in vis_msh_file_names:
+                    mesh_io.open_in_gmsh(vis_msh_file_name, True)
 
     def to_dict(self) -> dict:
         """Makes a dictionary storing all settings as key value pairs
@@ -890,7 +906,7 @@ def optimize_distance(
     local_optimization: bool = True,
     direct_args: dict | None = None,
     l_bfgs_b_args: dict | None = None,
-) -> tuple[float, float, npt.NDArray[np.float_], list]:
+) -> tuple[float, float, npt.NDArray[np.float_], list, dict]:
     """Optimizes the deformations of the coil elements as well as the global transformation to minimize the distance between the optimization_surface
     and the min distance points (if not present, the coil casing points) while preventing intersections of the
     optimization_surface and the intersect points (if not present, the coil casing points)
@@ -928,6 +944,8 @@ def optimize_distance(
         otherwise it is the optimized affine.
     opt_results
         The results of the optimizations
+    penalties : dict
+        A dictionary containing the penalties scores of the optimization
 
     Raises
     ------
@@ -976,6 +994,7 @@ def optimize_distance(
             if l_bfgs_b_args["options"][k] is None:
                 del l_bfgs_b_args["options"][k]
     l_bfgs_b_args["options"].setdefault("maxls", 100)
+    penalties = {"intersection_penalty": 0.0, "self_intersection_penalty": 0.0}
 
     global_deformations = add_global_deformations(
         coil, coil_rotation_ranges, coil_translation_ranges
@@ -1026,6 +1045,9 @@ def optimize_distance(
         distance_penalty = _get_fast_distance_score(
             target_distance_function, element_voxel_volume.keys(), affine
         )
+        penalties["intersection_penalty"] = intersection_penalty
+        penalties["self_intersection_penalty"] = self_intersection_penalty
+
 
         f = distance_penalty + (intersection_penalty + self_intersection_penalty)
 
@@ -1098,7 +1120,7 @@ def optimize_distance(
             result_affine = global_deformation.as_matrix() @ result_affine
     result_affine = affine.astype(float) @ result_affine
 
-    return initial_cost, optimized_cost, result_affine, opt_results
+    return initial_cost, optimized_cost, result_affine, opt_results, penalties
 
 
 def get_voxel_volume(
@@ -1298,7 +1320,7 @@ def optimize_e_mag(
     solver_options = "pardiso",
     cpus = 1,
     debug: bool = False,
-) -> tuple[float, float, npt.NDArray[np.float_], npt.NDArray[np.float_], list]:
+) -> tuple[float, float, npt.NDArray[np.float_], npt.NDArray[np.float_], list, dict]:
     """Optimizes the deformations of the coil elements as well as the global transformation to maximize the mean e-field magnitude in the ROI while preventing intersections of the
     scalp surface and the coil casing
 
@@ -1341,6 +1363,8 @@ def optimize_e_mag(
         The e field magnitude in the roi elements after the optimization
     opt_results : list
         The results of the optimizations
+    penalties : dict
+        A dictionary containing the penalties scores of the optimization
 
     Raises
     ------
@@ -1390,6 +1414,7 @@ def optimize_e_mag(
                 del l_bfgs_b_args["options"][k]
 
     l_bfgs_b_args["options"].setdefault("maxls", 100)
+    penalties = {"intersection_penalty": 0.0, "self_intersection_penalty": 0.0}
 
     global_deformations = add_global_deformations(
         coil_sampled, coil_rotation_ranges, coil_translation_ranges
@@ -1453,6 +1478,8 @@ def optimize_e_mag(
             self_intersection_elements,
             affine,
         )
+        penalties["intersection_penalty"] = intersection_penalty
+        penalties["self_intersection_penalty"] = self_intersection_penalty
 
         penalty = intersection_penalty + self_intersection_penalty
         if penalty > fem_evaluation_cutoff:
@@ -1546,8 +1573,9 @@ def optimize_e_mag(
             result_affine,
             optimized_e_mag,
             opt_results,
+            penalties,
             tracking_deformations,
             fs,
         )
     else:
-        return initial_cost, optimized_cost, result_affine, optimized_e_mag, opt_results
+        return initial_cost, optimized_cost, result_affine, optimized_e_mag, opt_results, penalties

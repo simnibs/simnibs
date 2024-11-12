@@ -1157,7 +1157,7 @@ def update_tag_from_tet_neighbors(m, faces, tet_faces, adj_tets, nr_iter = 12):
         idx_elm, new_tag, adj_diff = _get_elm_and_new_tag(tag, adj_tets, 2, return_diffmat = True)
         # exclude tets at outer surface and ensure that tets can still be relabeled
         idx = new_tag > -1
-        idx *= np.in1d( idx_elm, np.where(relabeling_allowed)[0] )
+        idx *= np.isin( idx_elm, np.where(relabeling_allowed)[0] )
         idx_elm = idx_elm[idx]
         new_tag = new_tag[idx]
         # get the 2 nodes that are shared by the two tet faces facing the 

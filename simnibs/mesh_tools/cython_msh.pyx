@@ -16,16 +16,16 @@ cdef inline int int_min(int a, int b): return a if a <= b else b
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def interp_grid(np.ndarray[np.int_t, ndim=1] n_voxels,
+def interp_grid(np.ndarray[long int, ndim=1] n_voxels,
                 np.ndarray[double, ndim=2] field,
                 np.ndarray[double, ndim=2] nd,
-                np.ndarray[np.int_t, ndim=2] tetrahedra):
+                np.ndarray[long int, ndim=2] tetrahedra):
     # image
     cdef np.ndarray[double, ndim=4] image = np.zeros((n_voxels[0], n_voxels[1],
                                                       n_voxels[2], field.shape[1]), np.double)
 
-    cdef np.int_t nr_components = field.shape[1]
-    cdef np.int_t node_data = field.shape[0] == nd.shape[0]
+    cdef long int nr_components = field.shape[1]
+    cdef long int node_data = field.shape[0] == nd.shape[0]
     ## Create bounding box with each tetrahedra
     cdef np.ndarray[double, ndim=3] th_coords = nd[tetrahedra]
 
@@ -33,13 +33,13 @@ def interp_grid(np.ndarray[np.int_t, ndim=1] n_voxels,
             np.linalg.inv(
                 np.transpose(th_coords[:, :3, :3] - th_coords[:, 3, None, :], (0, 2, 1)))
 
-    cdef np.ndarray[np.int_t, ndim=2] th_boxes_min = np.rint(
+    cdef np.ndarray[int, ndim=2] th_boxes_min = np.rint(
         np.min(th_coords, axis=1)).astype(int)
 
-    cdef np.ndarray[np.int_t, ndim=2] th_boxes_max = np.rint(
+    cdef np.ndarray[int, ndim=2] th_boxes_max = np.rint(
         np.max(th_coords, axis=1)).astype(int)
 
-    cdef np.ndarray[np.int_t, ndim=1] in_roi = np.where(
+    cdef np.ndarray[int, ndim=1] in_roi = np.where(
         np.all((th_boxes_min <= n_voxels) * (th_boxes_max >= 0), axis=1))[0].astype(int)
 
     th_boxes_max = np.minimum(th_boxes_max, np.array(n_voxels) - 1)
@@ -89,10 +89,10 @@ def interp_grid(np.ndarray[np.int_t, ndim=1] n_voxels,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def interp_grid_nodedata_max(np.ndarray[np.int_t, ndim=1] n_voxels,
+def interp_grid_nodedata_max(np.ndarray[long int, ndim=1] n_voxels,
                 np.ndarray[float, ndim=2] field,
                 np.ndarray[double, ndim=2] nd,
-                np.ndarray[np.int_t, ndim=2] tetrahedra,
+                np.ndarray[long int, ndim=2] tetrahedra,
                 compartments,
                 np.ndarray[uint16_t, ndim=3] labelimage,
                 np.ndarray[float, ndim=3] maximage):
@@ -101,9 +101,9 @@ def interp_grid_nodedata_max(np.ndarray[np.int_t, ndim=1] n_voxels,
     cdef uint16_t[:] comp = np.asarray([c for ci in compartments for c in ci],dtype=np.uint16)
     cdef uint16_t[:] comp_k = np.asarray([q for q,ci in enumerate(compartments) for c in ci],dtype=np.uint16)
     cdef uint8_t[:] c_last = np.asarray([q==len(ci)-1 for ci in compartments for q,c in enumerate(ci)])
-    cdef np.int_t n_comp = len(comp)
+    cdef long int n_comp = len(comp)
 
-    cdef np.int_t node_data = field.shape[0] == nd.shape[0]
+    cdef long int node_data = field.shape[0] == nd.shape[0]
     ## Create bounding box with each tetrahedra
     cdef np.ndarray[double, ndim=3] th_coords = nd[tetrahedra]
 
@@ -112,10 +112,10 @@ def interp_grid_nodedata_max(np.ndarray[np.int_t, ndim=1] n_voxels,
                 th_coords[:, :3, :3] - th_coords[:, 3, None, :], (0, 2, 1))
                 )
 
-    cdef np.ndarray[np.int_t, ndim=2] th_boxes_min = np.rint(
+    cdef np.ndarray[long int, ndim=2] th_boxes_min = np.rint(
         np.min(th_coords, axis=1)).astype(int)
 
-    cdef np.ndarray[np.int_t, ndim=2] th_boxes_max = np.rint(
+    cdef np.ndarray[long int, ndim=2] th_boxes_max = np.rint(
         np.max(th_coords, axis=1)).astype(int)
 
     cdef int[:] in_roi = np.where(
@@ -131,7 +131,7 @@ def interp_grid_nodedata_max(np.ndarray[np.int_t, ndim=1] n_voxels,
     cdef double eps = 1e-5
     cdef double current_field = 0.0
 
-    cdef np.int_t n_in_roi = len(in_roi)
+    cdef long int n_in_roi = len(in_roi)
 
     with nogil:
         for jj in range(n_in_roi):
@@ -183,20 +183,20 @@ def interp_grid_nodedata_max(np.ndarray[np.int_t, ndim=1] n_voxels,
 @cython.wraparound(False)
 def find_tetrahedron_with_points(np.ndarray[double, ndim=2] points,
                                  np.ndarray[double, ndim=3] th_nodes,
-                                 np.ndarray[np.int_t, ndim=1] starting_th,
-                                 np.ndarray[np.int_t, ndim=2] th_faces,
-                                 np.ndarray[np.int_t, ndim=2] adjacency_list):
+                                 np.ndarray[long int, ndim=1] starting_th,
+                                 np.ndarray[long int, ndim=2] th_faces,
+                                 np.ndarray[long int, ndim=2] adjacency_list):
 
-    cdef np.ndarray[np.int_t, ndim=2] face_points = np.array(
+    cdef np.ndarray[long int, ndim=2] face_points = np.array(
         [[0, 2, 1], [0, 1, 3], [0, 3, 2], [1, 2, 3]], int)
-    cdef np.ndarray[np.int_t, ndim=1] th_with_points = -np.ones(points.shape[0],
+    cdef np.ndarray[long int, ndim=1] th_with_points = -np.ones(points.shape[0],
                                                                 dtype=int)
     # We can now start the walking algorithm
-    cdef np.ndarray[np.int_t, ndim=1] face_order = np.arange(4, dtype=int)
+    cdef np.ndarray[long int, ndim=1] face_order = np.arange(4, dtype=int)
     cdef np.ndarray[double, ndim=1] p
-    cdef np.int_t previous_t, adjacent, nr_cycles
-    cdef np.uint_t end, outside, t, j, face
-    cdef np.int_t pt = len(th_faces) + 1
+    cdef long int previous_t, adjacent, nr_cycles
+    cdef unsigned int end, outside, t, j, face
+    cdef int pt = len(th_faces) + 1
 
     for i, p, t in zip(range(points.shape[0]), points, starting_th):
         previous_t = pt
@@ -249,7 +249,7 @@ def find_tetrahedron_with_points(np.ndarray[double, ndim=2] points,
 @cython.wraparound(False)
 def orientation(np.ndarray[double, ndim=1] p, int th, int face,
                 np.ndarray[double, ndim=3] th_nodes,
-                np.ndarray[np.int_t, ndim=2] face_points):
+                np.ndarray[long int, ndim=2] face_points):
     cdef np.ndarray[double, ndim=2] d = np.empty((3, 3), dtype=float)
     for i in range(3):
         for j in range(3):
@@ -267,7 +267,7 @@ def orientation(np.ndarray[double, ndim=1] p, int th, int face,
 @cython.wraparound(False)
 cdef double orientation(double[:] p,
                             double[:, :] th_nodes,
-                            np.int_t[:] face_points):
+                            long int[:] face_points):
     #cdef np.ndarray[double, ndim=2] d = np.empty((3, 3), dtype=float)
     cdef double[3][3] d
     for i in range(3):
@@ -358,13 +358,13 @@ def calc_quantities_for_test_point_in_triangle(triangles):
 @cython.wraparound(False)
 @cython.cdivision(True)
 def gauss_smooth(
-    np.uint_t[::1] surf_nodes,
+    unsigned long[::1] surf_nodes,
     double[:, ::1] nodes_pos,
-    np.uint_t[:, ::1] tetrahedra,
-    np.uint_t[::1] adj_indices,
-    np.uint_t[::1] adj_indptr,
-    np.uint_t[::1] adj_th_indices,
-    np.uint_t[::1] adj_th_indptr,
+    unsigned long[:, ::1] tetrahedra,
+    unsigned long[::1] adj_indices,
+    unsigned long[::1] adj_indptr,
+    unsigned long[::1] adj_th_indices,
+    unsigned long[::1] adj_th_indptr,
     float factor,
     float max_gamma
     ):
@@ -372,7 +372,7 @@ def gauss_smooth(
     that tetrahedra dont degenerate too much
     '''
     cdef int count_cancelled = 0
-    cdef np.uint_t n
+    cdef unsigned long n
     cdef double[3] bar
     cdef double[::1] pos_before
     cdef Py_ssize_t i, j, k
@@ -412,15 +412,15 @@ def gauss_smooth(
 @cython.wraparound(False)
 @cython.cdivision(True)
 def gauss_smooth_simple(
-    np.uint_t[::1] surf_nodes,
+    unsigned long[::1] surf_nodes,
     double[:, ::1] nodes_pos,
-    np.uint_t[::1] adj_indices,
-    np.uint_t[::1] adj_indptr,
+    unsigned long[::1] adj_indices,
+    unsigned long[::1] adj_indptr,
     float factor
     ):
     ''' Gaussian smoothing in-place
     '''
-    cdef np.uint_t n
+    cdef unsigned long n
     cdef double[3] bar
     cdef double[:, ::1] pos_before
     cdef Py_ssize_t i, j, k
@@ -450,7 +450,7 @@ def gauss_smooth_simple(
 @cython.wraparound(False)
 cdef int _test_sign(
     double[:, ::1] nodes_pos,
-    np.uint_t[:] th):
+    unsigned long[:] th):
     cdef double[3][3] M
     cdef Py_ssize_t i, j, k
     cdef double det
@@ -467,14 +467,14 @@ cdef int _test_sign(
 # Only for testing
 def test_sign(
     double[:, ::1] nodes_pos,
-    np.uint_t[:] th):
+    unsigned long[:] th):
     return _test_sign(nodes_pos, th)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef float _calc_gamma(
     double[:, ::1] nodes_pos,
-    np.uint_t[:] th):
+    unsigned long[:] th):
     '''
     Gamma measurement from the paper
     Parthasarathy, V. N., C. M. Graichen, and A. F. Hathaway. "A comparison of
@@ -511,5 +511,5 @@ cdef float _calc_gamma(
 
 def calc_gamma(
     double[:, ::1] nodes_pos,
-    np.uint_t[:] th):
+    unsigned long[:] th):
     return _calc_gamma(nodes_pos, th)
