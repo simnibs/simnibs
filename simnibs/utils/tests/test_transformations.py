@@ -964,4 +964,54 @@ def test_project_points_on_surface(sphere3_msh):
     assert np.all(np.abs(np.linalg.norm(pts_prj,axis=1) - 85.) < 0.5)
 
 
+def test_fix_boundary_zeros():
+    # test replacement of boundary zeros in non-linear warps
+    
+    # one voxel with 0,0,0 somewhere inside the volume --> keep, corresponds to
+    # origin
+    df_data = np.array(np.meshgrid(
+                np.arange(-100,51,10, dtype=float),
+                np.arange(-200,101,20, dtype=float),
+                np.arange(-30,51,5, dtype=float),
+                indexing='ij'))
+    df_data = df_data.reshape((3,-1)).T.reshape((16,16,17,3))
+        
+    df_data = transformations._fix_boundary_zeros(df_data)
+        
+    assert np.sum(np.all(df_data == 0, axis=3)) == 1
+    assert not np.any(np.isinf(df_data))
+    assert np.max(df_data[:,:,:,0]) == 50.0
+    assert np.min(df_data[:,:,:,0]) == -100.0
+    assert np.max(df_data[:,:,:,1]) == 100.0
+    assert np.min(df_data[:,:,:,1]) == -200.0
+    assert np.max(df_data[:,:,:,2]) ==  50.0
+    assert np.min(df_data[:,:,:,2]) == -30.0
+    
+    # keep voxel with 0,0,0 somewhere inside the volume, replace the rest
+    df_data = np.array(np.meshgrid(
+                np.arange(-100,51,10, dtype=float),
+                np.arange(-200,101,20, dtype=float),
+                np.arange(-30,51,5, dtype=float),
+                indexing='ij'))
+    df_data = df_data.reshape((3,-1)).T.reshape((16,16,17,3))
+    
+    # put zeros at the array boundaries along two dimensions
+    df_data[0,:,:,:] = 0.
+    df_data[-2:,:,:,:] = 0.
+    df_data[:,:,0,:] = 0.
+    df_data[:,:,-1,:] = 0.
+        
+    df_data = transformations._fix_boundary_zeros(df_data)
+        
+    assert np.sum(np.all(df_data == 0, axis=3)) == 1
+    assert np.sum(np.all(np.isinf(df_data), axis=3)) == 1232
+
+    df_data[np.isinf(df_data)] = np.nan
+    assert np.nanmax(df_data[:,:,:,0]) == 30.0
+    assert np.nanmin(df_data[:,:,:,0]) == -90.0
+    assert np.nanmax(df_data[:,:,:,1]) == 100.0
+    assert np.nanmin(df_data[:,:,:,1]) == -200.0
+    assert np.nanmax(df_data[:,:,:,2]) ==  45.0
+    assert np.nanmin(df_data[:,:,:,2]) == -25.0
+
 

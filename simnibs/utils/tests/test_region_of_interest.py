@@ -242,7 +242,6 @@ class TestMaskImageToIndexMask:
 
 class TestMniMaskToSub:
     @pytest.mark.slow
-    @pytest.mark.skip(reason="Final labels MNI has artifacts")
     def test_transform_final_tissues(self, example_dataset):
         m2m_path = os.path.join(example_dataset, "m2m_ernie")
         subject_files = SubjectFiles(subpath=m2m_path)
@@ -258,10 +257,13 @@ class TestMniMaskToSub:
             sub_final_tissues.affine, mni_to_sub_final_tissues.affine
         )
 
-        np.testing.assert_allclose(
-            np.squeeze(sub_final_tissues.get_fdata()),
-            mni_to_sub_final_tissues.get_fdata(),
-        )
+        img = np.squeeze(mni_to_sub_final_tissues.get_fdata().astype(np.uint16))
+        img_org = np.squeeze(sub_final_tissues.get_fdata().astype(np.uint16))
+        
+        # as transformation is not perfect, and MNI head does not extend so far down,
+        # only GM and WM are compared, and a low number of non-matching voxels are OK
+        assert np.sum((img == 1) != (img_org == 1)) < 6000
+        assert np.sum((img == 2) != (img_org == 2)) < 9000
 
 
 class TestCombineMask:

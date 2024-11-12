@@ -3555,7 +3555,7 @@ class Data(object):
         tags: list (optional)
             Mesh tags to be transformed. Defaut: transform the entire mesh
         order: int (optional)
-            Interpolation order to be used. Default: 1
+            Interpolation order to be used for transformation. Default: 1
         method: {'assign' or 'linear'} (Optional)
             Method for gridding the data.
             If 'assign', gives to each voxel the value of the element that contains

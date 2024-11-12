@@ -52,7 +52,8 @@ __all__ = [
 def volumetric_nonlinear(image, deformation, target_space_affine=None,
                          target_dimensions=None, intorder=1, cpus=1,
                          inverse_deformation=None,
-                         keep_vector_length=True):
+                         keep_vector_length=True,
+                         fix_boundary_zeros=True):
     ''' Applies a volumetric non-linear transformation
 
     Parameters
@@ -76,9 +77,13 @@ def volumetric_nonlinear(image, deformation, target_space_affine=None,
         original space and specifies in each voxel the equivalent coordinates (x, y, z)
         of the target space. This is used ony to rotate vectors accordingly. If not set,
         vectors wil not be rotated
-    keep_vector_length: bool
+    keep_vector_length: bool (Optional)
         Whether to keep the length of the vectors unchanged. Only comes into effect if the
-        image is 3 dimensional and inverse_deformation is set.
+        image is 3 dimensional and inverse_deformation is set. (Default: True)
+    fix_boundary_zeros: bool (Optional)
+        Whether to replace zeros at boundaries of deformation field by values
+        of clostest non-zero voxel (Default: True)
+    
     Returns
     ------
     outdata: ndarray
@@ -89,7 +94,12 @@ def volumetric_nonlinear(image, deformation, target_space_affine=None,
     df_data, df_affine = deformation
     if len(df_data.shape) > 4:
         df_data = df_data.squeeze()
-
+    
+    # boundaries of deformation fields sometimes contain voxels with 0,0,0
+    # --> replace by Infs
+    if fix_boundary_zeros:
+        df_data = _fix_boundary_zeros(df_data)
+    
     # If the resolution is to be changed
     if target_dimensions is None:
         target_dimensions = df_data.shape[:3]
@@ -110,7 +120,7 @@ def volumetric_nonlinear(image, deformation, target_space_affine=None,
         f = partial(scipy.ndimage.map_coordinates,
                     coordinates=t,
                     output=np.float32, order=1,
-                    mode='constant', cval=np.nan)
+                    mode='constant', cval=np.inf)
         voxvals = np.array([f(df_data[..., i]) for i in range(3)])
         # Figure out the voxel coordinates in original space
         iM = np.linalg.inv(im_affine)
@@ -166,10 +176,39 @@ def volumetric_nonlinear(image, deformation, target_space_affine=None,
             im_data = im_data_rotated
 
     # Interpolate to the target space
+    coords[np.isnan(coords)] = np.inf # inf is for sure outside volume, behavior for nan is unclear
     outdata = _interpolate(im_data, coords, intorder, target_dimensions, cpus)
     del im_data
     gc.collect()
     return outdata
+
+
+def _fix_boundary_zeros(df_data):
+    """
+    replace zeros at boundaries of deformation fields by Inf
+
+    Parameters
+    ----------
+    df_data : array
+        deformation field image
+
+    Returns
+    -------
+    df_data : array
+        updated deformation field image
+
+    """
+    assert df_data.ndim == 4
+    assert df_data.shape[3] == 3
+    
+    mask_imgregion = ~np.all(df_data == 0, axis=3)
+    mask_imgregion = scipy.ndimage.binary_fill_holes(mask_imgregion)    
+    if not np.all(mask_imgregion):
+        df_data[~mask_imgregion,:] = np.inf
+    del mask_imgregion
+    gc.collect()
+    
+    return df_data
 
 
 def volumetric_affine(image, affine, target_space_affine,
