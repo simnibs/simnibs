@@ -1546,7 +1546,7 @@ class TestElmData:
         fn = tempf.name
         tempf.close()
         nibabel.save(img, fn)
-        interp = f.to_deformed_grid(fn, fn, method='assign')
+        interp = f.to_deformed_grid(fn, fn, method='assign', fix_boundary_zeros=False)
         interp = np.asanyarray(interp.dataobj)
         assert np.isclose(interp[100, 5, 0], 3)
         assert np.isclose(interp[187, 5, 0], 4)
@@ -1572,7 +1572,7 @@ class TestElmData:
         fn = tempf.name
         tempf.close()
         nibabel.save(img, fn)
-        interp = f.to_deformed_grid(fn, fn, tags=3, method='assign')
+        interp = f.to_deformed_grid(fn, fn, tags=3, method='assign', fix_boundary_zeros=False)
         interp = np.asanyarray(interp.dataobj)
         assert np.isclose(interp[100, 5, 0], 3)
         assert np.isclose(interp[187, 5, 0], 0)

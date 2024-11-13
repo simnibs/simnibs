@@ -3531,7 +3531,7 @@ class Data(object):
                          out_original=None, tags=None, order=1,
                          method='linear', continuous=False,
                          inverse_warp=None, reference_original=None,
-                         binary=False):
+                         binary=False, fix_boundary_zeros=True):
         ''' Interpolates field to a grid and apply non-linear interpolation
 
         We first interpolate to a grid and then apply the transformation in order to
@@ -3573,7 +3573,11 @@ class Data(object):
             the dimensions and affine transformation for the initial griding
         binary: bool (optional)
             If True, thresholds the image at 0.5 and converts to np.uint8. Default: False
-
+        fix_boundary_zeros: bool (Optional)
+            Whether to replace zeros at boundaries of deformation field by values
+            of clostest non-zero voxel; relevant only for non-linear transforms
+            (Default: True)
+        
         Returns
         --------
         img: nibabel.Nifti1Pair
@@ -3618,7 +3622,8 @@ class Data(object):
         img = nifti_transform(
             (image, affine),
             warp, reference, out=out, order=order,
-            inverse_warp=inverse_warp, binary=binary)
+            inverse_warp=inverse_warp, binary=binary,
+            fix_boundary_zeros=fix_boundary_zeros)
 
         del image
         gc.collect()

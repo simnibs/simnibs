@@ -288,7 +288,7 @@ def _interpolate(im_data, coords, intorder, outdim, cpus=1):
 
 
 def nifti_transform(image, warp, ref, out=None, mask=None, order=1, inverse_warp=None,
-                    binary=False):
+                    binary=False, fix_boundary_zeros=True):
     ''' Transforms a nifti file to the reference space usign the defined warp
 
     Parameters
@@ -314,6 +314,13 @@ def nifti_transform(image, warp, ref, out=None, mask=None, order=1, inverse_warp
         Name of nifti file with inverse the transformation. Used to rotate vectors to the
         target space in the case of non-liner transformations. If the transformation is
         linear, the inverse matrix is used.
+    binary: bool (optional)
+        If True, thresholds the image at 0.5 and converts to np.uint8. (Default: False)
+    fix_boundary_zeros: bool (Optional)
+        Whether to replace zeros at boundaries of deformation field by values
+        of clostest non-zero voxel; relevant only for non-linear transforms
+        (Default: True)
+            
     Returns
     ------
     img: nibabel.Nifti1Pair
@@ -370,7 +377,8 @@ def nifti_transform(image, warp, ref, out=None, mask=None, order=1, inverse_warp
             target_space_affine=reference_nifti.affine,
             target_dimensions=reference_nifti.header['dim'][1:4],
             intorder=order,
-            inverse_deformation=inverse_warp)
+            inverse_deformation=inverse_warp,
+            fix_boundary_zeros=fix_boundary_zeros)
 
     if binary:
         image = (image >= .5).astype(np.uint8)
