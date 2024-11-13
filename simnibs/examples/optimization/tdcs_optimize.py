@@ -3,7 +3,7 @@
 
     simnibs_python tdcs_optimize.py
 
-    Copyright (C) 2019 Guilherme B Saturnino
+    Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 '''
 
 
@@ -30,6 +30,11 @@ target = opt.add_target()
 target.positions = [-50.7, 5.1, 55.5]
 # Intensity of the electric field (in V/m)
 target.intensity = 0.2
+# Default behavior is to optimize the E-field in the direction normal to the
+# target position. If you want the opposite direction, you can specify
+# `negative normal`. You can also specify the direction vector manually or
+# None to simply optimize the norm (magnitude) of the field in the target.
+# target.directions = "normal"
 
 # Run optimization
 simnibs.run_simnibs(opt)

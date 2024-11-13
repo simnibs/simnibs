@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>TMSLIST &#8212; SimNIBS 4.1.0 documentation</title>
+    <title>TMSLIST &#8212; SimNIBS 0) documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=12dfc556" />
-    <script src="../../_static/documentation_options.js?v=42d1b3bd"></script>
+    <script src="../../_static/documentation_options.js?v=e6165c10"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="icon" href="../../_static/favicon.ico"/>
@@ -76,10 +76,11 @@
 <ul id="tmslist-fnamecoil">
 <li><p><strong>fnamecoil</strong>: <em>string (Python)/ character array (MATLAB)</em></p>
 <ul>
-<li><p><strong>Description</strong>: Name of coil file. Coil files come in two types</p>
+<li><p><strong>Description</strong>: Name of coil file. Coil files come in three types</p>
 <ul class="simple">
 <li><p><em>.nii.gz</em> files: NIfTI files with sampled magnetic vector potentials. Recommended, allows for faster simulations. (<a class="reference external" href="https://doi.org/10.1016/j.brs.2015.07.035">Madsen et al., 2015</a>)</p></li>
 <li><p><em>.ccd</em> files: Text files that describe the coil as a set of magnetic dipoles. Simulations with this type of coil are slower. (<a class="reference external" href="https://doi.org/10.1016/j.clinph.2004.02.019">Thielscher and Kammer, 2004</a>)</p></li>
+<li><p><em>.tcd</em> files: JSON based text files that describe the coil as a set of magnetic dipoles, line segments and/or sampled magnetic vector potentials.</p></li>
 </ul>
 </li>
 <li><p><strong>Examples</strong>: <em>Python/MATLAB</em></p>
@@ -133,7 +134,7 @@ See the documentation on <a class="reference internal" href="session.html#sessio
 <span class="n">S</span><span class="o">.</span><span class="n">fnamehead</span> <span class="o">=</span> <span class="s1">&#39;ernie.msh&#39;</span>
 <span class="c1"># add a TMSLIST to the SESSION</span>
 <span class="n">tms</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">add_tmslist</span><span class="p">()</span>
-<span class="c1"># Select the coil from those available in the ccd-coils subfolder</span>
+<span class="c1"># Select the coil from those available in the coil_models subfolder</span>
 <span class="n">tms</span><span class="o">.</span><span class="n">fnamecoil</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;legacy_and_other&#39;</span><span class="p">,</span><span class="s1">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">)</span>
 <span class="c1"># Add a new position</span>
 <span class="n">pos</span> <span class="o">=</span> <span class="n">tms</span><span class="o">.</span><span class="n">add_position</span><span class="p">()</span>
@@ -155,7 +156,7 @@ See the documentation on <a class="reference internal" href="session.html#sessio
 <span class="n">S</span><span class="p">.</span><span class="n">fnamehead</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;ernie.msh&#39;</span><span class="p">;</span>
 <span class="c">% Add a TMSLIST to the SESSION</span>
 <span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sim_struct</span><span class="p">(</span><span class="s">&#39;TMSLIST&#39;</span><span class="p">);</span>
-<span class="c">% Select the coil from those available in the ccd-coils subfolder</span>
+<span class="c">% Select the coil from those available in the -coil_models subfolder</span>
 <span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">fnamecoil</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">fullfile</span><span class="p">(</span><span class="s">&#39;legacy_and_other&#39;</span><span class="p">,</span><span class="s">&#39;Magstim_70mm_Fig8.ccd&#39;</span><span class="p">);</span>
 <span class="c">% Place the coil over C3</span>
 <span class="n">S</span><span class="p">.</span><span class="n">poslist</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">pos</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">centre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;C3&#39;</span><span class="p">;</span>
@@ -210,7 +211,7 @@ See the documentation on <a class="reference internal" href="session.html#sessio
 <h3>Navigation</h3>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../dataset.html">Example Dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../tutorial/tutorial.html">Tutorial</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../documentation.html">Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../gui.html">Graphical User Interface Documentation</a></li>

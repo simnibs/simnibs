@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>TmsFlexOptimization &#8212; SimNIBS 0) documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../_static/documentation_options.js?v=e6165c10"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="icon" href="../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="RegionOfInterest" href="regionofinterest_doc.html" />
+    <link rel="prev" title="TesFlexOptimization" href="tes_flex_opt_doc.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+              <div class="related top">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="tes_flex_opt_doc.html" title="Previous document">TesFlexOptimization</a>
+        </li>
+        <li>
+          <a href="regionofinterest_doc.html" title="Next document">RegionOfInterest</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+
+          <div class="body" role="main">
+            
+  <section id="tmsflexoptimization">
+<span id="tms-flex-opt-doc"></span><h1>TmsFlexOptimization<a class="headerlink" href="#tmsflexoptimization" title="Link to this heading">¶</a></h1>
+<section id="initialization">
+<h2>Initialization<a class="headerlink" href="#initialization" title="Link to this heading">¶</a></h2>
+<ul>
+<li><p><strong>Python</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">opt_struct</span>
+<span class="n">opt</span> <span class="o">=</span> <span class="n">opt_struct</span><span class="o">.</span><span class="n">TmsFlexOptimization</span><span class="p">()</span>
+</pre></div>
+</div>
+<p></p>
+</li>
+<li><p><strong>MATLAB</strong></p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TmsFlexOptimization&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p></p>
+</li>
+</ul>
+</section>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="simnibs.opt_struct.TmsFlexOptimization">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simnibs.opt_struct.</span></span><span class="sig-name descname"><span class="pre">TmsFlexOptimization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">settings_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.opt_struct.TmsFlexOptimization" title="Link to this definition">¶</a></dt>
+<dd><p>Class that defines a flexible TMS optimization</p>
+<section id="parameters">
+<h3>Parameters:<a class="headerlink" href="#parameters" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>settings_dict: (optional) dict</dt><dd><p>Dictionary containing parameter as key value pairs</p>
+</dd>
+<dt>date: str | None</dt><dd><p>Date when the optimization struct was initiated</p>
+</dd>
+<dt>time_str: str | None</dt><dd><p>Time when the optimization struct was initiated</p>
+</dd>
+<dt>fnamecoil: str | None</dt><dd><p>Path to the coil file (example: “path/to/coil”)</p>
+</dd>
+<dt>pos: POSITION | None</dt><dd><p>The initial coil position from where the optimization is started</p>
+</dd>
+<dt>fnamehead: str | None</dt><dd><p>Path to the head mesh (example: “path/to/msh”)</p>
+</dd>
+<dt>subpath: str | None</dt><dd><p>Path to the m2m folder of the subject (example: “path/to/m2m”)</p>
+</dd>
+<dt>path_optimization: str | None</dt><dd><p>Path to the output folder where the result of the optimization is saved (example: “path/to/output”)</p>
+</dd>
+<dt>eeg_cap: str | None</dt><dd><p>Path to a eeg cap file (example: “path/to/csv”)</p>
+</dd>
+<dt>run_simulation: bool | None</dt><dd><p>Weather to run a full simulation at the optimized position after the optimization</p>
+</dd>
+<dt>run_simulation: bool | None</dt><dd><p>Weather to run a full simulation at the optimized position after the optimization</p>
+</dd>
+<dt>open_in_gmsh: bool</dt><dd><p>Weather to open the optimization result in gmsh</p>
+</dd>
+<dt>method: str | None</dt><dd><p>The method of optimization {“distance”, “emag”}</p>
+</dd>
+<dt>roi: RegionOfInterest | None</dt><dd><p>The region of interest in which the e field is simulated, method = “emag”</p>
+</dd>
+<dt>disable_SPR_for_volume_roi: bool</dt><dd><p>Weather to use SPR interpolation for volume rois, default True</p>
+</dd>
+<dt>distance: float</dt><dd><p>The distance at which the coil is supposed to be placed relative to the head</p>
+</dd>
+<dt>global_translation_ranges: list | None</dt><dd><p>Ranges that describe how far the coil is allowed to move in x,y,z direction [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] (example: [[-1, 1], [-2, 2], [-10, 10]] | [-1, 1] [0, 0], [0, 0]])</p>
+</dd>
+<dt>global_rotation_ranges: list | None</dt><dd><p>Ranges that describe how far the coil is allowed to rotate around the x,y,z axis [[min(x), max(x)],[min(y), max(y)], [min(z), max(z)]] (example: [[-1, 1], [-2, 2], [-10, 10]] | [-1, 1] [0, 0], [0, 0]])</p>
+</dd>
+<dt>dither_skip: int</dt><dd><p>How many voxel positions should be skipped when creating the coil volume representation.
+Used to speed up the optimization. When set to 0, no dithering will be applied. (example: 2 | 0), default 6</p>
+</dd>
+<dt>fem_evaluation_cutoff: float</dt><dd><p>If the penalty from the intersection and self intersection is greater than this cutoff value, the fem will not be evaluated to save time.
+Set to np.inf to always evaluate the fem (example: 500 | np.inf), default 1000</p>
+</dd>
+<dt>run_global_optimization: bool</dt><dd><p>Weather to run the global optimization, the global optimization will always run first</p>
+</dd>
+<dt>run_local_optimization: bool</dt><dd><p>Weather to run the local optimization, the local optimization will always run second</p>
+</dd>
+<dt>direct_args: dict</dt><dd><p>Settings for the scipy direct global optimization</p>
+</dd>
+<dt>l_bfgs_b_args: dict</dt><dd><p>Settings for the scipy L-BFGS-B local optimization</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
+</section>
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="tes_flex_opt_doc.html" title="Previous document">TesFlexOptimization</a>
+        </li>
+        <li>
+          <a href="regionofinterest_doc.html" title="Next document">RegionOfInterest</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.png" alt="Logo" />
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial/tutorial.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../gui.html">Graphical User Interface Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../command_line/command_line.html">Command Line Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="opt_struct.html">Optimization Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../neuronavigation/neuronavigation.html">Neuronavigation Data Import/Export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../output_files.html">Output Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../file_formats.html">File Formats in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../coordinates.html">Coordinates in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../conductivity.html">Standard Conductivity Values</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../coils.html">Coil Models Included in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../python_lib/python_lib.html">Python Library Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors and Funding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../documentation.html">Documentation</a><ul>
+  <li><a href="opt_struct.html">Optimization Data Structures</a><ul>
+      <li>Previous: <a href="tes_flex_opt_doc.html" title="previous chapter">TesFlexOptimization</a></li>
+      <li>Next: <a href="regionofinterest_doc.html" title="next chapter">RegionOfInterest</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2020, SimNIBS Developers.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../../_sources/documentation/opt_struct/tms_flex_opt_doc.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

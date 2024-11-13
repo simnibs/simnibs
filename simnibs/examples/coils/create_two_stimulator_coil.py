@@ -2,8 +2,11 @@
 Example of how to create a simple parametric TMS coil consisting of two figure of 8 coils stacked.
 The TMS coil is than saved in the tcd format.
 The coil is constructed using line segments which reconstruct the windings of the coil.
+
+Copyright (c) 2024 SimNIBS developers. Licensed under the GPL v3.
 """
 
+import os
 import numpy as np
 from simnibs.simulation.tms_coil.tms_coil import TmsCoil
 
@@ -180,4 +183,6 @@ tms_coil.generate_element_casings(
 )
 
 # Write the coil to a tcd file
-tms_coil.write("two_stimulator_example_coil.tcd")
+os.mkdir("coil_example")
+tms_coil.write(os.path.join("coil_example", "two_stimulator_example_coil.tcd"))
+

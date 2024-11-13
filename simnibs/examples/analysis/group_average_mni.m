@@ -2,7 +2,9 @@
 %  This example wil go throgh simulations and calculate
 %  the average of the electric field magnitude in MNI space
 %
-% It is a follow-up to the "run_simulations" example
+% It is a follow-up to the "run_simulations_group.m" example
+%    
+% Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 
 subjects = {'sub01', 'sub09', 'sub10', 'sub12', 'sub15'};
 results_folder = 'mni_volumes';

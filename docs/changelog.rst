@@ -2,13 +2,34 @@
 
 Changelog
 ===========
+4.5.0 
+------
+  * New optimization method TMS that also supports bent and flexible coils, thereby systematically avoiding intersections of the coil with the head. 
+  * New format (.tcd) for TMS coils that supports flexible and multi-element coils. Coils can now also be defined by their winding geometries. The A-fields (magnetic vector potential) are then determined via numerical integration of line integrals. This method complements coil definitions using magnetic dipoles and using precalculated A-fields stored on a regular grid (i.e. as NIfTI). The tcd-format supports all three cases.
+  * TMS coil models for Brainsway H1, H4 and H7, and for MagVenture MST twin coil.
+  * New optimization method for TES, including montages with rectangular electrodes, center-surround montages, temporal interference stimulation and electrode arrays for tumor treating field therapies.
+  * New class to support the convenient definition of regions-of-interest.
+  * New dataset Ernie Extended.
+  * New non-human primate dataset.
+  * Tutorial for calculating :ref:`EEG leadfields <eeg_leadfields>` with SimNIBS for use in `FieldTrip <https://www.fieldtriptoolbox.org/>`_ and `MNE-Python <https://mne.tools/stable/index.html>`_ added.
+  * Added `MUMPS solver <https://mumps-solver.org/index.php>`_ as option for the FEM calculations on Macs with Apple Silicon
+  * Added custom compiled version of `FMM3d <https://github.com/flatironinstitute/FMM3D>`_ so that it runs on Macs with Apple Silicon
+  * Update to python 3.11 and corresponding updates of most of the included packages.
+
+NOTES & Known issues:
+ * The PARDISO solver does not work on Apple Silicon (use MUMPS instead).
+ * Support of SimNIBS on MacOS on Intel is discontinued.
+ * Installation fails on paths with non-standard characters, such as backslash, chinese characters, ... (workaround: provide another path)
+ * simnibs_gui does not start on some linux systems, e.g. with wayland (workaround: ld preloading of libstdc++.so.6 seems to help; example: export LD_PRELOAD=/usr/lib/libstdc++.so.6 - path needs to be adjusted according to library path on local system)
+ * Setting the number of cpus in run_simnibs will be only taken into account in the new tms_flex_opt and tes_flex_opt optimizations, but not the previous TMS optimization methods.
+ * Setting custom conductivities and defining custom tissue types in the new tms_flex_opt and tes_flex_opt does not work yet.
+
+
 4.1.0 
 ------
  * Tetrahedral quality of the meshes was increased substantially to improve numerical accuracy of the FEM calculations and remove outliers in the calculated electric fields
  * Option added to use white matter and pial surfaces from FreeSurfer for more accurate representation of smaller sulci in the head meshes
  * I/O functions for neuronavigation data have been updated to support new Brainsight version 2.5.3
-
-NOTES & Known issues: see 4.0.0
  
 4.0.1
 ------

@@ -1,7 +1,9 @@
 '''
 ROI analysis of the electric field from a simulation using an atlas.
 
-We will calculate the mean electric field in a gray matter ROI defined using an atlas
+calculates the mean electric field in a gray matter ROI defined using an atlas
+
+Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 '''
 import os
 import numpy as np

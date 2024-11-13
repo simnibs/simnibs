@@ -20,6 +20,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
+import time
 from PyQt5 import QtCore, QtGui, QtWidgets
 from OpenGL import GL, GLU, GLUT
 import OpenGL
@@ -29,7 +30,6 @@ import numpy
 
 from simnibs.simulation.tms_coil.tms_coil import TmsCoil
 
-from ..simulation import coil_numpy as coil
 from ..mesh_tools import surface, mesh_io
 from ..utils.csv_reader import read_csv_positions
 
@@ -256,17 +256,12 @@ class GLHeadModel(QtWidgets.QOpenGLWidget):
         GL.glRotatef(self.zRot / 16.0, 0.0, 0.0, 1.0)
         GL.glScalef(-self.zoom,self.zoom,self.zoom)
 
+
         if self.model != 0:
             GL.glCallList(self.model)
 
         if self.indicator:
             GL.glCallList(self.indicator)
-
-        for stimulator in self.stimulator_objects:
-            try:
-                GL.glCallList(stimulator)
-            except:
-                pass
 
         for tmp in self.tmp_objects:
             try:
@@ -283,10 +278,15 @@ class GLHeadModel(QtWidgets.QOpenGLWidget):
             GL.glCallList(self.eegPositions)
         except:
             pass
+    
+        for stimulator in self.stimulator_objects:
+            try:
+                GL.glCallList(stimulator)
+            except:
+                pass
 
         self.model_matrix = GL.glGetDoublev(GL.GL_MODELVIEW_MATRIX)
         self.projection_matrix = GL.glGetDoublev(GL.GL_PROJECTION_MATRIX)
-
 
     def resizeGL(self, width, height):
         GL.glViewport(0, 0, width, height)
@@ -632,7 +632,7 @@ class GLHeadModel(QtWidgets.QOpenGLWidget):
         GL.glNewList(genList, GL.GL_COMPILE)
         for point, name in zip(points, names):
             normal = self.skin_surf.projectPoint(point, smooth=False)[1]
-            if normal is None or normal == []or point is None or point == []:
+            if normal is None or len(normal) == 0 or point is None or len(point) == 0:
                 print('Invalid Point!')
             else:
                 u, v = self.skin_surf.getTangentCoordinates(normal)
@@ -658,7 +658,7 @@ class GLHeadModel(QtWidgets.QOpenGLWidget):
         self.eegPositions = 0
 
     #Draws the points and directions from a 4x4 matrice, like matsimnibs
-    def drawPointAndDirs(self, matrix, color=GREEN):
+    def drawPointAndDirs(self, matrix, color=GREEN, fn_coil=''):
         try:
 
             xAxis = numpy.array([matrix[0][0], matrix[1][0], matrix[2][0]], 'float')
@@ -668,6 +668,49 @@ class GLHeadModel(QtWidgets.QOpenGLWidget):
         except:
             print('invalid matrix!')
             return None
+        
+        if fn_coil != '':
+            coil = TmsCoil.from_file(fn_coil)
+            coil_mesh = coil.get_mesh(numpy.array(matrix), include_optimization_points=False, include_coil_elements=False)
+            if coil_mesh.elm.nr == 0:
+                coil_genList = GL.glGenLists(1)
+                GL.glNewList(coil_genList, GL.GL_COMPILE)
+                GL.glEndList()
+            else:
+                QtWidgets.QApplication.processEvents()
+                coil_mesh.elm.tag1[:] = 1
+                coil_mesh.elm.tag2[:] = 1
+                rendered_surf = surface.Surface(coil_mesh, [1])
+                coil_color = [color.redF(), color.greenF(), color.blueF(), 0.4]
+                nodes_pos = numpy.array(rendered_surf.nodes, dtype='float32')
+                node_normals = numpy.array([normal for normal in rendered_surf.nodes_normals], dtype = 'float32')
+                nr_nodes = len(nodes_pos)
+                node_colors = numpy.array([coil_color, ]*nr_nodes,  dtype = 'float32')
+
+                GL.glEnableClientState(GL.GL_NORMAL_ARRAY)
+                GL.glEnableClientState(GL.GL_COLOR_ARRAY)
+                GL.glEnableClientState(GL.GL_VERTEX_ARRAY)
+
+                GL.glNormalPointerf(node_normals)
+                GL.glColorPointer(4, GL.GL_FLOAT, 0, node_colors)
+                GL.glVertexPointerf(nodes_pos)
+
+                coil_genList = GL.glGenLists(1)
+                GL.glNewList(coil_genList, GL.GL_COMPILE)
+                GL.glPushAttrib (GL.GL_ALL_ATTRIB_BITS)
+                GL.glEnable(GL.GL_CULL_FACE)
+                GL.glCullFace(GL.GL_BACK)
+                GL.glEnable(GL.GL_BLEND)
+                GL.glBlendFunc( GL.GL_SRC_ALPHA,  GL.GL_ONE_MINUS_SRC_ALPHA)
+
+                #for vertices in rendered_surf.tr_nodes:
+                GL.glDrawElements(GL.GL_TRIANGLES, len(rendered_surf.tr_nodes) * 3, GL.GL_UNSIGNED_INT, numpy.ravel(rendered_surf.tr_nodes))
+                
+                GL.glPopAttrib()
+                GL.glEndList()
+                GL.glDisableClientState(GL.GL_NORMAL_ARRAY)
+                GL.glDisableClientState(GL.GL_COLOR_ARRAY)
+                GL.glDisableClientState(GL.GL_VERTEX_ARRAY)
 
 
         qobj = GLU.gluNewQuadric()
@@ -728,7 +771,10 @@ class GLHeadModel(QtWidgets.QOpenGLWidget):
 
         GL.glEndList()
 
-        return genList
+        if fn_coil == '':
+            return genList
+        else:
+            return genList, coil_genList
 
 
 

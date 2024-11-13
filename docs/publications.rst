@@ -4,6 +4,33 @@ Publications
 =============
 The main publications documenting SimNIBS development are
 
+Version 4.5
+-----------
+
+General-purpose TMS Optimization
+''''''''''''''''''''''''''''''''
+* TODO
+
+Leadfield-free TES Optimization
+''''''''''''''''''''''''''''''''
+* TODO
+
+Extended Head Model "Ernie Extended"
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+* `Van Hoornweder, S., Cappozzo V., De Herde, L., Puonti, O., Siebner H. R., Meesen, L. J. R., Thielscher, A.,  Head And Shoulders - The Impact Of An Extended Head Model On The Simulation And Optimization Of Transcranial Electric Stimulation, biorxiv <https://doi.org/10.1101/2024.08.29.610251>`_
+
+Non-Human Primate Models
+''''''''''''''''''''''''''''''''
+* `Mantell KE, Perera ND, Shirinpour S, Puonti O, Xu T, Zimmermann J, Falchier A, Heilbronner SR, Thielscher A, Opitz A (2023)
+  Anatomical details affect electric field predictions for non-invasive brain stimulation in non-human primates. 
+  Neuroimage 279:120343. <https://doi.org/10.1016/j.neuroimage.2023.120343>`_
+
+Version 4.1
+-----------
+
+EEG forward modeling
+''''''''''''''''''''
+* `Nielsen JD, Puonti O, Xue R, Thielscher A, Madsen KH (2023) Evaluating the influence of anatomical accuracy and electrode positions on EEG forward solutions. Neuroimage, 277:120259. <https://doi.org/10.1016/j.neuroimage.2023.120259>`_ 
 
 Version 4.0
 -----------
@@ -22,8 +49,8 @@ TMS coil models
 Version 3.2
 -----------
 
-TMS Optimiztion (ADM method)
-''''''''''''''''''''''''''''
+TMS Optimization (ADM method)
+''''''''''''''''''''''''''''''
 * `Gomez, L. J., Dannhauer, M., & Peterchev, A. V. (2020). Fast computational optimization of TMS coil placement for individualized electric field targeting. NeuroImage 2021; 228: 117696. <https://doi.org/10.1016/j.neuroimage.2020.117696>`_
 
 

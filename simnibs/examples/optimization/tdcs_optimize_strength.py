@@ -1,4 +1,6 @@
 ''' Optimize controlling electric field strength
+
+Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 '''
 
 import simnibs

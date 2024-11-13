@@ -1,5 +1,6 @@
-% Example script to run a TMS optimization
-% Guilherme Saturnino, 2019
+% Example script to run a TMS optimization using grid search
+%
+% Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 
 tms_opt = opt_struct('TMSoptimize');
 % Subject folder

@@ -1,7 +1,9 @@
 ''' Example on how to run a SimNIBS TMS simulation using a coil with multiple stimulators in Python
+
+Copyright (c) 2024 SimNIBS developers. Licensed under the GPL v3.
 '''
 import os
-from simnibs import sim_struct, run_simnibs
+from simnibs import sim_struct, run_simnibs, SIMNIBSDIR
 
 ### General Information
 S = sim_struct.SESSION()
@@ -10,13 +12,13 @@ S.pathfem = 'tms_simu'  # Directory for the simulation
 
 ## Define the TMS simulation
 tms = S.add_tmslist()
-tms.fnamecoil = os.path.join('legacy_and_other','Magstim_70mm_Fig8.ccd')  # Choose a coil model
+tms.fnamecoil = os.path.join(SIMNIBSDIR, 'examples','coils','two_stimulator_example_coil.tcd')
 
 # Define the coil position
 pos = tms.add_position()
 pos.centre = 'C3'  # Place the coil over C3
 pos.pos_ydir = 'CP3'  # Polongation of coil handle (see documentation)
-#The first stimulator is connected to the figure of 8 part of the coil, the second one to the circular part
+#Setting the dIdt for the first and the second stimulator
 pos.didt = [10e6, 1e6]
 
 pos_2 = tms.add_position()

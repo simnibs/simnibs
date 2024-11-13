@@ -15,7 +15,7 @@ import json
 from datetime import datetime
 import xml.etree.ElementTree as ET
 
-from ..simulation import TMSLIST, POSITION
+from ..simulation.sim_struct import TMSLIST, POSITION
 from .. import __version__ as simnibs_v
 from .file_finder import SubjectFiles
 
@@ -604,7 +604,7 @@ class brainsight:
 
         assert not os.path.exists(fn) or overwrite, f'File {fn} already exists. Remove or set overwrite=True.'
 
-        with open(fn, 'w') as f:
+        with open(fn, 'w', encoding='utf-8') as f:
             f.write('# Version: 12\n')
             f.write(f'# Coordinate system: {out_coord_space}\n')
             f.write(f'# Created by: SimNIBS v{simnibs_v}\n')

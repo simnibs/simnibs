@@ -2,11 +2,12 @@ import base64
 import pickle
 from abc import ABC, abstractmethod
 from typing import Optional
+import zlib
 
 import fmm3dpy
 import numpy as np
 import numpy.typing as npt
-from scipy import ndimage
+from simnibs.simulation.numba_fem_utils import map_coord_lin_trans
 
 from simnibs.mesh_tools.mesh_io import Elements, Msh, Nodes
 from simnibs.simulation.tms_coil.tcd_element import TcdElement
@@ -74,7 +75,7 @@ class TmsCoilElements(ABC, TcdElement):
         eps : float, optional
             The requested precision, by default 1e-3
         apply_deformation : bool, optional
-                    Whether or not to apply the current coil element deformations, by default True
+            Whether or not to apply the current coil element deformations, by default True
 
         Returns
         -------
@@ -109,6 +110,60 @@ class TmsCoilElements(ABC, TcdElement):
             target_positions, coil_affine, eps
         )
 
+    @abstractmethod
+    def get_b_field(
+        self,
+        target_positions: npt.NDArray[np.float_],
+        coil_affine: npt.NDArray[np.float_],
+        eps: float = 1e-3,
+        apply_deformation: bool = True,
+    ) -> npt.NDArray[np.float_]:
+        """Calculates the B field applied by the coil element at each target position.
+
+        Parameters
+        ----------
+        target_positions : npt.NDArray[np.float_] (N x 3)
+            The points at which the B field should be calculated (in mm)
+        coil_affine : npt.NDArray[np.float_] (4 x 4)
+            The affine transformation that is applied to the coil
+        eps : float, optional
+            The requested precision, by default 1e-3
+        apply_deformation : bool, optional
+            Whether or not to apply the current coil element deformations, by default True
+
+        Returns
+        -------
+        npt.NDArray[np.float_] (N x 3)
+            The B field at every target positions in Tesla*meter
+        """
+        pass
+    
+    def get_db_dt(
+        self,
+        target_positions: npt.NDArray[np.float_],
+        coil_affine: npt.NDArray[np.float_],
+        eps: float = 1e-3,
+    ) -> npt.NDArray[np.float_]:
+        """Calculate the dB/dt field applied by the coil element at each target point
+
+        Parameters
+        ----------
+        target_positions : npt.NDArray[np.float_]
+            The target positions in mm at which the dB/dt field should be calculated
+        coil_affine : npt.NDArray[np.float_]
+            The affine transformation that is applied to the coil
+        eps : float, optional
+            The requested precision, by default 1e-3
+
+        Returns
+        -------
+        npt.NDArray[np.float_]
+            The dB/dt field in V/m at every target position
+        """
+        return self.stimulator.di_dt * self.get_b_field(
+            target_positions, coil_affine, eps
+        )
+
     def get_combined_transformation(
         self, affine_matrix: Optional[npt.NDArray[np.float_]] = None
     ) -> npt.NDArray[np.float_]:
@@ -138,8 +193,8 @@ class TmsCoilElements(ABC, TcdElement):
         self,
         affine_matrix: Optional[npt.NDArray[np.float_]] = None,
         apply_deformation: bool = True,
-    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_], npt.NDArray[np.float_]]:
-        """Returns the casing points, min distance points and intersection points,
+    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+        """Returns the casing points and min distance points,
         optionally transformed by the affine matrix and deformed by the element deformation
 
         Parameters
@@ -152,20 +207,19 @@ class TmsCoilElements(ABC, TcdElement):
         Returns
         -------
         tuple[npt.NDArray[np.float_], npt.NDArray[np.float_], npt.NDArray[np.float_]]
-            The casing points, min distance points and intersection points
+            The casing points and min distance points
         """
         if apply_deformation:
             affine_matrix = self.get_combined_transformation(affine_matrix)
         else:
             affine_matrix = affine_matrix if affine_matrix is not None else np.eye(4)
 
-        transformed_coordinates = [np.array([]), np.array([]), np.array([])]
+        transformed_coordinates = [np.array([]), np.array([])]
         if self.casing is not None:
             transformed_coordinates[0] = self.casing.get_points(affine_matrix)
             transformed_coordinates[1] = self.casing.get_min_distance_points(
                 affine_matrix
             )
-            transformed_coordinates[2] = self.casing.get_intersect_points(affine_matrix)
 
         return tuple(transformed_coordinates)
 
@@ -179,7 +233,7 @@ class TmsCoilElements(ABC, TcdElement):
         element_index: int = 0,
     ) -> Msh:
         """Generates a mesh of the coil element, optionally transformed by the affine matrix, deformed by the element deformation,
-        including the element casing, including the min distance and intersection points and including the coil element
+        including the element casing, including the min distance points and including the coil element
 
         Parameters
         ----------
@@ -190,7 +244,7 @@ class TmsCoilElements(ABC, TcdElement):
         include_element_casing : bool, optional
             Whether or not to include the casing mesh, by default True
         include_optimization_points : bool, optional
-            Whether or not to include the min distance and intersection points, by default True
+            Whether or not to include the min distance points, by default True
         include_coil_element : bool, optional
             Whether or not to include the stimulating elements in the mesh, by default True
         element_index : int, optional
@@ -320,14 +374,14 @@ class TmsCoilElements(ABC, TcdElement):
         if tcd_coil_element["type"] == 1:
             if isinstance(tcd_coil_element["points"], str):
                 points = np.frombuffer(
-                    base64.b64decode(tcd_coil_element["points"]), dtype=np.float64
+                    zlib.decompress(base64.b64decode(tcd_coil_element["points"])), dtype=np.float64
                 ).reshape(-1, 3)
             else:
                 points = np.array(tcd_coil_element["points"])
 
             if isinstance(tcd_coil_element["values"], str):
                 values = np.frombuffer(
-                    base64.b64decode(tcd_coil_element["values"]), dtype=np.float64
+                    zlib.decompress(base64.b64decode(tcd_coil_element["values"])), dtype=np.float64
                 ).reshape(-1, 3)
             else:
                 values = np.array(tcd_coil_element["values"])
@@ -344,14 +398,14 @@ class TmsCoilElements(ABC, TcdElement):
         elif tcd_coil_element["type"] == 2:
             if isinstance(tcd_coil_element["points"], str):
                 points = np.frombuffer(
-                    base64.b64decode(tcd_coil_element["points"]), dtype=np.float64
+                    zlib.decompress(base64.b64decode(tcd_coil_element["points"])), dtype=np.float64
                 ).reshape(-1, 3)
             else:
                 points = np.array(tcd_coil_element["points"])
 
             if isinstance(tcd_coil_element["values"], str):
                 values = np.frombuffer(
-                    base64.b64decode(tcd_coil_element["values"]), dtype=np.float64
+                    zlib.decompress(base64.b64decode(tcd_coil_element["values"])), dtype=np.float64
                 ).reshape(-1, 3)
             else:
                 values = np.array(tcd_coil_element["values"])
@@ -361,7 +415,7 @@ class TmsCoilElements(ABC, TcdElement):
             )
         elif tcd_coil_element["type"] == 3:
             if isinstance(tcd_coil_element["data"], str):
-                data = pickle.loads(base64.b64decode(tcd_coil_element["data"]))
+                data = pickle.loads(zlib.decompress(base64.b64decode(tcd_coil_element["data"])))
             else:
                 data = np.array(tcd_coil_element["data"])
 
@@ -472,6 +526,7 @@ class PositionalTmsCoilElements(TmsCoilElements, ABC):
             affine_matrix = self.get_combined_transformation(affine_matrix)
         return self.values @ affine_matrix[:3, :3].T
 
+
 class DipoleElements(PositionalTmsCoilElements):
     def get_a_field(
         self,
@@ -528,6 +583,55 @@ class DipoleElements(PositionalTmsCoilElements):
         A *= -1e-7
 
         return A
+    
+    def get_b_field(
+        self,
+        target_positions: npt.NDArray[np.float_],
+        coil_affine: npt.NDArray[np.float_],
+        eps: float = 1e-3,
+        apply_deformation: bool = True,
+    ) -> npt.NDArray[np.float_]:
+        """Calculates the B field applied by the dipole elements at each target positions.
+
+        Parameters
+        ----------
+        target_positions : npt.NDArray[np.float_] (N x 3)
+            The points at which the B field should be calculated (in mm)
+        coil_affine : npt.NDArray[np.float_] (4 x 4)
+            The affine transformation that is applied to the coil
+        eps : float, optional
+            The requested precision, by default 1e-3
+        apply_deformation : bool, optional
+            Whether or not to apply the current coil element deformations, by default True
+
+        Returns
+        -------
+        npt.NDArray[np.float_] (N x 3)
+            The B field at every target positions in Tesla
+        """
+        dipole_moment = self.get_values(coil_affine, apply_deformation)
+        dipole_position_m = self.get_points(coil_affine, apply_deformation) * 1e-3
+        target_positions_m = target_positions * 1e-3
+        if dipole_moment.shape[0] < 300:
+            out = fmm3dpy.l3ddir(
+                dipvec=dipole_moment.T,
+                sources=dipole_position_m.T,
+                targets=target_positions_m.T,
+                nd=1,
+                pgt=2,
+            )
+        else:
+            out = fmm3dpy.lfmm3d(
+                dipvec=dipole_moment.T,
+                sources=dipole_position_m.T,
+                targets=target_positions_m.T,
+                eps=eps,
+                nd=1,
+                pgt=2,
+            )
+
+        B = out.gradtarg.T * -1e-7
+        return B
 
     def generate_element_mesh(
         self,
@@ -605,10 +709,10 @@ class DipoleElements(PositionalTmsCoilElements):
             tcd_coil_element["points"] = self.points.tolist()
             tcd_coil_element["values"] = self.values.tolist()
         else:
-            tcd_coil_element["points"] = base64.b64encode(self.points.tobytes()).decode(
+            tcd_coil_element["points"] = base64.b64encode(zlib.compress(self.points.tobytes())).decode(
                 "ascii"
             )
-            tcd_coil_element["values"] = base64.b64encode(self.values.tobytes()).decode(
+            tcd_coil_element["values"] = base64.b64encode(zlib.compress(self.values.tobytes())).decode(
                 "ascii"
             )
 
@@ -704,6 +808,62 @@ class LineSegmentElements(PositionalTmsCoilElements):
         A = 1e-7 * A.pottarg.T
         return A
 
+    def get_b_field(
+        self,
+        target_positions: npt.NDArray[np.float_],
+        coil_affine: npt.NDArray[np.float_],
+        eps: float = 1e-3,
+        apply_deformation: bool = True,
+    ) -> npt.NDArray[np.float_]:
+        """Calculates the B field applied by the line segment elements at each target positions.
+
+        Parameters
+        ----------
+        target_positions : npt.NDArray[np.float_] (N x 3)
+            The points at which the B field should be calculated (in mm)
+        coil_affine : npt.NDArray[np.float_] (4 x 4)
+            The affine transformation that is applied to the coil
+        eps : float, optional
+            The requested precision, by default 1e-3
+        apply_deformation : bool, optional
+            Whether or not to apply the current coil element deformations, by default True
+
+        Returns
+        -------
+        npt.NDArray[np.float_] (N x 3)
+            The B field at every target positions in Tesla
+        """
+        directions_m = self.get_values(coil_affine, apply_deformation) * 1e-3
+        segment_position_m = self.get_points(coil_affine, apply_deformation) * 1e-3
+        target_positions_m = target_positions * 1e-3
+
+        if directions_m.shape[0] >= 300:
+            out = fmm3dpy.l3ddir(
+                sources=segment_position_m.T,
+                charges=directions_m.T,
+                targets=target_positions_m.T,
+                nd=3,
+                pgt=2,
+            )
+        else:
+            out = fmm3dpy.lfmm3d(
+                sources=segment_position_m.T,
+                charges=directions_m.T,
+                targets=target_positions_m.T,
+                nd=3,
+                eps=eps,
+                pgt=2,
+            )
+            
+        B = np.empty((target_positions_m.shape[0], 3), dtype=float)
+
+        B[:, 0] = out.gradtarg[1][2] - out.gradtarg[2][1]
+        B[:, 1] = out.gradtarg[2][0] - out.gradtarg[0][2]
+        B[:, 2] = out.gradtarg[0][1] - out.gradtarg[1][0]
+
+        B *= -1e-7
+        return B
+
     def generate_element_mesh(
         self,
         affine_matrix: npt.NDArray[np.float_],
@@ -783,10 +943,10 @@ class LineSegmentElements(PositionalTmsCoilElements):
             tcd_coil_element["points"] = self.points.tolist()
             tcd_coil_element["values"] = self.values.tolist()
         else:
-            tcd_coil_element["points"] = base64.b64encode(self.points.tobytes()).decode(
+            tcd_coil_element["points"] = base64.b64encode(zlib.compress(self.points.tobytes())).decode(
                 "ascii"
             )
-            tcd_coil_element["values"] = base64.b64encode(self.values.tobytes()).decode(
+            tcd_coil_element["values"] = base64.b64encode(zlib.compress(self.values.tobytes())).decode(
                 "ascii"
             )
 
@@ -804,8 +964,16 @@ class SampledGridPointElements(TmsCoilElements):
         deformations: Optional[list[TmsCoilDeformation]] = None,
     ):
         super().__init__(stimulator, name, casing, deformations)
-        self.data = np.array(data, dtype=np.float64)
+        self.data = data
         self.affine = np.array(affine, dtype=np.float64)
+
+    @property
+    def data(self) -> npt.NDArray[np.float_]:
+        return np.transpose(self._data, (1, 2, 3, 0))
+
+    @data.setter
+    def data(self, value: npt.NDArray[np.float_]):
+        self._data = np.transpose(value, (3, 0, 1, 2)).astype(np.float64, order="F")
 
     def get_a_field(
         self,
@@ -830,26 +998,58 @@ class SampledGridPointElements(TmsCoilElements):
         Returns
         -------
         npt.NDArray[np.float_] (N x 3)
-            The A field at every target positions in Tesla*meter
+            The A-field at every target positions in Tesla*meter
         """
         combined_affine = coil_affine
         if apply_deformation:
             combined_affine = self.get_combined_transformation(combined_affine)
         iM = np.linalg.pinv(self.affine) @ np.linalg.pinv(combined_affine)
 
-        target_voxle_coordinates = (
-            iM[:3, :3] @ target_positions.T + iM[:3, 3][:, np.newaxis]
-        )
+        M1 = np.ascontiguousarray(iM[:3, :3])
+        t = np.ascontiguousarray(iM[:3, 3])
+        M2 = np.ascontiguousarray(combined_affine[:3, :3])
+
+        # target_voxle_coordinates = (
+        #    iM[:3, :3] @ target_positions.T + iM[:3, 3][:, np.newaxis]
+        # )
 
         # Interpolates the values of the field in the given coordinates
-        out = np.zeros((3, target_voxle_coordinates.shape[1]))
-        for dim in range(3):
-            out[dim] = ndimage.map_coordinates(
-                np.asanyarray(self.data)[..., dim], target_voxle_coordinates, order=1
-            )
+        # out = np.zeros((3, target_voxle_coordinates.shape[1]))
+        # for dim in range(3):
+        #    out[dim] = ndimage.map_coordinates(
+        #        np.asanyarray(self.data)[..., dim], target_voxle_coordinates, order=1
+        #    )
+        out = map_coord_lin_trans(self._data, target_positions.T, M1, t, M2)
 
         # Rotates the field
-        return out.T @ combined_affine[:3, :3].T
+        return out.T  # @ combined_affine[:3, :3].T
+    
+    def get_b_field(
+        self,
+        target_positions: npt.NDArray[np.float_],
+        coil_affine: npt.NDArray[np.float_],
+        eps: float = 1e-3,
+        apply_deformation: bool = True,
+    ) -> npt.NDArray[np.float_]:
+        """Calculates the B field interpolated from the sampled grid point elements at each target positions.
+
+        Parameters
+        ----------
+        target_positions : npt.NDArray[np.float_] (N x 3)
+            The points at which the B field should be calculated (in mm)
+        coil_affine : npt.NDArray[np.float_] (4 x 4)
+            The affine transformation that is applied to the coil
+        eps : float, optional
+            The requested precision, by default 1e-3
+        apply_deformation : bool, optional
+            Whether or not to apply the current coil element deformations, by default True
+
+        Returns
+        -------
+        npt.NDArray[np.float_] (N x 3)
+            The B-field at every target positions in Tesla
+        """
+        raise NotImplementedError()
 
     def generate_element_mesh(
         self,
@@ -880,8 +1080,10 @@ class SampledGridPointElements(TmsCoilElements):
 
         point_transformation = combined_affine @ self.affine
 
+        data = self.data
+
         voxel_coordinates = np.array(
-            list(np.ndindex(self.data.shape[0], self.data.shape[1], self.data.shape[2]))
+            list(np.ndindex(data.shape[0], data.shape[1], data.shape[2]))
         )
 
         points = (
@@ -895,7 +1097,7 @@ class SampledGridPointElements(TmsCoilElements):
         )
 
         point_mesh.add_node_field(
-            self.data.reshape(-1, 3) @ combined_affine[:3, :3].T,
+            data.reshape(-1, 3) @ combined_affine[:3, :3].T,
             f"{element_index}-sampled_vector",
         )
 
@@ -920,8 +1122,9 @@ class SampledGridPointElements(TmsCoilElements):
         """
         deformation_affine = self.get_combined_transformation()
         combined_affine = deformation_affine @ self.affine
-        data = (self.data.reshape((-1, 3)) @ deformation_affine[:3, :3].T).reshape(
-            self.data.shape
+        data = self.data
+        data = (data.reshape((-1, 3)) @ deformation_affine[:3, :3].T).reshape(
+            data.shape
         )
 
         frozen_casing = None
@@ -944,10 +1147,12 @@ class SampledGridPointElements(TmsCoilElements):
         tcd_coil_element = super().to_tcd(stimulators, coil_models, deformations)
         tcd_coil_element["type"] = 3
 
+        data = self.data
+
         if ascii_mode:
-            tcd_coil_element["data"] = self.data.tolist()
+            tcd_coil_element["data"] = data.tolist()
         else:
-            tcd_coil_element["data"] = base64.b64encode(pickle.dumps(self.data)).decode(
+            tcd_coil_element["data"] = base64.b64encode(zlib.compress(pickle.dumps(data))).decode(
                 "ascii"
             )
 

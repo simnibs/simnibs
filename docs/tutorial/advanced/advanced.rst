@@ -6,7 +6,8 @@ Advanced Features
    :maxdepth: 2
 
    group_analysis
-   tdcs_distributed_opt
    uq
    custom_meshing
    fix_headmodel
+   fix_affine_registration
+   eeg_leadfields

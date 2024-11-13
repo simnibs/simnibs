@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>RegionOfInterest &#8212; SimNIBS 0) documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../_static/documentation_options.js?v=e6165c10"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="icon" href="../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Electrode and array layouts for TesFlexOptimization" href="electrode_layouts.html" />
+    <link rel="prev" title="TmsFlexOptimization" href="tms_flex_opt_doc.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+              <div class="related top">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="tms_flex_opt_doc.html" title="Previous document">TmsFlexOptimization</a>
+        </li>
+        <li>
+          <a href="electrode_layouts.html" title="Next document">Electrode and array layouts for TesFlexOptimization</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+
+          <div class="body" role="main">
+            
+  <section id="regionofinterest">
+<span id="regionofinterest-doc"></span><h1>RegionOfInterest<a class="headerlink" href="#regionofinterest" title="Link to this heading">¶</a></h1>
+<p>Used for the definition of regions of interests on surfaces and in volumes. Please see also <code class="file docutils literal notranslate"><span class="pre">roi_definition.py</span></code> and <code class="file docutils literal notranslate"><span class="pre">roi_definition.m</span></code> in examples/utilities for usage examples.</p>
+<section id="initialization">
+<h2>Initialization<a class="headerlink" href="#initialization" title="Link to this heading">¶</a></h2>
+<ul>
+<li><p><strong>Python</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">opt_struct</span>
+
+<span class="c1"># TmsFlexOptimization</span>
+<span class="n">opt</span> <span class="o">=</span> <span class="n">opt_struct</span><span class="o">.</span><span class="n">TmsFlexOptimization</span><span class="p">()</span>
+<span class="n">roi</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_region_of_interest</span><span class="p">()</span>
+
+<span class="c1"># TesFlexOptimization</span>
+<span class="n">opt</span> <span class="o">=</span> <span class="n">opt_struct</span><span class="o">.</span><span class="n">TesFlexOptimization</span><span class="p">()</span>
+<span class="n">roi</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">add_roi</span><span class="p">()</span>
+</pre></div>
+</div>
+<p></p>
+</li>
+<li><p><strong>MATLAB</strong></p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% TmsFlexOptimization</span>
+<span class="n">opt</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TmsFlexOptimization&#39;</span><span class="p">);</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">roi</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;RegionOfInterest&#39;</span><span class="p">);</span>
+
+<span class="c">% TesFlexOptimization</span>
+<span class="n">opt</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TesFlexOptimization&#39;</span><span class="p">);</span>
+<span class="n">opt</span><span class="p">.</span><span class="n">roi</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;RegionOfInterest&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p></p>
+</li>
+</ul>
+</section>
+<section id="parameters-and-attributes">
+<h2>Parameters and attributes<a class="headerlink" href="#parameters-and-attributes" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="simnibs.utils.region_of_interest.RegionOfInterest">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simnibs.utils.region_of_interest.</span></span><span class="sig-name descname"><span class="pre">RegionOfInterest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">settings_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.utils.region_of_interest.RegionOfInterest" title="Link to this definition">¶</a></dt>
+<dd><p>A class describing a region of Interest in a volume mesh or a surface mesh.</p>
+<section id="parameters">
+<h3>Parameters:<a class="headerlink" href="#parameters" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>settings_dict: (optional) dict</dt><dd><p>Dictionary containing parameter as key value pairs</p>
+</dd>
+<dt>method: str</dt><dd><p>The method to create the ROI {“manual”, “custom”, “surface”, “volume”, “volume_from_surface”, “mesh+mask”}</p>
+</dd>
+<dt>subpath: str | None</dt><dd><p>Path to the m2m folder of the subject (example: “path/to/m2m”)</p>
+</dd>
+<dt>mesh: str | Msh | None</dt><dd><p>Path to a mesh or a mesh instance (example: “path/to/msh” | mesh_instance)</p>
+</dd>
+<dt>mask_space: str | list[str] | None</dt><dd><p>The space the mask is defined in, method = “surface” : {“subject”, “subject_lh”, “fs_avg_lh”, “subject_rh”, “fs_avg_rh”, “mni”} | method = “volume” : {“subject”, “mni”}</p>
+</dd>
+<dt>mask_path: str | list[str] | None</dt><dd><p>The path to the mask, method = “surface” : (label, annot, curv, nifti) | method = “volume” : (nifti) (example: “path/to/file”)</p>
+</dd>
+<dt>mask_value: int | list[int] | None</dt><dd><p>The values that are considered as the mask in the mask files, default 1 (example: 1 | [1, 2])</p>
+</dd>
+<dt>mask_operator: str | list[str] | None</dt><dd><p>The operator to combine the mask with the ROI {“union”, “intersection”, “difference”}, default “union”</p>
+</dd>
+<dt>roi_sphere_center: list[float] | list[list[float]] | None</dt><dd><p>Sphere center coordinates for spherical masks in mm (example: [0,0,0] | [[1,2,3], [4,5,6]])</p>
+</dd>
+<dt>roi_sphere_radius: float | list[float] | None</dt><dd><p>The radius of the spherical masks in mm (example: 5 | [3, 45])</p>
+</dd>
+<dt>roi_sphere_center_space: str | list[str] | None</dt><dd><p>The space the center coordinates of the spheres are defined in {“subject”, “mni”}</p>
+</dd>
+<dt>roi_sphere_operator: str | list[str] | None</dt><dd><p>The operator to combine the mask with the ROI {“union”, “intersection”, “difference”}, default “union”</p>
+</dd>
+<dt>nodes: list[list[float]] | None</dt><dd><p>Only for method = “custom” -&gt; a custom list of node coordinates (example: [[1.1, 2.2, 3.3], [4.4, 5.5, 6.6]])</p>
+</dd>
+<dt>surface_type: str | None</dt><dd><p>Only for method = “surface” -&gt; Weather the surface is the subject specific central gm surface or a custom surface {“central”, “custom”}</p>
+</dd>
+<dt>surface_path: str | None</dt><dd><p>Only for method = “surface” -&gt; Only for surface_type = “custom” -&gt; The path to a custom surface (msh, freesurfer, gifti)</p>
+</dd>
+<dt>tissues: int | list[int] | ElementTags | list[ElementTags] | None</dt><dd><p>Only for method = “volume” -&gt; a number of volume tissue tags, default 2 (example: ElementTags.GM | [ElementTags.WM, ElementTags.GM])</p>
+</dd>
+<dt>surface_inclusion_radius: float | None</dt><dd><p>Only for method = “volume_from_surface” -&gt; The radius from the surface nodes at which the volume elements should be included in mm (example: 5)</p>
+</dd>
+<dt>node_mask: list[bool] | None</dt><dd><p>Only for method = “mesh+mask” -&gt; a boolean node mask (exclusive with elm_mask) (example: [True, …, False])</p>
+</dd>
+<dt>elm_mask: list[bool] | None</dt><dd><p>Only for method = “mesh+mask” -&gt; a boolean node mask (exclusive with node_mask) (example: [True, …, False])</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</section>
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="tms_flex_opt_doc.html" title="Previous document">TmsFlexOptimization</a>
+        </li>
+        <li>
+          <a href="electrode_layouts.html" title="Next document">Electrode and array layouts for TesFlexOptimization</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.png" alt="Logo" />
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial/tutorial.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../gui.html">Graphical User Interface Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../command_line/command_line.html">Command Line Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="opt_struct.html">Optimization Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../neuronavigation/neuronavigation.html">Neuronavigation Data Import/Export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../output_files.html">Output Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../file_formats.html">File Formats in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../coordinates.html">Coordinates in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../conductivity.html">Standard Conductivity Values</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../coils.html">Coil Models Included in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../python_lib/python_lib.html">Python Library Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors and Funding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../documentation.html">Documentation</a><ul>
+  <li><a href="opt_struct.html">Optimization Data Structures</a><ul>
+      <li>Previous: <a href="tms_flex_opt_doc.html" title="previous chapter">TmsFlexOptimization</a></li>
+      <li>Next: <a href="electrode_layouts.html" title="next chapter">Electrode and array layouts for TesFlexOptimization</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2020, SimNIBS Developers.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../../_sources/documentation/opt_struct/regionofinterest_doc.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

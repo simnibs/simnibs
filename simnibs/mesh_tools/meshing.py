@@ -1157,7 +1157,7 @@ def update_tag_from_tet_neighbors(m, faces, tet_faces, adj_tets, nr_iter = 12):
         idx_elm, new_tag, adj_diff = _get_elm_and_new_tag(tag, adj_tets, 2, return_diffmat = True)
         # exclude tets at outer surface and ensure that tets can still be relabeled
         idx = new_tag > -1
-        idx *= np.in1d( idx_elm, np.where(relabeling_allowed)[0] )
+        idx *= np.isin( idx_elm, np.where(relabeling_allowed)[0] )
         idx_elm = idx_elm[idx]
         new_tag = new_tag[idx]
         # get the 2 nodes that are shared by the two tet faces facing the 
@@ -1337,7 +1337,7 @@ def _fix_labels(m, label_img):
         idx_keep = np.argsort(label_counts)[::-1]
         idx_keep = idx_keep[:-n_dropped]
         indices_seg = np.sort(indices_seg[idx_keep])
-        logger.warn('{} small region(s) dropped during meshing. Check label numbers in mesh!'.format(n_dropped))
+        logger.warning('{} small region(s) dropped during meshing. Check label numbers in mesh!'.format(n_dropped))
     new_tags = np.copy(m.elm.tag1)
     for i, t in enumerate(indices_seg):
         new_tags[m.elm.tag1 == i+1] = t
@@ -1486,7 +1486,7 @@ def create_mesh(label_img, affine,
 
     Parameters
     ----------
-    label_img: 3D np.ndarray in uint8 format
+    label_img: 3D np.ndarray in uint8 or uint16 format
         Labeled image from segmentation
     affine: 4x4 np.ndarray
         Affine transformation from voxel coordinates to world coordinates
@@ -1563,6 +1563,11 @@ def create_mesh(label_img, affine,
         raise ValueError('elem_sizes needs a \"standard\" entry')
     if not 'standard' in facet_distances:
         raise ValueError('facet_distances needs a \"standard\" entry')
+    
+    if label_img.dtype not in [np.uint8, np.uint16]:
+        raise MeshingError('Image must be of type uint8 or uint16')
+    
+    label_img = label_img.astype(np.uint16)
 
     if apply_cream:
         if sizing_field is not None:
@@ -1577,7 +1582,7 @@ def create_mesh(label_img, affine,
     thickness[thickness < .5] = 100 # set background thickness to some large value
     voxel_size = get_vox_size(affine) 
     if not np.allclose(np.diff(voxel_size), 0):
-        logger.warn('Anisotropic image, meshing may contain extra artifacts')
+        logger.warning('Anisotropic image, meshing may contain extra artifacts')
     thickness *= np.average(voxel_size) # Scale thickness with voxel size
     
     # Define size fields and distance field
@@ -2192,7 +2197,7 @@ def apply_cream_layer(label_img, size_field, distance_field, cream_thickness):
 #     thickness[thickness < .5] = 100 # set background thickness to some large value
 #     voxel_size = get_vox_size(affine) 
 #     if not np.allclose(np.diff(voxel_size), 0):
-#         logger.warn('Anisotropic image, meshing may contain extra artifacts')
+#         logger.warning('Anisotropic image, meshing may contain extra artifacts')
 #     thickness *= np.average(voxel_size) # Scale thickness with voxel size
     
 #     # Define size fields and distance field

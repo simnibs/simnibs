@@ -1,4 +1,9 @@
-% General Infoarmation
+%
+%   example on how to define a TMS coil position via MNI coordinates
+%    
+%    Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
+
+% General Information
 S = sim_struct('SESSION');
 S.subpath = 'm2m_ernie'; % subject folder
 S.pathfem = 'tms_hand';  % Directory for the simulation

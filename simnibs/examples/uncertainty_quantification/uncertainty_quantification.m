@@ -1,7 +1,6 @@
 % example script that runs an Uncertainty Quantification analysis
 % 
-% G. Saturnino, 2019
-%
+% Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 
 %% General information
 

@@ -23,13 +23,6 @@ from simnibs.utils import file_finder
 
 from .... import SIMNIBSDIR
 
-
-@pytest.fixture(scope="module")
-def sphere3_msh():
-    fn = os.path.join(SIMNIBSDIR, "_internal_resources", "testing_files", "sphere3.msh")
-    return Msh(fn=fn)
-
-
 @pytest.fixture(scope="module")
 def minimal_tcd_coil_dict() -> dict[str, Any]:
     coil_dict = {
@@ -134,7 +127,6 @@ def medium_tcd_coil() -> TmsCoil:
                 Nodes(np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])),
                 Elements(triangles=np.array([[0, 1, 2]]) + 1),
             ),
-            None,
             None,
         ),
     ]
@@ -263,25 +255,21 @@ def full_tcd_coil_dict() -> dict[str, Any]:
                 "points": [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]],
                 "faces": [[0, 1, 2]],
                 "minDistancePoints": [[0.0, -1.0, -2.0]],
-                "intersectPoints": [[1.0, 1.0, 1.0]],
             },
             {
                 "points": [[10.0, 11.0, 12.0], [13.0, 14.0, 15.0], [16.0, 17.0, 18.0]],
                 "faces": [[0, 1, 2]],
                 "minDistancePoints": [[-3.0, -4.0, -5.0]],
-                "intersectPoints": [[2.0, 2.0, 2.0]],
             },
             {
                 "points": [[19.0, 20.0, 21.0], [22.0, 23.0, 24.0], [25.0, 26.0, 27.0]],
                 "faces": [[0, 1, 2]],
                 "minDistancePoints": [[-6.0, -7.0, -8.0]],
-                "intersectPoints": [[3.0, 3.0, 3.0]],
             },
             {
                 "points": [[28.0, 29.0, 30.0], [31.0, 32.0, 33.0], [34.0, 35.0, 36.0]],
                 "faces": [[0, 1, 2]],
                 "minDistancePoints": [[-9.0, -10.0, -11.0]],
-                "intersectPoints": [[4.0, 4.0, 4.0]],
             },
         ],
         "selfIntersectionTest": [[0, 1], [1, 2, 3]],
@@ -298,7 +286,6 @@ def full_tcd_coil() -> TmsCoil:
                 Elements(triangles=np.array([[0, 1, 2]]) + 1),
             ),
             np.array([[-0, -1, -2]]),
-            np.array([[1, 1, 1]]),
         ),
         TmsCoilModel(
             Msh(
@@ -306,7 +293,6 @@ def full_tcd_coil() -> TmsCoil:
                 Elements(triangles=np.array([[0, 1, 2]]) + 1),
             ),
             np.array([[-3, -4, -5]]),
-            np.array([[2, 2, 2]]),
         ),
         TmsCoilModel(
             Msh(
@@ -314,7 +300,6 @@ def full_tcd_coil() -> TmsCoil:
                 Elements(triangles=np.array([[0, 1, 2]]) + 1),
             ),
             np.array([[-6, -7, -8]]),
-            np.array([[3, 3, 3]]),
         ),
         TmsCoilModel(
             Msh(
@@ -322,7 +307,6 @@ def full_tcd_coil() -> TmsCoil:
                 Elements(triangles=np.array([[0, 1, 2]]) + 1),
             ),
             np.array([[-9, -10, -11]]),
-            np.array([[4, 4, 4]]),
         ),
     ]
     deformations = [
@@ -381,143 +365,6 @@ def full_tcd_coil() -> TmsCoil:
         coil_casings[0],
         [[0, 1], [1, 2, 3]],
     )
-    return coil
-
-
-@pytest.fixture(scope="module")
-def small_functional_3_element_coil() -> TmsCoil:
-    casings = [
-        TmsCoilModel(
-            Msh(
-                Nodes(
-                    np.array([[-20, -20, 0], [-20, 20, 0], [20, -20, 0], [20, 20, 0]])
-                ),
-                Elements(triangles=np.array([[0, 1, 2], [3, 2, 1]]) + 1),
-            ),
-            None,
-            None,
-        ),
-        TmsCoilModel(
-            Msh(
-                Nodes(
-                    np.array([[-20, -60, 0], [-20, -20, 0], [20, -60, 0], [20, -20, 0]])
-                ),
-                Elements(triangles=np.array([[0, 1, 2], [3, 2, 1]]) + 1),
-            ),
-            None,
-            None,
-        ),
-        TmsCoilModel(
-            Msh(
-                Nodes(np.array([[-20, 20, 0], [-20, 60, 0], [20, 20, 0], [20, 60, 0]])),
-                Elements(triangles=np.array([[0, 1, 2], [3, 2, 1]]) + 1),
-            ),
-            None,
-            None,
-        ),
-    ]
-    deformations = [
-        TmsCoilRotation(
-            TmsCoilDeformationRange(0, (0, 90)),
-            np.array([0, -20, 0]),
-            np.array([40, -20, 0]),
-        ),
-        TmsCoilRotation(
-            TmsCoilDeformationRange(0, (0, 90)),
-            np.array([40, 20, 0]),
-            np.array([0, 20, 0]),
-        ),
-    ]
-    stimulator = TmsStimulator("SimNIBS-Stimulator")
-    coil = TmsCoil(
-        [
-            LineSegmentElements(
-                stimulator,
-                np.array([[0, -10, 0], [10, 10, 0], [-10, 10, 0]]),
-                casing=casings[0],
-            ),
-            LineSegmentElements(
-                stimulator,
-                np.array([[0, -50, 0], [10, -30, 0], [-10, -30, 0]]),
-                casing=casings[1],
-                deformations=[deformations[0]],
-            ),
-            LineSegmentElements(
-                stimulator,
-                np.array([[0, 30, 0], [10, 50, 0], [-10, 50, 0]]),
-                casing=casings[2],
-                deformations=[deformations[1]],
-            ),
-        ],
-        limits=np.array([[-200, 200], [-200, 200], [-200, 200]]),
-        resolution=np.array([10, 10, 10]),
-    )
-
-    return coil
-
-@pytest.fixture(scope="module")
-def small_self_intersecting_2_element_coil() -> TmsCoil:
-    casings = [
-        TmsCoilModel(
-            Msh(
-                Nodes(
-                    np.array([[-20, -20, 0], [-20, 20, 0], [20, -20, 0], [20, 20, 0], [0, 0, 20]])
-                ),
-                Elements(triangles=np.array([[0, 1, 2], [3, 2, 1], [0, 1, 4], [1, 3, 4], [2, 3, 4], [2, 0, 4]]) + 1),
-            ),
-            None,
-            None,
-        ),
-        TmsCoilModel(
-            Msh(
-                Nodes(
-                    np.array([[-2, -2, 0], [-2, 2, 0], [2, -2, 0], [2, 2, 0], [0, 0, 2]]) + np.array([0, 0, 10])
-                ),
-                Elements(triangles=np.array([[0, 1, 2], [3, 2, 1], [0, 1, 4], [1, 3, 4], [2, 3, 4], [2, 0, 4]]) + 1),
-            ),
-            None,
-            None,
-        ),
-    ]
-    deformations = [
-        TmsCoilTranslation(
-            TmsCoilDeformationRange(0, (-30, 30)),
-            0
-        ),
-        TmsCoilTranslation(
-            TmsCoilDeformationRange(0, (-30, 30)),
-            2
-        ),
-        TmsCoilTranslation(
-            TmsCoilDeformationRange(0, (-30, 30)),
-            0
-        ),
-        TmsCoilTranslation(
-            TmsCoilDeformationRange(0, (-30, 30)),
-            2
-        ),
-    ]
-    stimulator = TmsStimulator("SimNIBS-Stimulator")
-    coil = TmsCoil(
-        [
-            LineSegmentElements(
-                stimulator,
-                np.array([[0, -10, 0], [10, 10, 0], [-10, 10, 0]]),
-                casing=casings[0],
-                deformations=[deformations[0], deformations[1]]
-            ),
-            LineSegmentElements(
-                stimulator,
-                np.array([[0, -1, 10], [1, 1, 10], [-1, 1, 10]]),
-                casing=casings[1],
-                deformations=[deformations[2], deformations[3]]
-            ),
-        ],
-        limits=np.array([[-200, 200], [-200, 200], [-200, 200]]),
-        resolution=np.array([10, 10, 10]),
-        self_intersection_test=[[1,2]]
-    )
-
     return coil
 
 @pytest.fixture(scope="module")

@@ -240,13 +240,13 @@ class TestElements:
         th = elm[elm.tetrahedra]
         faces_th = th[:, [[0, 2, 1], [0, 1, 3], [0, 3, 2], [1, 2, 3]]]
         assert np.all(faces_th[0] == faces[th_faces[0]])
-        assert np.sum(np.in1d(th[adjacency_list[0, 0]], th[adjacency_list[0, 1]])) == 3
-        assert np.any(np.in1d(th_faces[0], th_faces[adjacency_list[th_faces[0, 0], 1]]))
+        assert np.sum(np.isin(th[adjacency_list[0, 0]], th[adjacency_list[0, 1]])) == 3
+        assert np.any(np.isin(th_faces[0], th_faces[adjacency_list[th_faces[0, 0], 1]]))
 
         # Here I don't care about order because it might be flipped
         assert np.all(np.unique(faces_th[-1]) == np.unique(faces[th_faces[-1]]))
-        assert np.sum(np.in1d(th[adjacency_list[-1, 0]], th[adjacency_list[-1, 1]])) == 3
-        assert np.any(np.in1d(th_faces[-1], th_faces[adjacency_list[th_faces[-1, 0], 1]]))
+        assert np.sum(np.isin(th[adjacency_list[-1, 0]], th[adjacency_list[-1, 1]])) == 3
+        assert np.any(np.isin(th_faces[-1], th_faces[adjacency_list[th_faces[-1, 0], 1]]))
 
 
     def test_get_outside_faces(self, sphere3_msh):
@@ -367,7 +367,7 @@ class TestMsh:
 
     def test_crop_mesh_nodes(self, sphere3_msh):
         target = range(1, 11)
-        w_node = np.any(np.in1d(sphere3_msh.elm.node_number_list,
+        w_node = np.any(np.isin(sphere3_msh.elm.node_number_list,
                                 target).reshape(-1,4), axis=1)
         neighbours = np.unique(sphere3_msh.elm.node_number_list[w_node].T)[1:]
         orig_coords = sphere3_msh.nodes[neighbours]
@@ -406,16 +406,16 @@ class TestMsh:
 
         v = m.elmdata[0].value
         ref = m1.elmdata[0].value
-        assert np.all(np.isclose(v[np.in1d(m.elm.tag1, [3, 1003])], ref))
-        assert np.all(np.isnan(v[~np.in1d(m.elm.tag1, [3, 1003])]))
+        assert np.all(np.isclose(v[np.isin(m.elm.tag1, [3, 1003])], ref))
+        assert np.all(np.isnan(v[~np.isin(m.elm.tag1, [3, 1003])]))
 
         assert np.all(np.isclose(m.nodedata[1].value[m1.nodes.nr:],m2.nodes.node_number))
         assert np.all(np.isnan(m.nodedata[1].value[:m1.nodes.nr]))
 
         v = m.elmdata[1].value
         ref = m2.elmdata[0].value
-        assert np.all(np.isclose(v[np.in1d(m.elm.tag1, [5, 1005])], ref))
-        assert np.all(np.isnan(v[~np.in1d(m.elm.tag1, [5, 1005])]))
+        assert np.all(np.isclose(v[np.isin(m.elm.tag1, [5, 1005])], ref))
+        assert np.all(np.isnan(v[~np.isin(m.elm.tag1, [5, 1005])]))
 
 
     def test_remove_elements(self, sphere3_msh):
@@ -1002,7 +1002,7 @@ class TestMsh:
         inside = np.ones(len(interp_points), dtype=bool)
         inside[m_out.elm.nr:] = False
         M = m.interp_matrix(interp_points,
-                            th_indices=m.elm.elm_number[np.in1d(m.elm.tag1, [3, 4, 5])],
+                            th_indices=m.elm.elm_number[np.isin(m.elm.tag1, [3, 4, 5])],
                             element_wise=element_wise)
         if element_wise:
             x = m.elements_baricenters().value[:, 0]
@@ -1085,7 +1085,7 @@ class TestMsh:
     def test_reconstruct_surfaces_tag(self, sphere3_msh):
         m = sphere3_msh.crop_mesh(elm_type=4)
         m.reconstruct_surfaces(tags=[4])
-        assert ~np.any(np.in1d(m.elm.tag1, [1003, 1005]))
+        assert ~np.any(np.isin(m.elm.tag1, [1003, 1005]))
 
     def test_reconstruct_unique_surface(self, sphere3_msh):
         m2=sphere3_msh.crop_mesh(elm_type=2)
@@ -1350,7 +1350,7 @@ class TestElmData:
         bar = sphere3_msh.elements_baricenters()
         bar.mesh = sphere3_msh
         interp_points = sphere3_msh.nodes.node_coord[:10]
-        th_indices = sphere3_msh.elm.elm_number[np.in1d(
+        th_indices = sphere3_msh.elm.elm_number[np.isin(
             sphere3_msh.elm.tag1, [3, 4, 5])]
         interp = bar.interpolate_scattered(
             interp_points, th_indices=th_indices)
@@ -1546,7 +1546,7 @@ class TestElmData:
         fn = tempf.name
         tempf.close()
         nibabel.save(img, fn)
-        interp = f.to_deformed_grid(fn, fn, method='assign')
+        interp = f.to_deformed_grid(fn, fn, method='assign', fix_boundary_zeros=False)
         interp = np.asanyarray(interp.dataobj)
         assert np.isclose(interp[100, 5, 0], 3)
         assert np.isclose(interp[187, 5, 0], 4)
@@ -1572,7 +1572,7 @@ class TestElmData:
         fn = tempf.name
         tempf.close()
         nibabel.save(img, fn)
-        interp = f.to_deformed_grid(fn, fn, tags=3, method='assign')
+        interp = f.to_deformed_grid(fn, fn, tags=3, method='assign', fix_boundary_zeros=False)
         interp = np.asanyarray(interp.dataobj)
         assert np.isclose(interp[100, 5, 0], 3)
         assert np.isclose(interp[187, 5, 0], 0)
@@ -1825,7 +1825,7 @@ class TestNodeData:
         nd = mesh_io.NodeData(msh.nodes.node_coord)
         nd.mesh = msh
         interp_points = msh.elements_baricenters().value[:10]
-        th_indices = msh.elm.elm_number[np.in1d(msh.elm.tag1, [3, 4, 5])]
+        th_indices = msh.elm.elm_number[np.isin(msh.elm.tag1, [3, 4, 5])]
         interp = nd.interpolate_scattered(
             interp_points,  th_indices=th_indices)
         assert np.allclose(interp, interp_points, atol=1e-1, rtol=1e-1)
@@ -1931,6 +1931,46 @@ class TestReadRes:
 
         np.testing.assert_allclose([-1.2, -2, 3.0], v)
 
+class TestVTK:
+    import importlib
+    @pytest.mark.skipif(
+        not importlib.util.find_spec("pyvista"), reason="requires the pyvista library"
+    )
+    def test_read_write(self, tmp_path):
+        nodes = np.array([[1.2, 3.4, 1.2], [2.3, 5.6, 1.2], [3.1, 6.7, 9.2], [9.1, 2.5, 2.3], [23.1, 3.4, 5.3]])
+        triangles = np.array([[1,2,3], [2,4,5]])
+        tetrahedra = np.array([[1,2,3,4], [3, 4, 5, 1]])
+
+        msh = mesh_io.Msh(mesh_io.Nodes(nodes), mesh_io.Elements(triangles, tetrahedra))
+
+        msh.add_element_field(np.arange(msh.elm.nr) + 99, 'elm_test')
+        msh.add_node_field(np.arange(msh.nodes.nr)+ 999, 'node_test')
+
+        msh.elm.tag1 = np.arange(msh.elm.nr)
+        msh.elm.tag2 = np.arange(msh.elm.nr)
+
+        path = os.path.join(tmp_path, 'test.vtk')
+        mesh_io.write_vtk(msh, path)
+        vtk_msh = mesh_io.read_vtk(path)
+
+        assert msh.nodes.nr == vtk_msh.nodes.nr
+        assert msh.elm.nr == vtk_msh.elm.nr
+        assert len(msh.nodedata) == len(vtk_msh.nodedata)
+        assert len(msh.elmdata) == len(vtk_msh.elmdata)
+
+        np.testing.assert_array_equal(msh.elm.node_number_list, vtk_msh.elm.node_number_list)
+        np.testing.assert_allclose(msh.nodes.node_coord, vtk_msh.nodes.node_coord)
+        np.testing.assert_array_equal(msh.elm.tag1, vtk_msh.elm.tag1)
+        np.testing.assert_array_equal(msh.elm.tag2, vtk_msh.elm.tag2)
+
+        for msh_elm_data, vtk_msh_elm_data in zip(msh.elmdata, vtk_msh.elmdata):
+            assert msh_elm_data.field_name == vtk_msh_elm_data.field_name
+            np.testing.assert_array_equal(msh_elm_data.value, vtk_msh_elm_data.value)
+
+        for msh_node_data, vtk_node_elm_data in zip(msh.nodedata, vtk_msh.nodedata):
+            assert msh_node_data.field_name == vtk_node_elm_data.field_name
+            np.testing.assert_array_equal(msh_node_data.value, vtk_node_elm_data.value)
+
 class TestWriteGeo:
     def test_write_spheres_no_values(self):
         positions = np.array([[1, 0, 0], [0, 1, 0]], dtype=float)
@@ -2031,3 +2071,27 @@ class TestAABBTree:
         assert(tree.any_point_inside(np.array((50,30,25))==False))
         # tree.__del__()
         del tree
+
+class TestGetMinDistanceOnGrid:
+    @pytest.mark.parametrize("tag", [1003, 1004, 1005])
+    @pytest.mark.parametrize("resolution", [1, 2])
+    @pytest.mark.parametrize("offset", [-3.4, -1.2, 0, 1, 4.567])
+    def test_spheres_internal_distance(self, sphere3_msh: mesh_io.Msh, tag, resolution, offset):
+        surface = sphere3_msh.crop_mesh([tag])
+        min_distance_on_grid, grid, M, AABBTree = surface.get_min_distance_on_grid(resolution=resolution, distance_offset=offset)
+
+        radius = np.max(surface.nodes.node_coord[:, 0]) + offset
+        max_internal_distance = np.min(grid) * -1 
+        assert radius - resolution < max_internal_distance and radius + resolution > max_internal_distance
+
+
+    def test_distance_function_on_sphere(self, sphere3_msh: mesh_io.Msh,):
+        surface = sphere3_msh.crop_mesh([1005])
+        min_distance_on_grid, grid, M, AABBTree = surface.get_min_distance_on_grid(resolution=1)
+
+        radius = np.max(surface.nodes.node_coord[:, 0]) 
+        for offset in range(200):
+            distance = min_distance_on_grid(np.array([[offset, 0, 0]]))[0] * -1
+            assert radius - offset - 1.5 < distance and radius - offset + 1.5 > distance
+
+

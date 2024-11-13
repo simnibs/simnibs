@@ -3,7 +3,9 @@
     the average and the standard deviation of the normal component
     of the electric field in FsAverage space
 
-    It is a follow-up to the "run_simulations" example
+    It is a follow-up to the "run_simulations_group.py" example
+    
+    Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 '''
 import os
 import numpy as np

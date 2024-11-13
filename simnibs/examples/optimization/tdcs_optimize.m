@@ -1,7 +1,6 @@
 % Example of a SimNIBS tDCS optimization in MATLAB
 %
-% Copyright (C) 2019 Guilherme B Saturnino
-
+% Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 
 % Initialize structure
 opt = opt_struct('TDCSoptimize');
@@ -23,5 +22,11 @@ opt.max_active_electrodes = 8;
 opt.target.positions = [-50.7, 5.1, 55.5];
 % Intensity of the electric field (in V/m)
 opt.target.intensity = 0.2;
+% Default behavior is to optimize the E-field in the direction normal to the
+% target position. If you want the opposite direction, you can specify
+% `negative normal`. You can also specify the direction vector manually or
+% 'none' to simply optimize the norm (magnitude) of the field in the target.
+% opt.target.directions = 'normal';
+
 % Run optimization
 run_simnibs(opt);

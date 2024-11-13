@@ -4,7 +4,7 @@ Python Library Documentation
 SimNIBS main programming language is Python. Here you can see documentation for the main
 modules used in SimNIBS.
 
-.. currentmodule:: simnibs
+.. currentmodule:: simnibs.mesh_tools
 
 I/O Functions
 --------------
@@ -13,16 +13,16 @@ I/O Functions
    :toctree: auto
    :nosignatures:
 
-    read_msh
-    write_msh
-    read_freesurfer_surface
-    write_freesurfer_surface
-    read_gifti_surface
-    read_curv
-    write_curv
-    read_stl
-    write_geo_spheres
-    write_geo_text
+    mesh_io.read_msh
+    mesh_io.write_msh
+    mesh_io.read_freesurfer_surface
+    mesh_io.write_freesurfer_surface
+    mesh_io.read_gifti_surface
+    mesh_io.read_curv
+    mesh_io.write_curv
+    mesh_io.read_stl
+    mesh_io.write_geo_spheres
+    mesh_io.write_geo_text
 
 
 
@@ -33,14 +33,15 @@ Mesh Classes
    :toctree: auto
    :nosignatures:
 
-   Msh
-   Nodes
-   Elements
-   NodeData
-   ElementData
+   mesh_io.Msh
+   mesh_io.Nodes
+   mesh_io.Elements
+   mesh_io.NodeData
+   mesh_io.ElementData
 
 Transformations
 ----------------
+.. currentmodule:: simnibs.utils.transformations
 
 .. autosummary::
    :toctree: auto
@@ -52,27 +53,30 @@ Transformations
 
 Utilities
 ----------
+.. currentmodule:: simnibs.utils
+
 .. autosummary::
    :toctree: auto
    :nosignatures:
 
-    templates
-    get_atlas
-    SubjectFiles
-
-
+    file_finder.templates
+    file_finder.get_atlas
+    file_finder.SubjectFiles
+    
 Simulations
 ------------
+.. currentmodule:: simnibs.simulation
+
 .. autosummary::
    :toctree: auto
    :nosignatures:
 
-    simulation.calc_B
-    simulation.calc_fields
-    simulation.tdcs
-    simulation.tdcs_neumann
-    simulation.tdcs_leadfield
-    simulation.tms_dadt
-    simulation.tms_coil
-    simulation.tms_many_simulations
-    simulation.electric_dipole
+    biot_savart.calc_B
+    fem.calc_fields
+    fem.tdcs
+    fem.tdcs_neumann
+    fem.tdcs_leadfield
+    fem.tms_dadt
+    fem.tms_coil
+    fem.tms_many_simulations
+    fem.electric_dipole

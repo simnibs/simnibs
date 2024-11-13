@@ -15,6 +15,15 @@ Reference
 
 `Drakaki M, Mathiesen C, Siebner HR, Madsen KH, Thielscher A. (2022). Database of 25 validated coil models for electric field simulations for TMS. Brain Stimulation. <https://doi.org/10.1016/j.brs.2022.04.017>`_
 
+Flexible Coil Files
+-------------------
+
+Models of the flexible H1, H4 and H7 coils from Brainsway and the MST-Twin coil with movable parts from MagVenture can be found in subfolder *flexible_coils*. The Brainsway coils were constructed based on X-ray images.
+A description of the TMS coil definition file format (.tcd) can be found in :ref:`file_formats`.
+
+Reference
+''''''''''
+TODO
 
 Previous Coil Files
 -------------------

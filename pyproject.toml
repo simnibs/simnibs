@@ -12,15 +12,31 @@ description = "Simulation of Non-Invasive Brain Stimulation"
 # long_description_content_type = text/markdown
 dynamic = ["version"]
 # version=open("simnibs/_version.py").readlines()[-1].split()[-1].strip("\"'"),
-# version = "4.1.0"
-requires-python = ">=3.9"
+#version = v4.1
+requires-python = ">=3.11"
 
+# additional dependencies which should perhaps be added?
+# libwebp, freeglut
+# python-mumps - only works automatically via conda
+# mpfr, gmp - from conda
 dependencies =[
-    "numpy==1.22.0",
-    "scipy>=1.9",
-    "h5py==3.6.0",
-    "nibabel>=2.3",
-    "packaging==21.3"]
+    "fmm3dpy==1.0.0",
+    "h5py",
+    "jsonschema",
+    # "matplotlib",
+    "mkl ; sys_platform != 'darwin'",
+    "nibabel",
+    "numba",
+    "numpy",
+    "petsc4py",
+    "pillow",
+    "pygpc==0.3.9",
+    "PyQt5",
+    "requests",
+    "samseg",
+    "scipy",
+    "tbb ; sys_platform != 'darwin'",
+  ]
 
 [project.urls]  # Optional
 "Homepage" = "simnibs.org"
@@ -28,7 +44,7 @@ dependencies =[
 "Source" = "https://github.com/simnibs/simnibs/"
 
 [build-system]
-requires = ['setuptools>=63', 'wheel', 'build', 'numpy==1.22.0', 'cython','setuptools-scm>=8']
+requires = ['setuptools>=68', 'wheel', 'build', 'numpy >= 1.26, < 2', 'cython','setuptools-scm>=8']
 build-backend = 'setuptools.build_meta'
 
 [tool.setuptools]
@@ -39,14 +55,13 @@ include-package-data = true
 where = ["."]
 exclude = ["packing"]
 
-[tool.setuptools_scm]
-version_file = "simnibs/_version.py"
-git_describe_command = "git describe --tags --abbrev=0"
+# [tool.setuptools_scm]
+
 [project.scripts]
     charm = "simnibs.cli.charm:main"
     add_tissues_to_upsampled = "simnibs.cli.add_tissues_to_upsampled:main"
     calc_B = "simnibs.cli.calc_B:main"
-    ccd2nifti = "simnibs.cli.ccd2nifti:main"
+    coil2nifti = "simnibs.cli.coil2nifti:main"
     charm_tms = "simnibs.cli.charm_tms:main"
     convert_3_to_4 = "simnibs.cli.convert_3_to_4:main"
     download_coils = "simnibs.cli.download_coils:main"
@@ -74,10 +89,10 @@ git_describe_command = "git describe --tags --abbrev=0"
 
 [project.optional-dependencies]
 test =[
-    "pytest==7.1.1",
-    "mock==4.0.3"
+    "pytest",
+    "mock"
 ]
 GUI =[
     "pyqt5",
-    "pyopengl==3.1.1a1"
+    "pyopengl"
 ]

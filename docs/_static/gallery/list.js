@@ -6,7 +6,11 @@ var filelist = ["simnibs_workflow.png",
 			"25coils.webp",
 			"../../_images/tutorial_fixheadmodel_3_check.png",
 			"tes_optimization.png",
-			"tms_optimization.jpg"];
+			"tms_optimization.jpg",
+			"TES_flex_opt.png",
+			"TMS_flex_opt.gif",
+			"EEG_leadfields.png",
+			"ernieextended.png"];
 
 var description = ["SimNIBS workflow",
 			 "Custom electrode shapes",
@@ -14,8 +18,12 @@ var description = ["SimNIBS workflow",
 			"CHARM headmodeling",
 			"25 TMS coil models",
 			"Custom tissue types",
-			"Leadfields & TES optimization",
-			"TMS optimization"];
+			"Leadfield-based TES optimization",
+			"TMS optimization (grid-search and ADM)",
+			"Leadfield-free TES optimization",
+			"General-purpose TMS optimization",
+			"EEG leadfield calculations",
+			"Datasets"];
 				
 var links = ["tutorial/tutorial.html",
 			 "../../simnibs/examples/simulations/tDCS_advanced.py",
@@ -24,4 +32,8 @@ var links = ["tutorial/tutorial.html",
 			 "https://doi.org/10.1016/j.brs.2022.04.017",
 			 "tutorial/advanced/fix_headmodel.html",
 			 "tutorial/optimization.html",
-			 "tutorial/tms_optimization.html"];
+			 "tutorial/tms_optimization.html",
+			 "tutorial/tes_flex_opt.html",
+			 "tutorial/tms_flex_opt.html",
+			 "tutorial/advanced/eeg_leadfields.html",
+			 "dataset.html"];

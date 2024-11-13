@@ -150,7 +150,7 @@ Setting up a TMS Simulation
 
 .. attention:: This is **NOT the electric field**, but it can be interpreted as a very smooth approximation of it.
 
-.. note:: Most coil files are supplied in *.ccd*-format, which needs less disk space compared to *.nii.gz*. However, the preview option *Show dA/dt field* in the GUI currently works only for *.nii.gz* coil file. If needed, you can use the command line tool :ref:`ccd2nifti_doc` to convert coil files from *.ccd* to *.nii.gz*.
+.. note:: Most coil files are supplied in *.tcd*/*.ccd*-format, which needs less disk space compared to *.nii.gz*. However, the preview option *Show dA/dt field* in the GUI currently works only for *.nii.gz* coil file. If needed, you can use the command line tool :ref:`coil2nifti_doc` to convert coil files from *.tcd*/*.ccd* to *.nii.gz*.
 
 Setting Simulation Options
 ---------------------------

@@ -3,7 +3,7 @@
 
     simnibs_python uncertainty_quantification.py
 
-    Copyright (C) 2019 Guilherme B Saturnino
+    Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 '''
 from simnibs import sim_struct, run_simnibs
 

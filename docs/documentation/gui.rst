@@ -25,7 +25,7 @@ TMS Tab
 
 .. image:: ../images/doc_guitms.png
 
-1. Name of the coil definition file. Clicking on *Browse* will bring you to the :file:`ccd-files/` folder, where the SimNIBS coil files are stored.
+1. Name of the coil definition file. Clicking on *Browse* will bring you to the :file:`coil_models/` folder, where the SimNIBS coil files are stored.
 2. Rate of change of the coil current *dI/dt*, in A/s. Usually, the maximal rate of change at the beginning of a pulse is used here. For example, this value is directly reported on the display of MagVenture stimulators.
 3. Distance between the coil and the skin. A value of 4 mm is set as default, in order to roughly account for the additional distance caused by the hair. Please change in case more accurate information is available for your specific case.
 4. Position and direction of the coil. Click twice to open a selection window and then click on the mesh to determine the position of the coil center and an additional position specifying the coil orientation. See the TMS tutorial for more information.

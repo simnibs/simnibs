@@ -3,7 +3,7 @@
 
     simnibs_python leadfield.py
 
-    Copyright (C) 2019 Guilherme B Saturnino
+    Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
     
     place script in the main folder of the example dataset
 '''

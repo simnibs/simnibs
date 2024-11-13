@@ -45,9 +45,9 @@ switch S.type
        S.fname=''; % string; points towards file containing neuronavigation data; optional
        S.date=''; % string; optional
        S.poslist={}; % can be 'TMSLIST' or 'TDCSLIST'
-       S.fnamehead=''; % same as ${subID}.msh created by mri2mesh or headreco
-       S.subpath = ''; % path to the 'm2m_{subID}' folder created by mri2mesh or headreco (OPTIONAL, filled from fnamehead)
-       S.pathfem='';   % path to save the results (OPTIONAL, filled from fnamehead)
+       S.fnamehead=''; % same as ${subID}.msh created by charm
+       S.subpath = ''; % path to the 'm2m_{subID}' folder created by charm (OPTIONAL, filled from fnamehead)
+       S.pathfem='';   % path to save the results
        S.fname_tensor = ''; % file name of the diffusion tensors (OPTIONAL, filled from fnamehead)
        S.eeg_cap = ''; % file name of the CSV file with electrode positions; (OPTIONAL, filled from fnamehead)
        S.open_in_gmsh=false; % Open result in gmsh when done

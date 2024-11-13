@@ -10,6 +10,7 @@ import copy
 import warnings
 import atexit
 import h5py
+import logging
 import numpy as np
 import scipy.sparse as sparse
 from simnibs.mesh_tools import gmsh_view
@@ -19,16 +20,12 @@ from simnibs.utils.mesh_element_properties import ElementTags
 
 from ..mesh_tools import mesh_io
 from ..utils import cond_utils as cond_lib
-from . import coil_numpy as coil_lib
-from . import pardiso
-from . import petsc_solver
+import mumps
 from ..utils.simnibs_logger import logger
 
-DEFAULT_SOLVER_OPTIONS = \
-        '-ksp_type cg ' \
-        '-ksp_rtol 1e-10 -pc_type hypre ' \
-        '-pc_hypre_type boomeramg ' \
-        '-pc_hypre_boomeramg_coarsen_type HMIS'
+from petsc4py import PETSc
+from simnibs.simulation import pardiso
+
 
 '''
     This program is part of the SimNIBS package.
@@ -51,15 +48,111 @@ DEFAULT_SOLVER_OPTIONS = \
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-_PETSC_IS_INITILIZED = False
-def _initialize_petsc():
-    global _PETSC_IS_INITILIZED
-    if not _PETSC_IS_INITILIZED:
-        # Initialize PETSc
-        petsc_solver.petsc_initialize()
-        # Register the finalizer for PETSc
-        atexit.register(petsc_solver.petsc_finalize)
-        _PETSC_IS_INITILIZED = True
+VALID_SOLVER_OPTIONS = {"hypre", "pardiso", "mumps", "petsc_pardiso"}
+
+class KSPSolver:
+    def __init__(self, A, ksp_type, pc_type, factor_solver_type=None, rtol=1e-10, log_level=20) -> None:
+        """Simple interface to setup PETSc KSP object with very limited flexibility.
+
+        when pc_type = hypre the, the following options are hardcoded:
+            - HYPRE type = boomeramg
+            - BoomerAMG coarsen type = HMIS
+
+
+        """
+
+        self.log_level = log_level
+        self.set_system_matrix(A)
+        self.setup_ksp(ksp_type, pc_type, factor_solver_type, rtol)
+        self.initialize_system_vectors()
+
+    def set_system_matrix(self, S):
+        S = S.tocsr()
+        A = PETSc.Mat(comm=PETSc.COMM_WORLD)
+        A.createAIJ(size=S.shape, csr=(S.indptr, S.indices, S.data))
+
+        # Use AIJMKL matrix type
+        # options = PETSc.Options()
+        # options["mat_type"] = "aijmkl"
+        # A.setFromOptions()
+
+        A.assemble()
+        self.A = A
+
+    def initialize_system_vectors(self):
+        """Create vectors to hold RHS and solution."""
+        self._b = self.A.createVecLeft()
+        self._x = self.A.createVecRight()
+
+    def setup_ksp(self, ksp_type, pc_type, factor_solver_type, rtol):
+
+        # Build KSP solver object
+        ksp = PETSc.KSP()
+        ksp.create(comm=self.A.getComm())
+        ksp.setOperators(self.A)
+        ksp.setTolerances(rtol=rtol)
+        ksp.setType(ksp_type)
+        # ksp.setConvergenceHistory()
+
+        # setup PC
+        ksp.getPC().setType(pc_type)
+        if ksp.getPC().getType() == "hypre":
+            ksp.getPC().setHYPREType("boomeramg")
+
+            # This option cannot be set from the python interface directly
+            #-pc_hypre_boomeramg_coarsen_type HMIS
+            options = PETSc.Options()
+            options["pc_hypre_boomeramg_coarsen_type"] = "HMIS"
+            ksp.getPC().setFromOptions()
+
+        # setup factor solver
+        if factor_solver_type is not None:
+            ksp.getPC().setFactorSolverType(factor_solver_type)
+            # MUMPS: to explicitly set the permutation analysis tool to METIS
+            # ksp.getPC().getFactorMatrix().setMumpsIcntl(7, 5)
+
+        start = time.perf_counter()
+        ksp.setUp()
+        logger.log(self.log_level,f"Time to set up KSP: {time.perf_counter()-start:8.4f} s")
+
+        self.ksp = ksp
+
+    def _solve_single(self, b):
+        start = time.perf_counter()
+        self._b[:] = b
+        self.ksp.solve(self._b, self._x)
+        logger.log(self.log_level,f"Time to solve: {time.perf_counter()-start:8.4f} s")
+        return self._x[:]
+
+    def solve(self, b: np.ndarray):
+        if b.ndim == 1:
+            x = self._solve_single(b)
+        else:
+            assert b.ndim == 2
+            x = np.zeros_like(b)
+            for i in range(b.shape[1]):
+                x[:, i] = self._solve_single(b[:, i])
+        return x
+
+class MUMPS_Solver:
+    def __init__(self, A=None, isSymmetric=True, log_level=20):
+        self.log_level = log_level
+        start = time.time()
+        self.ctx = mumps.Context()
+        self.ctx.set_matrix(A, symmetric=isSymmetric)
+        logger.log(self.log_level, f'{time.time()-start:.2f} seconds to init solver')
+        start = time.time()
+        self.ctx.analyze()
+        logger.log(self.log_level, f'{time.time()-start:.2f} seconds to analyze matrix')
+        start = time.time()
+        self.ctx.factor()
+        logger.log(self.log_level, f'{time.time()-start:.2f} seconds to factorize matrix')
+
+    def solve(self, b):
+        start = time.time()
+        x = self.ctx._solve_dense(b)
+        logger.log(self.log_level, f'{time.time()-start:.2f} seconds to solve system')
+        return x
 
 
 def calc_fields(potentials, fields, cond=None, dadt=None, units='mm', E=None):
@@ -80,7 +173,7 @@ def calc_fields(potentials, fields, cond=None, dadt=None, units='mm', E=None):
         j: Current density magnitude at the elements
         s: Conductivity at the elements
         D: dA/dt at the nodes
-        g: gradiet of the potential at the elements
+        g: gradient of the potential at the elements
     cond: simnibs.mesh.mesh_io.ElementData (optional)
         Conductivity at the elements, used to calculate J, j and s.
         Might be a scalar or a tensor.
@@ -317,7 +410,7 @@ class DirichletBC(object):
         dof_map: dofMap
             Mapping of node indexes to rows and columns in A and b, modified
         '''
-        if np.any(~np.in1d(self.nodes, dof_map.inverse)):
+        if np.any(~np.isin(self.nodes, dof_map.inverse)):
             raise ValueError('BC node indices not found in dof_map')
         stay = np.ones(A.shape[0], dtype=bool)
         stay[dof_map[self.nodes]] = False
@@ -345,7 +438,7 @@ class DirichletBC(object):
         dof_map: dofMap
             Mapping of node indexes to rows and columns in A and b, modified
         '''
-        if np.any(~np.in1d(self.nodes, dof_map.inverse)):
+        if np.any(~np.isin(self.nodes, dof_map.inverse)):
             raise ValueError('BC node indices not found in dof_map')
         stay = np.ones(b.shape[0], dtype=bool)
         stay[dof_map[self.nodes]] = False
@@ -379,7 +472,7 @@ class DirichletBC(object):
         dof_map: dofMap
             Mapping of node indexes to rows and columns in A and b, modified
         '''
-        if np.any(~np.in1d(self.nodes, dof_map.inverse)):
+        if np.any(~np.isin(self.nodes, dof_map.inverse)):
             raise ValueError('BC node indices not found in dof_map')
         stay = np.ones(A.shape[0], dtype=bool)
         stay[dof_map[self.nodes]] = False
@@ -423,7 +516,7 @@ class DirichletBC(object):
         dof_map: dofMap
             Mapping of node indexes to rows and columns in A and b, modified
         '''
-        if np.any(np.in1d(self.nodes, dof_map.inverse)):
+        if np.any(np.isin(self.nodes, dof_map.inverse)):
             raise ValueError('Found DOFs already defined')
         dof_inverse = np.hstack((dof_map.inverse, self.nodes))
         x = np.atleast_2d(x)
@@ -492,6 +585,9 @@ class FEMSystem(object):
         Wether to store the gradient matrix. Default: False
     solver_options: str
         Options to be used by the solver. Default: DEFAULT_SOLVER_OPTIONS
+    solver_loglevel: int (optional)
+        sets the log level of the standard logging messages of the solvers.
+        Default: logging.INFO
 
     Attributes
     ----------
@@ -513,12 +609,21 @@ class FEMSystem(object):
     Once created, do NOT change the attributes of this class.
 
     '''
-    def __init__(self, mesh, cond, dirichlet=None, units='mm', store_G=False,
-                 solver_options=None):
+    def __init__(
+        self,
+        mesh,
+        cond,
+        dirichlet=None,
+        units='mm',
+        store_G: bool = False,
+        solver_options: None | str = "hypre",
+        solver_loglevel=logging.INFO
+    ):
         if units in ['mm', 'm']:
             self.units = units
         else:
             raise ValueError('Invalid unit: {0}'.format(units))
+        self.solver_loglevel = solver_loglevel
         self._mesh = mesh
         if isinstance(cond, mesh_io.ElementData):
             cond = cond.value.squeeze()
@@ -533,10 +638,9 @@ class FEMSystem(object):
         self._solver = None
         self._G = None # Gradient operator
         self._D = None # Gradient matrix
-        if solver_options in [None, '']:
-            self._solver_options = DEFAULT_SOLVER_OPTIONS
-        else:
-            self._solver_options = solver_options
+        solver_options = "hypre" if solver_options is None else solver_options
+        assert solver_options in VALID_SOLVER_OPTIONS # or isinstance(solver_options, PETSc.KSP)
+        self._solver_options = solver_options
         self.assemble_fem_matrix(store_G=store_G)
 
     @property
@@ -579,8 +683,7 @@ class FEMSystem(object):
                              ' disconected nodes?')
 
         time_assemble = time.time() - start
-        logger.info(
-            '{0:.2f}s to assemble FEM matrix'.format(time_assemble))
+        logger.info(f'{time_assemble:.2f} s to assemble FEM matrix')
 
     def prepare_solver(self):
         '''Prepares the object to solve FEM systems
@@ -595,13 +698,26 @@ class FEMSystem(object):
         dof_map = copy.deepcopy(self.dof_map)
         if self.dirichlet is not None:
             A, dof_map = self.dirichlet.apply_to_matrix(A, dof_map)
-
+            
         if self._solver_options == 'pardiso':
-            self._solver = pardiso.Solver(A)
+            self._solver = pardiso.Solver(A, log_level=self.solver_loglevel)
+        elif self._solver_options == 'petsc_pardiso':
+            self._solver = KSPSolver(A, "preonly", "cholesky", "mkl_pardiso", 
+                                     log_level=self.solver_loglevel)
+        elif self._solver_options == 'mumps':
+            self._solver = MUMPS_Solver(A, isSymmetric=True, log_level=self.solver_loglevel)
+            # or with PETSc (only on MacOS)
+            # self._solver = KSPSolverSimple(A, "preonly", "cholesky", "mumps")
+        elif self._solver_options == "hypre":
+            self._solver = KSPSolver(A, "cg", "hypre", log_level=self.solver_loglevel)
         else:
-            _initialize_petsc()
-            self._A_reduced = A  # We need to save this as PETSc does not copy the vectors
-            self._solver = petsc_solver.Solver(self._solver_options, A)
+            raise ValueError(f"Invalid solver (got {self._solver_options})")
+
+            # assume KSP object
+            # self._solver = self._solver_options
+            # self._solver.setUp
+            # self._initialize_system_vectors()
+
 
     def solve(self, b=None):
         ''' Solves the FEM system
@@ -679,7 +795,9 @@ class TMSFEM(FEMSystem):
             cond,
             solver_options=None,
             units='mm',
-            store_G=True
+            store_G=True,
+            solver_loglevel=logging.INFO,
+            dirichlet_node=None
         ):
         '''Set up a TMS problem.
 
@@ -691,9 +809,17 @@ class TMSFEM(FEMSystem):
             Conductivity of each element.
         solver_options: str
             Options to be used by the solver. Default: DEFAULT_SOLVER_OPTIONS
+        dirichlet_node: int
+            explicitly use this node number as dirichlet node,
+            refers to mesh.nodes.node_number, indexing starts at 1.
+            Default: None, this will use the node with the lowest z-coordinate
+            
         '''
-        dirichlet_bc = set_ground_at_nodes(mesh)
-        super().__init__(mesh, cond, dirichlet_bc, units, store_G, solver_options)
+        if dirichlet_node is None:
+            dirichlet_bc = set_ground_at_nodes(mesh)
+        else:
+            dirichlet_bc = set_ground_at_nodes(mesh, nodes=dirichlet_node)
+        super().__init__(mesh, cond, dirichlet_bc, units, store_G, solver_options, solver_loglevel)
 
     def assemble_rhs(self, dadt):
         '''Assemble the right-hand side for a TMS simulation.
@@ -757,6 +883,7 @@ class TDCSFEMDirichlet(FEMSystem):
             solver_options=None,
             units='mm',
             store_G=False,
+            solver_loglevel=logging.INFO
         ):
         '''Set up a TDCS problem using Dirichlet boundary conditions in all
         electrodes.
@@ -779,7 +906,7 @@ class TDCSFEMDirichlet(FEMSystem):
         # self.input_type = input_type
 
         dirichlet_bc = self._init_dirichlet_bcs(mesh)
-        super().__init__(mesh, cond, dirichlet_bc, units, store_G, solver_options)
+        super().__init__(mesh, cond, dirichlet_bc, units, store_G, solver_options, solver_loglevel)
 
     def _init_dirichlet_bcs(self, mesh):
         """Set Dirichlet boundary conditions on all electrodes."""
@@ -792,7 +919,7 @@ class TDCSFEMDirichlet(FEMSystem):
                 raise ValueError('Did not find any surface with tag: {0}'.format(t))
             n = np.unique(mesh.elm.node_number_list[elements_in_surface, :3])
             bcs.append(DirichletBC(n, p * np.ones_like(n, dtype=float)))
-        return DirichletBC.join(bcs)
+        return DirichletBC.join(bcs)            # =====
 
 
 class TDCSFEMNeumann(FEMSystem):
@@ -806,6 +933,7 @@ class TDCSFEMNeumann(FEMSystem):
             solver_options=None,
             units='mm',
             store_G=False,
+            solver_loglevel=logging.INFO
         ):
         '''Set up a TDCS problem using Dirichlet boundary conditions in the
         ground electrode and Neumann boundary conditions in the other
@@ -835,7 +963,7 @@ class TDCSFEMNeumann(FEMSystem):
         self.areas = mesh.nodes_areas() if self.weigh_by_area else None
 
         dirichlet_bc = self._init_dirichlet_bc(mesh)
-        super().__init__(mesh, cond, dirichlet_bc, units, store_G, solver_options)
+        super().__init__(mesh, cond, dirichlet_bc, units, store_G, solver_options, solver_loglevel)
 
     def _init_dirichlet_bc(self, mesh):
         """Set Dirichlet boundary condition on the ground electrode only."""
@@ -875,8 +1003,8 @@ class TDCSFEMNeumann(FEMSystem):
         b: np.ndarray
             Right-hand-side of FEM system
         '''
-        if self.input_type == "nodes":
-            electrodes = np.atleast_2d(electrodes)
+        # if self.input_type == "nodes":
+        #     electrodes = np.atleast_2d(electrodes)
         assert len(electrodes) == len(currents)
         b = np.zeros(self.dof_map.nr, dtype=np.float64)
         for e, c in zip(electrodes, currents):
@@ -900,7 +1028,7 @@ class TDCSFEMNeumann(FEMSystem):
         b = np.zeros(self.dof_map.nr, dtype=np.float64)
         ix = self.dof_map[nodes]
         b[ix] = current
-        if self.weigh_by_area: # self.areas is not None
+        if self.weigh_by_area:  # self.areas is not None
             b[ix] *= self.areas[nodes] / self.areas[nodes].sum()
         return b
 
@@ -913,6 +1041,7 @@ class DipoleFEM(FEMSystem):
             solver_options=None,
             units='mm',
             store_G=True,
+            solver_loglevel=logging.INFO
         ):
         '''Set up an electric dipole simulation using the selected source
         model (i.e., the "direct" approach).
@@ -927,7 +1056,7 @@ class DipoleFEM(FEMSystem):
             Options to be used by the solver. Default: DEFAULT_SOLVER_OPTIONS
         '''
         dirichlet_bc = set_ground_at_nodes(mesh)
-        super().__init__(mesh, cond, dirichlet_bc, units, store_G, solver_options)
+        super().__init__(mesh, cond, dirichlet_bc, units, store_G, solver_options, solver_loglevel)
 
     # def assemble_rhs(self, primary_j, source_model):
     def assemble_rhs(self, dip_pos, dip_mom, source_model):
@@ -1296,7 +1425,7 @@ def tdcs(mesh, cond, currents, electrode_surface_tags, n_workers=1, units='mm',
         'there should be one channel for each current'
 
     surf_tags = np.unique(mesh.elm.tag1[mesh.elm.elm_type == 2])
-    assert np.all(np.in1d(electrode_surface_tags, surf_tags)),\
+    assert np.all(np.isin(electrode_surface_tags, surf_tags)),\
         'Could not find all the electrode surface tags in the mesh'
 
     assert np.isclose(np.sum(currents), 0),\
@@ -1361,14 +1490,14 @@ def _calc_flux_electrodes(v, cond, el_volume, scalp_tag=[ElementTags.SCALP, Elem
     m.elmdata = [cond]
     # Select mesh nodes wich are is in one electrode as well as the scalp
     # Triangles in scalp
-    tr_scalp = np.in1d(m.elm.tag1, scalp_tag) * (m.elm.elm_type == 2)
+    tr_scalp = np.isin(m.elm.tag1, scalp_tag) * (m.elm.elm_type == 2)
     if not np.any(tr_scalp):
         raise ValueError('Could not find skin surface')
     tr_scalp_nodes = m.elm.node_number_list[tr_scalp, :3]
     tr_index = m.elm.elm_number[tr_scalp]
 
     # Tetrahehedra in electrode
-    th_el = np.in1d(m.elm.tag1, el_volume) * (m.elm.elm_type == 4)
+    th_el = np.isin(m.elm.tag1, el_volume) * (m.elm.elm_type == 4)
     if not np.any(th_el):
         raise ValueError('Could not find electrode volume')
     th_el_nodes = m.elm.node_number_list[th_el]
@@ -1420,7 +1549,7 @@ def tms_dadt(mesh, cond, dAdt, solver_options=None):
     s = TMSFEM(mesh, cond, solver_options)
     b = s.assemble_rhs(dAdt)
     v = s.solve(b)
-    
+
     del s, b
     gc.collect()
     return mesh_io.NodeData(v, name='v', mesh=mesh)
@@ -1544,7 +1673,7 @@ def _run_tms(mesh, cond, cond_list, fn_coil, fields, matsimnibs, didt, fn_out, f
     #summary += m.fields_summary(roi=2)
 #
     #logger.log(25, summary)
-    
+
     del dAdt, v, b
     gc.collect()
 
@@ -1558,7 +1687,7 @@ def _get_da_dt_from_coil(fn_coil, mesh, didt, matsimnibs):
     else:
         for stimulator, stimulator_didt in zip(tms_coil.get_elements_grouped_by_stimulators().keys(), didt):
             stimulator.di_dt = stimulator_didt
-    return tms_coil.get_da_dt(mesh, matsimnibs)
+    return tms_coil.get_da_dt(mesh, matsimnibs).node_data2elm_data()
 
 def _finalize_global_solver():
     global tms_global_solver
@@ -1592,7 +1721,7 @@ def tdcs_neumann(mesh, cond, currents, electrode_surface_tags):
     S = TDCSFEMNeumann(mesh, cond, electrode_surface_tags[0])
     b = S.assemble_rhs(electrode_surface_tags[1:], currents[1:])
     v = S.solve(b)
-    
+
     del S, b
     gc.collect()
     return mesh_io.NodeData(v, name='v', mesh=mesh)
@@ -1700,7 +1829,7 @@ def tdcs_leadfield(mesh, cond, electrode_surface, fn_hdf5, dataset,
     n_out = mesh.elm.nr
     # Separate out the part of the gradiend that is in the ROI
     if roi is not None:
-        roi = np.in1d(mesh.elm.tag1, roi)
+        roi = np.isin(mesh.elm.tag1, roi)
         D = [d.tocsc() for d in D]
         D = [d[roi] for d in D]
         n_out = np.sum(roi)
@@ -1724,8 +1853,7 @@ def tdcs_leadfield(mesh, cond, electrode_surface, fn_hdf5, dataset,
     # Run simulations (sequential)
     if n_workers == 1:
         for i, (el_tag, current) in enumerate(zip(electrode_surface[1:], currents)):
-            logger.info('Running Simulation {0} out of {1}'.format(
-                i+1, n_sims))
+            logger.info(f'Running Simulation {i+1} of {n_sims}')
             b = S.assemble_rhs([el_tag], [current])
             v = S.solve(b)
 
@@ -1734,8 +1862,8 @@ def tdcs_leadfield(mesh, cond, electrode_surface, fn_hdf5, dataset,
             if input_type == "tag":
                 # estimate calibration error
                 ref_electrode = el_tag
-                # other_electrodes = [x for x in electrode_surface if np.all(x!=ref_electrode)][0]  
-                other_electrodes = np.array([x for x in electrode_surface if x!=ref_electrode])             
+                # other_electrodes = [x for x in electrode_surface if np.all(x!=ref_electrode)][0]
+                other_electrodes = np.array([x for x in electrode_surface if x!=ref_electrode])
 
                 v_ = mesh_io.NodeData(v, name='v', mesh=mesh)
                 flux = np.array([
@@ -1766,7 +1894,7 @@ def tdcs_leadfield(mesh, cond, electrode_surface, fn_hdf5, dataset,
 
         del S, b, v
         gc.collect()
-        
+
     # Run simulations (parallel)
     else:
         # Lock has to be passed through inheritance
@@ -1814,7 +1942,7 @@ def _run_tdcs_leadfield(i, el_tags, currents, fn_hdf5, dataset, input_type, mesh
     global tdcs_global_post_pro
     global tdcs_global_cond
     global tdcs_global_field
-    logger.info('Running Simulation {0} out of {1}'.format(
+    logger.info('Running Simulation {0} of {1}'.format(
         i+1, tdcs_global_nsims))
     b = tdcs_global_solver.assemble_rhs(el_tags, currents)
     v = tdcs_global_solver.solve(b)
@@ -1853,7 +1981,7 @@ def _run_tdcs_leadfield(i, el_tags, currents, fn_hdf5, dataset, input_type, mesh
     with h5py.File(fn_hdf5, 'a') as f:
         f[dataset][i] = out_field
     tdcs_global_solver.lock.release()
-    
+
     del b, v
     gc.collect()
 
@@ -1918,7 +2046,7 @@ def tms_many_simulations(
     n_out = mesh.elm.nr
     # Separate out the part of the gradient that is in the ROI
     if roi is not None:
-        roi = np.in1d(mesh.elm.tag1, roi)
+        roi = np.isin(mesh.elm.tag1, roi)
         D = [d.tocsc() for d in D]
         D = [d[roi] for d in D]
         cond = cond.value[roi]
@@ -1948,8 +2076,8 @@ def tms_many_simulations(
     if n_workers == 1:
         for i, matsimnibs, didt in zip(range(n_sims), matsimnibs_list, didt_list):
             logger.info(
-                f'Running Simulation {i+1} out of {n_sims}')
-            dAdt = coil_lib.set_up_tms(mesh, fn_coil, matsimnibs, didt)
+                f'Running Simulation {i+1} of {n_sims}')
+            dAdt = _get_da_dt_from_coil(fn_coil, mesh, didt, matsimnibs)
             # b = S.assemble_tms_rhs(dAdt)
             b = S.assemble_rhs(dAdt)
             v = S.solve(b)
@@ -1979,7 +2107,7 @@ def tms_many_simulations(
 
             del b
             gc.collect()
-            
+
         del S
         gc.collect()
 
@@ -2033,13 +2161,13 @@ def _run_tms_many_simulations(i, matsimnibs, didt, fn_hdf5, dataset):
     global tms_many_global_cond
     global tms_many_global_field
     global tms_many_global_roi
-    logger.info('Running Simulation {0} out of {1}'.format(
-        i+1, tms_many_global_nsims))
+    logger.info(f'Running Simulation {i+1} of {tms_many_global_nsims}')
     # RHS
-    dAdt = coil_lib.set_up_tms(
-        tms_many_global_solver.mesh,
+    dAdt = _get_da_dt_from_coil(
         tms_many_global_fn_coil,
-        matsimnibs, didt
+        tms_many_global_solver.mesh,
+        didt,
+        matsimnibs
     )
     b = tms_many_global_solver.assemble_rhs(dAdt)
     # Simulate
@@ -2071,7 +2199,7 @@ def _run_tms_many_simulations(i, matsimnibs, didt, fn_hdf5, dataset):
     with h5py.File(fn_hdf5, 'a') as f:
         f[dataset][i] = out_field
     tms_many_global_solver.lock.release()
-    
+
     del b
     gc.collect()
 
@@ -2135,3 +2263,45 @@ def electric_dipole(mesh, cond, dipole_positions, dipole_moments, source_model,
     S = DipoleFEM(mesh, cond, solver_options, units)
     b = S.assemble_rhs(dipole_positions, dipole_moments, source_model)
     return np.atleast_2d(S.solve(b).T)
+
+
+def get_dirichlet_node_index_cog(mesh, roi=None):
+    """
+    Get closest node to center of gravity of head model on lower 10% quantile in z-direction (neck direction)
+    ensuring that it does not lie on a surface. (indexing starting with 1)
+
+    Parameters
+    ----------
+    mesh : Msh object
+        Mesh object
+    roi : list of RegionOfInterest instances, optional, default: None
+        List of ROI surfaces. The Dirichlet node will be set such it does not lay on it.
+
+    Returns
+    -------
+    node_idx : int
+        Index of the node with node indexing starting with 1
+    """
+
+    # center of whole head model but lower 25% quantile of z-axis (into neck direction)
+    target_coords = np.mean(mesh.nodes.node_coord, axis=0)
+    target_coords[2] = np.quantile(mesh.nodes.node_coord[:, 2], 0.1)
+
+    # get list of node indices, which are closest to center of gravity of mesh
+    node_idx = np.argsort(np.linalg.norm(
+        mesh.nodes.node_coord - target_coords, axis=1))
+    node_idx_triangles = np.unique(mesh.elm.node_number_list[mesh.elm.triangles-1, :][:, :-1]-1)
+
+    if roi is not None:
+        if type(roi) is not list:
+            roi = [roi]
+
+        for _roi in roi:
+            node_idx_triangles = np.hstack((node_idx_triangles, _roi.node_index_list.flatten()))
+
+        node_idx_triangles = np.unique(node_idx_triangles)
+
+    # test and return first node, which is not lying on a surface
+    for idx in node_idx:
+        if idx not in node_idx_triangles:
+            return idx + 1

@@ -38,7 +38,7 @@ import simnibs.utils.cond_utils
 from simnibs.utils.cond_utils import COND
 from simnibs.utils.mesh_element_properties import ElementTags
 
-from ..mesh_tools import mesh_io, gmsh_view
+from ..mesh_tools import mesh_io
 from ..utils import transformations
 from ..utils import simnibs_logger
 from ..utils import file_finder
@@ -195,10 +195,10 @@ class SESSION(object):
         if not self.tissues_in_niftis:
             self.tissues_in_niftis = [2]
 
-        logger.info('Head Mesh: {0}'.format(self.fnamehead))
-        logger.info('Subject Path: {0}'.format(self.subpath))
         self.pathfem = os.path.abspath(os.path.expanduser(self.pathfem))
-        logger.info('Simulation Folder: {0}'.format(self.pathfem))
+        logger.info(f'Head Mesh:          {self.fnamehead}')
+        logger.info(f'Subject Path:       {self.subpath}')
+        logger.info(f'Simulation Folder:  {self.pathfem}')
 
         if os.path.isfile(self.fnamehead):
             mesh = mesh_io.read_msh(self.fnamehead)
@@ -695,7 +695,7 @@ class SimuList(object):
         Returns
         --------------------------
         dict
-            Dictionaty for scipy.io.savemat
+            Dictionary for scipy.io.savemat
         """
         mat_cond = {}
 
@@ -1148,7 +1148,7 @@ class TMSLIST(SimuList):
         cond = self.cond2elmdata()
         matsimnibs_list = [p.calc_matsimnibs(self.mesh) for p in self.pos]
         didt_list = [p.didt for p in self.pos]
-        dirname = os.path.dirname(self.fnamecoil)
+        #dirname = os.path.dirname(self.fnamecoil)
         #fname = os.path.splitext(os.path.basename(self.fnamecoil))[0]
         #fname = fname.split('.nii')[0]+'.stl'
         #fn_stl = os.path.join(dirname,fname)
@@ -1339,6 +1339,46 @@ class POSITION(object):
         if self.pos_ydir and isinstance(self.pos_ydir[0], str):
             self.pos_ydir = ''.join(self.pos_ydir)
 
+    def to_dict(self) -> dict:
+        """ Makes a dictionary storing all settings as key value pairs
+
+        Returns
+        --------------------
+        dict
+            Dictionary containing settings as key value pairs
+        """
+        # Generate dict from instance variables (excluding variables starting with _ or __)
+        settings = {
+            key:value for key, value in self.__dict__.items()
+            if not key.startswith('__')
+            and not key.startswith('_')
+            and not callable(value)
+            and not callable(getattr(value, "__get__", None))
+            and value is not None
+        }
+
+        return settings
+
+    def from_dict(self, settings: dict) -> "POSITION":
+        """ Reads parameters from a dict
+
+        Parameters
+        ----------
+        settings: dict
+            Dictionary containing parameter as key value pairs
+
+        Returns
+        -------
+        POSITION
+            Self with applied settings
+        """
+        for key, value in self.__dict__.items():
+            if key.startswith('__') or key.startswith('_') or callable(value) or callable(getattr(value, "__get__", None)):
+                continue
+            setattr(self, key, settings.get(key, value))
+
+        return self
+
     def substitute_positions_from_cap(self, cap=None):
         if cap is None:
             cap = self.eeg_cap
@@ -1371,7 +1411,7 @@ class POSITION(object):
                 raise ValueError('Coil centre not set!')
             if not isinstance(self.pos_ydir, np.ndarray) and not self.pos_ydir:
                 raise ValueError('Coil pos_ydir not set!')
-            if not self.distance:
+            if self.distance is None:
                 raise ValueError('Coil distance not set!')
             self.substitute_positions_from_cap(cap=cap)
             if len(self.centre) != 3:
@@ -1700,7 +1740,8 @@ class TDCSLIST(SimuList):
         v = m.view(
             visible_tags=_surf_preferences(m),
             visible_fields=_field_preferences(self.postprocess),
-            cond_list=self.cond)
+            cond_list=self.cond,
+            add_logo=True)
         v.add_merge(el_geo_fn)
         v.add_view(ColormapNumber=10, ColormapAlpha=.5,
                    Visible=1)  # el_currents
@@ -2134,7 +2175,7 @@ class LEADFIELD():
         self.name = ''  # This is here only for leagacy reasons, it doesnt do anything
         self._log_handlers = []
 
-        self.solver_options = ''
+        self.solver_options = None
         if matlab_struct:
             self.read_mat_struct(matlab_struct)
 
@@ -2172,7 +2213,7 @@ class LEADFIELD():
 
         self.fnamehead = os.path.abspath(os.path.expanduser(self.fnamehead))
         if not os.path.isfile(self.fnamehead):
-            raise IOError('Cannot locate head mesh file: %s' % self.fnamehead)
+            raise IOError(f'Cannot locate head mesh file: {self.fnamehead}')
 
         if not os.path.isdir(self.subpath):
             logger.warning('Cannot locate subjects m2m folder')
@@ -2182,10 +2223,10 @@ class LEADFIELD():
         if not self.fname_tensor:
             self.fname_tensor = sub_files.tensor_file
 
-        logger.info('Head Mesh: {0}'.format(self.fnamehead))
-        logger.info('Subject Path: {0}'.format(self.subpath))
         self.pathfem = os.path.abspath(os.path.expanduser(self.pathfem))
-        logger.info('Simulation Folder: {0}'.format(self.pathfem))
+        logger.info(f'Head Mesh:          {self.fnamehead}')
+        logger.info(f'Subject Path:       {self.subpath}')
+        logger.info(f'Simulation Folder:  {self.pathfem}')
 
         self.mesh = mesh_io.read_msh(self.fnamehead)
 
@@ -2581,7 +2622,7 @@ class TDCSLEADFIELD(LEADFIELD):
         roi_msh = w_elec.crop_mesh(roi_fill)
 
         # 'roi':  the GM and eye surfaces ([self.tissues + [2])
-        in_roi = np.in1d(roi_msh.elm.tag1, roi)
+        in_roi = np.isin(roi_msh.elm.tag1, roi)
 
         # th_indices': the volume in the 'roi_msh'
         th_indices = roi_msh.elm.elm_number[in_roi]

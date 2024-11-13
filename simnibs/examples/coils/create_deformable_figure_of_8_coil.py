@@ -1,7 +1,10 @@
 """
 Example of how to create a deformable parametric figure of 8 TMS coil and save it in the tcd format.
 The coil is constructed using line segments which reconstruct the windings of the coil.
+
+Copyright (c) 2024 SimNIBS developers. Licensed under the GPL v3.
 """
+import os
 
 import numpy as np
 from simnibs.simulation.tms_coil.tms_coil import TmsCoil
@@ -189,4 +192,5 @@ tms_coil.generate_element_casings(
 )
 
 # Write the coil to a tcd file
-tms_coil.write("deformable_figure_of_8_example_coil.tcd")
+os.mkdir("coil_example")
+tms_coil.write(os.path.join("coil_example", "deformable_figure_of_8_example_coil.tcd"))

@@ -1,3 +1,4 @@
+import itertools
 from pathlib import Path
 from typing import Iterable, Union
 
@@ -154,11 +155,11 @@ class Montage:
         # fmt: on
         lm = np.array(ch_types) == "Fiducial"
         if lm.any():
-            landmarks = dict(zip(ch_names[lm], ch_pos[lm]))
+            landmarks = dict(zip(tuple(itertools.compress(ch_names, lm)), ch_pos[lm]))
             not_fids = ~lm
-            ch_types = ch_types[not_fids]
+            ch_types = tuple(itertools.compress(ch_types, not_fids))
             ch_pos = ch_pos[not_fids]
-            ch_names = ch_names[not_fids]
+            ch_names = tuple(itertools.compress(ch_names, not_fids))
         else:
             landmarks = None
         assert all(np.isin(ch_types, ("Electrode", "ReferenceElectrode")))

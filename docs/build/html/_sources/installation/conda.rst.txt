@@ -73,38 +73,15 @@ MacOS
 
 2. Download the `SimNIBS OSX environment file <https://github.com/simnibs/simnibs/releases/latest/download/environment_macOS.yml>`_
 
-3. If you are using an Intel-based Mac (x86_64), run the following in a terminal window:
+3. Run in a terminal window:
 
   .. code-block:: bash
-  
+
       export PATH="$HOME/miniconda/bin:$PATH" # This part can change depending on your miniconda installation
       conda env create -f ~/Downloads/environment_macOS.yml
       conda activate simnibs_env
       pip install -f https://github.com/simnibs/simnibs/releases/latest simnibs
-  
-  \
 
-If you are using an ARM-based Mac, you will have to create an x86_64 environment in order to build simnibs. Run this instead
-
-  .. code-block:: bash
-  
-      export PATH="$HOME/miniconda/bin:$PATH" # This part can change depending on your miniconda installation
-      conda env create -f ~/Downloads/environment_macOS.yml --platform osx-64
-      conda activate simnibs_env
-      pip install -f https://github.com/simnibs/simnibs/releases/latest simnibs
-  
-  \
-
-If the :code:`--platform` argument is not available in your version of conda, use the following workaround
-  
-  .. code-block:: bash
-  
-      export PATH="$HOME/miniconda/bin:$PATH" # This part can change depending on your miniconda installation
-      CONDA_SUBDIR=osx-64 conda env create -f ~/Downloads/environment_macOS.yml
-      conda env config vars set CONDA_SUBDIR=osx-64 -n simnibs_env
-      conda activate simnibs_env
-      pip install -f https://github.com/simnibs/simnibs/releases/latest simnibs
-  
   \
 
 4. (Optional) To setup the menu icons, file associations, the MATLAB library and add SimNIBS to the system path, run the :code:`postinstall_simnibs` script:

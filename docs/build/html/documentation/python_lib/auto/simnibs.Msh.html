@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>simnibs.Msh &#8212; SimNIBS 4.1.0 documentation</title>
+    <title>simnibs.Msh &#8212; SimNIBS dev&#39;) documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
-    <script src="../../../_static/documentation_options.js?v=42d1b3bd"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/documentation_options.js?v=bcc8d217"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -211,50 +211,56 @@ Overides nodes and elements</p></li>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_AABBTree</span></code>()</p></td>
 <td><p>Build AABBTree for efficient intersection tests</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_min_distance_on_grid</span></code>([resolution, AABBTree])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_min_distance_on_grid</span></code>([resolution, ...])</p></td>
+<td><p>Generates a distance to surface field on a grid</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_voxel_volume</span></code>([resolution, dither_skip, ...])</p></td>
 <td><p>Generates a distance field on a grid to the mesh surface</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">interp_matrix</span></code>(pos[, out_fill, th_indices, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">interp_matrix</span></code>(pos[, out_fill, th_indices, ...])</p></td>
 <td><p>Calculates a matrix to perform interpolation y = M.dot(x)</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">intersect_ray</span></code>(points, directions[, AABBTree])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">intersect_ray</span></code>(points, directions[, AABBTree])</p></td>
 <td><p>Finds the triangle (if any) that intersects with the rays starting</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">intersect_segment</span></code>(near, far)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">intersect_segment</span></code>(near, far)</p></td>
 <td><p>Finds the triangle (if any) that intersects a line segment</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">join_mesh</span></code>(other)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">join_mesh</span></code>(other)</p></td>
 <td><p>Join the current mesh with another</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_areas</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_areas</span></code>()</p></td>
 <td><p>Areas for all nodes in a surface</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_normals</span></code>([triangles, smooth])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_normals</span></code>([triangles, smooth])</p></td>
 <td><p>Normals for all nodes in a surface</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_volumes_or_areas</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes_volumes_or_areas</span></code>()</p></td>
 <td><p>Return the volume (volume mesh) if area (surface mesh) of all nodes Only works for ordered values of mesh and node indices</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">open_in_gmsh</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">open_in_gmsh</span></code>()</p></td>
 <td><p>Opens the mesh in gmsh</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">partition_skin_surface</span></code>([...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">partition_skin_surface</span></code>([...])</p></td>
 <td><p>Return indices of vertices and faces estimated to be on the inner and outer skin surface (the inner part would be those inside nasal cavities, ear canals etc.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepare_surface_tags</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepare_surface_tags</span></code>()</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">pts_inside_surface</span></code>(pts[, AABBTree])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">pts_inside_surface</span></code>(pts[, AABBTree])</p></td>
 <td><p>Test which points are inside the surface.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_hdf5</span></code>(hdf5_fn[, path, load_data])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_hdf5</span></code>(hdf5_fn[, path, load_data])</p></td>
 <td><p>Reads mesh information from an hdf5 file</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reconstruct_surfaces</span></code>([tags])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reconstruct_surfaces</span></code>([tags])</p></td>
 <td><p>Reconstruct the mesh surfaces for each label/connected component individually This function acts in-place, and will keep any surfaces already present in the mesh</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reconstruct_unique_surface</span></code>([hierarchy, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reconstruct_unique_surface</span></code>([hierarchy, ...])</p></td>
 <td><p>Reconstructs the mesh surfaces from the tetrahedra.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">relabel_internal_air</span></code>([label_skin, label_new])</p></td>
+<td><p>Relabels skin in internal air cavities to something else; relevant for charm meshes and TES optimization to determine valid skin region.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_from_mesh</span></code>([tags, elm_type, nodes, ...])</p></td>
 <td><p>Removes the specified tags from the mesh Generates a new mesh, with the specified tags removed The nodes are also reordered</p></td>
@@ -382,7 +388,7 @@ Overides nodes and elements</p></li>
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
@@ -390,7 +396,7 @@ Overides nodes and elements</p></li>
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
 
 
@@ -408,7 +414,7 @@ Overides nodes and elements</p></li>
       &#169;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
       |

@@ -1,6 +1,8 @@
 % Simple ROI analysis of the electric field from a simulation.
 % We will calculate the mean electric field in a gray matter ROI
 % The ROI is defined using an MNI coordinates
+%
+% Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 
 %% Load Simulation Result
 

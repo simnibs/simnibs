@@ -1,5 +1,6 @@
 % Optimize controlling electric field strength
 %
+% Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 
 opt = opt_struct('TDCSoptimize');
 opt.leadfield_hdf = 'leadfield/ernie_leadfield_EEG10-10_UI_Jurak_2007.hdf5';

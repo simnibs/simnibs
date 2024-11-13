@@ -4,7 +4,7 @@ Example on running a SimNIBS tDCS simulation for a Nx1 montage in Python.
     Run with:
         simnibs_python tDCS_Nx1.py
 
-    Copyright (C) 2020 Axel Thielscher
+    Copyright (c) 2020 SimNIBS developers. Licensed under the GPL v3.
 """
 
 from simnibs import sim_struct, run_simnibs

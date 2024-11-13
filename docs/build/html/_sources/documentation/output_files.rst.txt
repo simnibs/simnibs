@@ -37,7 +37,7 @@ TMS
 * :file:`<sub_id>_TMS_<poslist_nr>-<position_nr>_<coil_name>_<cond_type>.msh`
     *Gmsh* mesh file with TMS simulation results
 * :file:`<sub_id>_TMS_<poslist_nr>-<position_nr>_<coil_name>_coil_pos.geo`
-    *Gmsh* *.geo* file with a simplified coil model showing it’s center and axes. For *.ccd* coil models, this is a more detail model showing dipoles.
+    *Gmsh* *.geo* file with a representation of the coil.
 
 Others
 '''''''

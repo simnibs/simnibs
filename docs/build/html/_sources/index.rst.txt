@@ -1,14 +1,14 @@
 .. simnibs documentation master file, created by
    sphinx-quickstart on Wed Aug 22 14:44:31 2018.
 
-==========
- SimNIBS 4
-==========
+=============
+ SimNIBS 4.5
+=============
 
 
-**SimNIBS 4** is a free and open source software package for the Simulation of Non-invasive Brain Stimulation. It allows for realistic calculations of the electric field induced by transcranial magnetic stimulation (TMS) and transcranial electric stimulation (TES). 
+**SimNIBS v4.5** is a free and open source software package for the Simulation of Non-invasive Brain Stimulation. It allows for realistic calculations of the electric field induced by transcranial magnetic stimulation (TMS) and transcranial electric stimulation (TES).
 
-A SimNIBS workflow consists of three main parts:
+A basic SimNIBS workflow consists of three main parts:
 
    * :ref:`Generate high-quality head models <head_modeling_tutorial>` from MR images.
 
@@ -16,7 +16,7 @@ A SimNIBS workflow consists of three main parts:
 
    * :ref:`Visualize simulation results <visualization_tutorial>`, and easily transform them to *FsAverage* or *MNI* space via in-built functions.
 
-SimNIBS offers several advanced options such as :ref:`Optimizations of TMS coil positions <tms_optimize>`, or TES optimizations for :ref:`single and multiple targets <tdcs_opt>` and :ref:`brain network targeting <tdcs_distributed_opt>`.
+In addition, SimNIBS offers several advanced options such as :ref:`Optimizations of TMS coil positions <tms_optimize>`, or TES optimizations for :ref:`single and multiple targets <tdcs_opt>` and :ref:`brain network targeting <tdcs_distributed_opt>`.
 
 .. raw:: html
 
@@ -134,10 +134,12 @@ SimNIBS is copyrighted |copy| by its :ref:`authors <contributors>` and licensed 
  News
 ======
 
-  * **Version 4.1.0** improves the mesh quality and adds the option to use FreeSurfer results for more accurate representation of smaller sulci in the head meshes
+  * **Version 4.5.0** introduces exciting new optimization methods for :ref:`TMS <tms_flex_opt>`  and :ref:`TES <tes_flex_opt>`. 
+	* They enable the :ref:`optimization of TMS coil positions also for bent and flexible coils <tms_flex_opt>`, thereby systematically avoiding intersections of the coil with the head.
+	* In addition, they support the :ref:`optimization of several TES montages <tes_flex_opt>`, including those with rectangular electrodes, center-surround montages, temporal interference stimulation and electrode arrays for tumor treating field therapies.
+  * As part of the update to 4.5.0, several new TMS coil models and new :ref:`datasets <dataset>` were added.
+  * Version 4.1.0 improves the mesh quality and adds the option to use FreeSurfer results for more accurate representation of smaller sulci in the head meshes
   * Version 4.0.0 is a major update that introduces our new head modeling approach :ref:`charm <head_modeling_tutorial>`. In contrast to the previous methods, *charm* does not have any external dependencies (matlab, freesurfer) and is ready-to-run directly after installation. Head models created by *charm* are more accurate for non-brain tissues and include additional tissue types such as large blood vessels and spongy bone.
-  * *Charm* replaces the previous methods *mri2mesh* and *headreco* which are discontinued. Use the tool :ref:`convert_3_to_4` to convert old head models for use in SimNIBS4 simulations.
-  * Further major new features are the inclusion of :ref:`many new TMS coil models <coil_fies>` and a :ref:`flexible meshing approach <fixheadmodel_tutorial>` to simplify manual editing and inclusion of custom tissue types in the head mesh. Basic I/O functions for :ref:`neuronavigation data <nnav_docs>` are now also available in python. 
 
 Please see details in the :ref:`changelog <changelog>`.
 

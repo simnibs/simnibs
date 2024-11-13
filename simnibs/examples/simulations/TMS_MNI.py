@@ -1,3 +1,8 @@
+'''
+    example on how to define a TMS coil position via MNI coordinates
+    
+    Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
+'''
 import os
 import simnibs
 from simnibs import sim_struct

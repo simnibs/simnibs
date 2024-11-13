@@ -78,7 +78,7 @@ class TestDrawElectrodes:
 
         # test if there is no volume node outside of the ROI with a smaller distance than the radius + 2*avg_l to the center. 
         not_in_roi = np.full((sphere3_msh.nodes.nr), False)
-        node_in_volume = (sphere3_msh.elm.elm_type == 4) * (np.in1d(sphere3_msh.elm.tag1, [5]))
+        node_in_volume = (sphere3_msh.elm.elm_type == 4) * (np.isin(sphere3_msh.elm.tag1, [5]))
         node_in_volume = np.unique(sphere3_msh.elm.node_number_list[node_in_volume, :3])
         not_in_roi[node_in_volume-1] = True
         not_in_roi[roi_th_nodes-1] = False
@@ -192,9 +192,9 @@ class TestDrawElectrodes:
         nodes = np.vstack([X.reshape(-1), Y.reshape(-1)]).T
         tri = scipy.spatial.Delaunay(nodes)
         edges, tr_edges, adjacency_list = electrode_placement._edge_list(tri.simplices)
-        assert np.sum(np.in1d(tri.simplices[adjacency_list[0, 0]],
+        assert np.sum(np.isin(tri.simplices[adjacency_list[0, 0]],
                               tri.simplices[adjacency_list[0, 1]])) == 2
-        assert np.any(np.in1d(tr_edges[0], tr_edges[adjacency_list[tr_edges[0, 0], 1]]))
+        assert np.any(np.isin(tr_edges[0], tr_edges[adjacency_list[tr_edges[0, 0], 1]]))
 
     def test_baricentric(self):
         tri = np.array([[0., 0.], [0., 1.], [np.sqrt(3) / 2., 1./2.]])

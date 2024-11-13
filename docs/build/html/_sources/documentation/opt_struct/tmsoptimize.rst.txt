@@ -160,5 +160,5 @@ Attributes
 
 * **method**: *'direct' or 'ADM', optional*
 
-  * **Description**: Method to be used for the solution. Can be either a :code:`direct` method, which will perform electric field simulations at each coil position or the Auxiliary Dipole Method (ADM, `Gomez 2020 <https://doi.org/10.1101/2020.05.27.120022>`_), which uses reciprocity and the fast multipole method (FMM) to massively accelerate the optimization. The ADM method is only compatible with :file:`.ccd` coil files
+  * **Description**: Method to be used for the solution. Can be either a :code:`direct` method, which will perform electric field simulations at each coil position or the Auxiliary Dipole Method (ADM, `Gomez 2020 <https://doi.org/10.1101/2020.05.27.120022>`_), which uses reciprocity and the fast multipole method (FMM) to massively accelerate the optimization. The ADM method is only compatible with :file:`.ccd` coil files or :file:`.tcd` coil files that only contain dipole elements.
   * **Default**: :code:`direct`

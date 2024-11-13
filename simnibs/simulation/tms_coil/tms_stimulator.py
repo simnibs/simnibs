@@ -1,6 +1,7 @@
 import base64
 import warnings
 from typing import Optional
+import zlib
 
 import numpy as np
 import numpy.typing as npt
@@ -70,12 +71,12 @@ class TmsWaveform:
             if self.fit is not None and len(self.fit) > 0:
                 tcd_waveform["fit"] = self.fit.tolist()
         else:
-            tcd_waveform["time"] = base64.b64encode(self.time.tobytes()).decode("ascii")
-            tcd_waveform["signal"] = base64.b64encode(self.signal.tobytes()).decode(
+            tcd_waveform["time"] = base64.b64encode(zlib.compress(self.time.tobytes())).decode("ascii")
+            tcd_waveform["signal"] = base64.b64encode(zlib.compress(self.signal.tobytes())).decode(
                 "ascii"
             )
             if self.fit is not None and len(self.fit) > 0:
-                tcd_waveform["fit"] = base64.b64encode(self.fit.tobytes()).decode(
+                tcd_waveform["fit"] = base64.b64encode(zlib.compress(self.fit.tobytes())).decode(
                     "ascii"
                 )
 
@@ -87,14 +88,14 @@ class TmsWaveform:
 
         if isinstance(tcd_element["time"], str):
             time = np.frombuffer(
-                base64.b64decode(tcd_element["time"]), dtype=np.float64
+                zlib.decompress(base64.b64decode(tcd_element["time"])), dtype=np.float64
             )
         else:
             time = np.array(tcd_element["time"])
 
         if isinstance(tcd_element["signal"], str):
             signal = np.frombuffer(
-                base64.b64decode(tcd_element["signal"]), dtype=np.float64
+                zlib.decompress(base64.b64decode(tcd_element["signal"])), dtype=np.float64
             )
         else:
             signal = np.array(tcd_element["signal"])
@@ -102,7 +103,7 @@ class TmsWaveform:
         if tcd_element.get("fit") is None:
             fit = None
         elif isinstance(tcd_element["fit"], str):
-            fit = np.frombuffer(base64.b64decode(tcd_element["fit"]), dtype=np.float64)
+            fit = np.frombuffer(zlib.decompress(base64.b64decode(tcd_element["fit"])), dtype=np.float64)
         else:
             fit = np.array(tcd_element["fit"])
 

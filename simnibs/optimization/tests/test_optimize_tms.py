@@ -4,7 +4,7 @@ import pytest
 import scipy.spatial
 
 from ... import SIMNIBSDIR
-from .. import optimize_tms
+from .. import tms_optimization
 from ...mesh_tools import mesh_io
 
 
@@ -17,7 +17,7 @@ def sphere3_msh():
 
 class TestGetOptGrid:
     def test_get_pos(self, sphere3_msh):
-        pos, normals = optimize_tms._create_grid(
+        pos, normals = tms_optimization._create_grid(
             sphere3_msh,
             [90, 0, 0],
             0, 10, 2
@@ -40,7 +40,7 @@ class TestGetOptGrid:
              [0, 0, -1],
              [0, 1, 0]]
         )
-        matrices = optimize_tms._rotate_system(
+        matrices = tms_optimization._rotate_system(
             R, [-90, 90], 90
         )
         assert len(matrices) == 3
@@ -65,7 +65,7 @@ class TestGetOptGrid:
         )
 
     def test_get_opt_grid(self, sphere3_msh):
-        matrices = optimize_tms.get_opt_grid(
+        matrices = tms_optimization.get_opt_grid(
             sphere3_msh, [90, 0, 0], handle_direction_ref=None,
             distance=1., radius=10, resolution_pos=1,
             resolution_angle=20, angle_limits=None)
@@ -89,7 +89,7 @@ class TestGetOptGrid:
             )
 
     def test_get_opt_handle_dir(self, sphere3_msh):
-        matrices = optimize_tms.get_opt_grid(
+        matrices = tms_optimization.get_opt_grid(
             sphere3_msh, [90, 0, 0], handle_direction_ref=[90, 0, 1],
             distance=1., radius=10, resolution_pos=1,
             resolution_angle=30, angle_limits=[-60, 60])
@@ -126,10 +126,7 @@ def test_define_target_region(sphere3_msh):
     c = [85, 0, 0]
     r = 5
     t = 3
-    elm = optimize_tms.define_target_region(sphere3_msh, c, r, t)
-    outside = sphere3_msh.elm.elm_number[
-        ~np.isin(sphere3_msh.elm.elm_number, elm)
-    ]
+    elm = tms_optimization.define_target_region(sphere3_msh, c, r, t)
     bar = sphere3_msh.elements_baricenters()
     dist = np.linalg.norm(bar[:] - c, axis=1)
     assert np.all(dist[elm - 1] < r)
@@ -137,7 +134,7 @@ def test_define_target_region(sphere3_msh):
     assert np.all(sphere3_msh.elm.elm_type[elm - 1] == 4)
 
 def test_get_opt_grid_ADM(sphere3_msh):
-    matrices, coil_dir = optimize_tms.get_opt_grid_ADM(
+    matrices, coil_dir = tms_optimization.get_opt_grid_ADM(
         sphere3_msh, [90, 0, 0], handle_direction_ref=[90, 0, 1],
         distance=1., radius=10, resolution_pos=1,
         resolution_angle=30, angle_limits=[-60, 60]

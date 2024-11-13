@@ -1028,7 +1028,6 @@ class COIL_TABLE_ROW:
 
         self.name_item = QtWidgets.QTableWidgetItem('')
 
-
     def calc_matsimnibs(self, surface):
         return surface.calculateMatSimnibs(self.p1, self.p2, skin_distance=self.dist_box.value())
 
@@ -1044,6 +1043,7 @@ class CoilTable (QtWidgets.QWidget):
         self.type = 'TMS'
         self.glHeadModel = glHeadModel
         self.table_rows = []
+        self.show_coil_enabled = False
 
         self.colors =  [QtGui.QColor.fromCmykF(0., 0., 1., 0.),
                         QtGui.QColor.fromCmykF(0.72, 0.52, 0., 0.),
@@ -1071,6 +1071,12 @@ class CoilTable (QtWidgets.QWidget):
         self.conduct_btn = QtWidgets.QPushButton("Set Conductivities")
         self.conduct_btn.clicked.connect(self.setConductivities)
 
+        self.preview_btn = QtWidgets.QPushButton('Preview Coil')
+        self.preview_btn.clicked.connect(self.show_coil)
+
+        self.hide_btn = QtWidgets.QPushButton('Hide Coil')
+        self.hide_btn.clicked.connect(self.hide_coil)
+
 
         self.show_dAdt_btn = QtWidgets.QPushButton("Show dA/dt field")
         self.show_dAdt_btn.clicked.connect(self.showdAdt)
@@ -1082,12 +1088,23 @@ class CoilTable (QtWidgets.QWidget):
         layout.addWidget(self.add_pos_btn,4,0)
         layout.addWidget(self.rem_pos_btn,4,1)
         layout.addWidget(self.conduct_btn,5,1)    
-        layout.addWidget(self.show_dAdt_btn, 4,2)
+        layout.addWidget(self.show_dAdt_btn, 5,0)
+        layout.addWidget(self.preview_btn,4,2)
+        layout.addWidget(self.hide_btn, 5,2)
 
 
         self.setLayout(layout)
 
         self.loadStruct(tmslist, eeg_cap)
+
+    def show_coil(self):
+        self.show_coil_enabled = True
+        self.updateStimulatorModels()
+
+    def hide_coil(self):
+        self.show_coil_enabled = False
+        self.updateStimulatorModels()
+
 
     #Box for defining the electrode file
     def coilBox(self):
@@ -1109,17 +1126,17 @@ class CoilTable (QtWidgets.QWidget):
 
 
     def coilDialog(self):
-        #get folder with ccd files
+        #get folder with coil models
         try:
-            ccd_folder = os.path.join(SIMNIBSDIR, 'resources', 'coil_models')
+            coil_folder = os.path.join(SIMNIBSDIR, 'resources', 'coil_models')
         except:
-            ccd_folder = './'
+            coil_folder = './'
 
 
         dialog = QtWidgets.QFileDialog(self)
         dialog.setWindowTitle('Open Coil Definition File')
         dialog.setNameFilter('Coil Definition files (*.ccd *.nii *.gz *.tcd)')
-        dialog.setDirectory(ccd_folder)
+        dialog.setDirectory(coil_folder)
         dialog.setFileMode(QtWidgets.QFileDialog.ExistingFile)
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
             fn = str(dialog.selectedFiles()[0])
@@ -1131,6 +1148,8 @@ class CoilTable (QtWidgets.QWidget):
 
     def set_coil_fn(self):
         self.tmslist.fnamecoil = str(self.coil_line_edit.text())
+        self.updateStimulatorModels()
+
 
     def createTable(self):
         table =  QtWidgets.QTableWidget(0,4)
@@ -1139,12 +1158,16 @@ class CoilTable (QtWidgets.QWidget):
         table.horizontalHeader().setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
         table.verticalHeader().hide()
         table.cellDoubleClicked.connect(self.tableLeftClick)
+        table.cellClicked.connect(self.tableLeftClickOnes)
         return table
 
 
     def tableLeftClick(self, row, column):
         if column == 2:
             self.definePosition(row)
+
+    def tableLeftClickOnes(self, row, column):
+        self.updateStimulatorModels(row)
 
 
     def addNewRow(self):
@@ -1158,7 +1181,7 @@ class CoilTable (QtWidgets.QWidget):
         self.table.setItem(row_nbr, 2, self.table_rows[row_nbr].position_item)
         self.table.setItem(row_nbr,3, self.table_rows[row_nbr].name_item)
         self.table_rows[row_nbr].name_item.setBackground(self.colors[row_nbr%len(self.colors)])
-        self.table_rows[row_nbr].dist_box.valueChanged.connect(self.updateStimulatorModels)
+        self.table_rows[row_nbr].dist_box.valueChanged.connect(lambda : self.updateStimulatorModels(row_nbr))
         #self.table.setItem(row_nbr, 2, self.table_rows[row_nbr].coil)
 
 
@@ -1176,7 +1199,7 @@ class CoilTable (QtWidgets.QWidget):
     def definePosition(self, row):
          pos_gui = Position_GUI(self.table_rows[row].p1, self.table_rows[row].p2,
                                 str(self.table_rows[row].name_item.text()),
-                                self.glHeadModel)
+                                self.glHeadModel, str(self.coil_line_edit.text()) if self.show_coil_enabled else '')
          pos_gui.show()
          p1, p2, name, ok = pos_gui.GetPositions()
 
@@ -1255,20 +1278,43 @@ class CoilTable (QtWidgets.QWidget):
         return self.tmslist
 
 
-    def updateStimulatorModels(self):
-        c_list = []
-        i = 0
-        for row in self.table_rows:
-            if len(row.p1) != 0:
-                ogl_object = self.glHeadModel.drawPointAndDirs(row.calc_matsimnibs(self.glHeadModel.getSurface('Scalp')),
-                                                            self.colors[i%len(self.colors)])
-                c_list.append(ogl_object)
-                i += 1
-        self.glHeadModel.stimulatorList(c_list)
+    def updateStimulatorModels(self, row_nb=-1):
+        fn_coil = ''
+        if self.show_coil_enabled:
+            fn_coil = str(self.coil_line_edit.text())
+        if row_nb == -1:
+            c_list = []
+            i = 0
+            coil_object = None
+            for row in self.table_rows:
+                if len(row.p1) != 0:
+                    if self.show_coil_enabled:
+                        ogl_object, coil_object = self.glHeadModel.drawPointAndDirs(row.calc_matsimnibs(self.glHeadModel.getSurface('Scalp')),
+                                                                self.colors[i%len(self.colors)], fn_coil)
+                    else:
+                        ogl_object = self.glHeadModel.drawPointAndDirs(row.calc_matsimnibs(self.glHeadModel.getSurface('Scalp')),
+                                                                self.colors[i%len(self.colors)], fn_coil)
+                    c_list.append(ogl_object)
+                    i += 1
+            if self.show_coil_enabled:
+                c_list.append(coil_object)    
+            self.glHeadModel.stimulatorList(c_list)
+        else:
+            if len(self.table_rows[row_nb].p1) != 0 and len(self.glHeadModel.stimulator_objects) > row_nb:
+                if self.show_coil_enabled:
+                    ogl_object, coil_object = self.glHeadModel.drawPointAndDirs(self.table_rows[row_nb].calc_matsimnibs(self.glHeadModel.getSurface('Scalp')),
+                        self.colors[row_nb%len(self.colors)], fn_coil)
+                else:
+                    ogl_object = self.glHeadModel.drawPointAndDirs(self.table_rows[row_nb].calc_matsimnibs(self.glHeadModel.getSurface('Scalp')),
+                                                                self.colors[row_nb%len(self.colors)], fn_coil)
+                self.glHeadModel.stimulator_objects[row_nb] = ogl_object
+                if self.show_coil_enabled:
+                    self.glHeadModel.stimulator_objects[-1] = coil_object
+                self.glHeadModel.stimulatorList(self.glHeadModel.stimulator_objects)
 
 
     def showdAdt(self):
-        if str(self.coil_line_edit.text()) == '' or str(self.coil_line_edit.text()).endswith('.ccd'):
+        if str(self.coil_line_edit.text()) == '' or str(self.coil_line_edit.text()).endswith('.ccd') or str(self.coil_line_edit.text()).endswith('.tcd'):
             QtWidgets.QMessageBox.critical(self, "Warning",
                 'For previewing dA/dt fields, please select a nifti coil file')
         row = self.table_rows[self.table.currentRow()]
@@ -1282,7 +1328,7 @@ class CoilTable (QtWidgets.QWidget):
 
 #GUI where the user clicks and chooses the position
 class Position_GUI(QtWidgets.QDialog):
-    def __init__(self, centre, reference, name, glHeadModel):
+    def __init__(self, centre, reference, name, glHeadModel, fn_coil=''):
         super(Position_GUI, self).__init__()
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.centre = centre
@@ -1290,6 +1336,7 @@ class Position_GUI(QtWidgets.QDialog):
         self.glHeadModel = glHeadModel
         self.ogl_object = None
         self.name = name
+        self.fn_coil = fn_coil
         glHeadModel.windowClicked.connect(self.getClickedPosition)
 
         mainLayout = QtWidgets.QGridLayout()
@@ -1497,9 +1544,14 @@ class Position_GUI(QtWidgets.QDialog):
         centre, reference = self.getPositions()
         scalp_surf = self.glHeadModel.getSurface('Scalp')
         transf_matrix = scalp_surf.calculateMatSimnibs(centre, reference)
-        ogl_object = self.glHeadModel.drawPointAndDirs(
-            transf_matrix, QtGui.QColor.fromCmykF(0., 0., 0., 0.74))
-        self.glHeadModel.tmpObjectList([ogl_object])
+        if self.fn_coil == '':
+            ogl_object= self.glHeadModel.drawPointAndDirs(
+                transf_matrix, QtGui.QColor.fromCmykF(0., 0., 0., 0.74))
+            self.glHeadModel.tmpObjectList([ogl_object])
+        else:
+            ogl_object, coil_object = self.glHeadModel.drawPointAndDirs(
+                transf_matrix, QtGui.QColor.fromCmykF(0., 0., 0., 0.74), self.fn_coil)
+            self.glHeadModel.tmpObjectList([ogl_object, coil_object])
         self.glHeadModel.update()
 
     def GetPositions(self):

@@ -5,16 +5,16 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>simnibs.SubjectFiles &#8212; SimNIBS 4.1.0 documentation</title>
+    <title>simnibs.SubjectFiles &#8212; SimNIBS dev&#39;) documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
-    <script src="../../../_static/documentation_options.js?v=42d1b3bd"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/documentation_options.js?v=bcc8d217"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="icon" href="../../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="simnibs.simulation.calc_B" href="simnibs.simulation.calc_B.html" />
+    <link rel="next" title="simnibs.simulation.calc_fields" href="simnibs.simulation.calc_fields.html" />
     <link rel="prev" title="simnibs.get_atlas" href="simnibs.get_atlas.html" />
    
   <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
@@ -38,7 +38,7 @@
           <a href="simnibs.get_atlas.html" title="Previous document">simnibs.get_atlas</a>
         </li>
         <li>
-          <a href="simnibs.simulation.calc_B.html" title="Next document">simnibs.simulation.calc_B</a>
+          <a href="simnibs.simulation.calc_fields.html" title="Next document">simnibs.simulation.calc_fields</a>
           &rarr;
         </li>
     </ul>
@@ -52,7 +52,7 @@
 <h1>simnibs.SubjectFiles<a class="headerlink" href="#simnibs-subjectfiles" title="Link to this heading">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="simnibs.SubjectFiles">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simnibs.</span></span><span class="sig-name descname"><span class="pre">SubjectFiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fnamehead</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subpath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.SubjectFiles" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simnibs.</span></span><span class="sig-name descname"><span class="pre">SubjectFiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fnamehead</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subpath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.SubjectFiles" title="Link to this definition">¶</a></dt>
 <dd><p>Class to find files for a given subject</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -503,7 +503,7 @@ to the corresponding morph file.</p>
 </div>
 <dl class="py method">
 <dt class="sig sig-object py" id="simnibs.SubjectFiles.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fnamehead</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subpath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.SubjectFiles.__init__" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fnamehead</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subpath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.SubjectFiles.__init__" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <p class="rubric">Methods</p>
@@ -538,7 +538,7 @@ to the corresponding morph file.</p>
           <a href="simnibs.get_atlas.html" title="Previous document">simnibs.get_atlas</a>
         </li>
         <li>
-          <a href="simnibs.simulation.calc_B.html" title="Next document">simnibs.simulation.calc_B</a>
+          <a href="simnibs.simulation.calc_fields.html" title="Next document">simnibs.simulation.calc_fields</a>
           &rarr;
         </li>
     </ul>
@@ -597,13 +597,13 @@ to the corresponding morph file.</p>
   <li><a href="../../documentation.html">Documentation</a><ul>
   <li><a href="../python_lib.html">Python Library Documentation</a><ul>
       <li>Previous: <a href="simnibs.get_atlas.html" title="previous chapter">simnibs.get_atlas</a></li>
-      <li>Next: <a href="simnibs.simulation.calc_B.html" title="next chapter">simnibs.simulation.calc_B</a></li>
+      <li>Next: <a href="simnibs.simulation.calc_fields.html" title="next chapter">simnibs.simulation.calc_fields</a></li>
   </ul></li>
   </ul></li>
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
@@ -611,7 +611,7 @@ to the corresponding morph file.</p>
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
 
 
@@ -629,7 +629,7 @@ to the corresponding morph file.</p>
       &#169;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
       |

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>simnibs.utils.region_of_interest.RegionOfInterest &#8212; SimNIBS dev&#39;) documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=bcc8d217"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="icon" href="../../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="simnibs.simulation.calc_B" href="simnibs.simulation.calc_B.html" />
+    <link rel="prev" title="simnibs.SubjectFiles" href="simnibs.SubjectFiles.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+              <div class="related top">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="simnibs.SubjectFiles.html" title="Previous document">simnibs.SubjectFiles</a>
+        </li>
+        <li>
+          <a href="simnibs.simulation.calc_B.html" title="Next document">simnibs.simulation.calc_B</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+
+          <div class="body" role="main">
+            
+  <section id="simnibs-utils-region-of-interest-regionofinterest">
+<h1>simnibs.utils.region_of_interest.RegionOfInterest<a class="headerlink" href="#simnibs-utils-region-of-interest-regionofinterest" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="simnibs.utils.region_of_interest.RegionOfInterest">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simnibs.utils.region_of_interest.</span></span><span class="sig-name descname"><span class="pre">RegionOfInterest</span></span><a class="headerlink" href="#simnibs.utils.region_of_interest.RegionOfInterest" title="Link to this definition">¶</a></dt>
+<dd><p>A class describing a region of Interest in a volume mesh or a surface mesh.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="simnibs.utils.region_of_interest.RegionOfInterest.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.utils.region_of_interest.RegionOfInterest.__init__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#simnibs.utils.region_of_interest.RegionOfInterest.__init__" title="simnibs.utils.region_of_interest.RegionOfInterest.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_sphere_mask</span></code>([node_type, ...])</p></td>
+<td><p>Applies a mask based on one or multiple spheres.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_surface_mask</span></code>(surface_type[, ...])</p></td>
+<td><p>Applies a surface mask based.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_tissue_mask</span></code>([tissues, ...])</p></td>
+<td><p>Applies a mask based on the tissue tags in the mesh using the tissue_mask_operator.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_volume_mask</span></code>([node_type, mask_space, ...])</p></td>
+<td><p>Applies a volume mask based on Nifti images.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_volume_mask_from_surface_roi</span></code>(...[, ...])</p></td>
+<td><p>Applies a mask based on a Region of Interest that is defined by a surface.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_nodes</span></code>([node_type])</p></td>
+<td><p>Returns the nodes which are part of the Region of Interest.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_roi_mesh</span></code>()</p></td>
+<td><p>Returns the Region of Interest as a mesh</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">invert</span></code>()</p></td>
+<td><p>Inverts the current mask</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_mesh</span></code>([mesh, subpath])</p></td>
+<td><p>Initializes the Region of Interest with a mesh either with a .msh file or a m2m folder.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_surfaces</span></code>([surface_type, subpath, ...])</p></td>
+<td><p>Initializes the Region of Interest with a surface either with a surface from a m2m folder or a custom surface.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_mat</span></code>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_visualization</span></code>(folder_path, base_file_name)</p></td>
+<td><p>Writes a visualization of the Region of Interest to a folder</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">method</span></code></p></td>
+<td><p>The method to create the ROI {&quot;manual&quot;, &quot;custom&quot;, &quot;surface&quot;, &quot;volume&quot;, &quot;volume_from_surface&quot;, &quot;mesh+mask&quot;}</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">subpath</span></code></p></td>
+<td><p>&quot;path/to/m2m&quot;)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">mesh</span></code></p></td>
+<td><p>&quot;path/to/msh&quot; | mesh_instance)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">mask_space</span></code></p></td>
+<td><p>{&quot;subject&quot;, &quot;mni&quot;}</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">mask_path</span></code></p></td>
+<td><p>(nifti) (example: &quot;path/to/file&quot;)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">mask_value</span></code></p></td>
+<td><p>1 | [1, 2])</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">mask_operator</span></code></p></td>
+<td><p>The operator to combine the mask with the ROI {&quot;union&quot;, &quot;intersection&quot;, &quot;difference&quot;}, default &quot;union&quot;</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">roi_sphere_center</span></code></p></td>
+<td><p>[0,0,0] | [[1,2,3], [4,5,6]])</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">roi_sphere_radius</span></code></p></td>
+<td><p>5 | [3, 45])</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">roi_sphere_center_space</span></code></p></td>
+<td><p>The space the center coordinates of the spheres are defined in {&quot;subject&quot;, &quot;mni&quot;}</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">roi_sphere_operator</span></code></p></td>
+<td><p>The operator to combine the mask with the ROI {&quot;union&quot;, &quot;intersection&quot;, &quot;difference&quot;}, default &quot;union&quot;</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nodes</span></code></p></td>
+<td><p>[[1.1, 2.2, 3.3], [4.4, 5.5, 6.6]])</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">surface_type</span></code></p></td>
+<td><p>Only for method = &quot;surface&quot; -&gt; Weather the surface is the subject specific central gm surface or a custom surface {&quot;central&quot;, &quot;custom&quot;}</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">surface_path</span></code></p></td>
+<td><p>Only for method = &quot;surface&quot; -&gt; Only for surface_type = &quot;custom&quot; -&gt; The path to a custom surface (msh, freesurfer, gifti)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tissues</span></code></p></td>
+<td><p>ElementTags.GM | [ElementTags.WM, ElementTags.GM])</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">surface_inclusion_radius</span></code></p></td>
+<td><p><ol class="arabic simple" start="5">
+<li></li>
+</ol>
+</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">node_mask</span></code></p></td>
+<td><p>[True, ..., False])</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">elm_mask</span></code></p></td>
+<td><p>[True, ..., False])</p></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="simnibs.SubjectFiles.html" title="Previous document">simnibs.SubjectFiles</a>
+        </li>
+        <li>
+          <a href="simnibs.simulation.calc_B.html" title="Next document">simnibs.simulation.calc_B</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../../index.html">
+    <img class="logo" src="../../../_static/logo.png" alt="Logo" />
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataset.html">Example Dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/tutorial.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../gui.html">Graphical User Interface Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../command_line/command_line.html">Command Line Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../opt_struct/opt_struct.html">Optimization Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../neuronavigation/neuronavigation.html">Neuronavigation Data Import/Export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../output_files.html">Output Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../file_formats.html">File Formats in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../coordinates.html">Coordinates in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../conductivity.html">Standard Conductivity Values</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../coils.html">Coil Models Included in SimNIBS</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../python_lib.html">Python Library Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors and Funding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../documentation.html">Documentation</a><ul>
+  <li><a href="../python_lib.html">Python Library Documentation</a><ul>
+      <li>Previous: <a href="simnibs.SubjectFiles.html" title="previous chapter">simnibs.SubjectFiles</a></li>
+      <li>Next: <a href="simnibs.simulation.calc_B.html" title="next chapter">simnibs.simulation.calc_B</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2020, SimNIBS Developers.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../../../_sources/documentation/python_lib/auto/simnibs.utils.region_of_interest.RegionOfInterest.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

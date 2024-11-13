@@ -1,5 +1,5 @@
 function S_out = expand_to_center_surround(tdcslist,subpath,varargin)
-% 
+%
 % tdcslist = expand_to_center_surround(tdcslist,subpath [,'OptionName',OptionValue,...])
 %
 % Expands a TDCSLIST with a single electrode to a center-surround montage
@@ -8,25 +8,25 @@ function S_out = expand_to_center_surround(tdcslist,subpath,varargin)
 %   subpath: path of the m2m-folder of the subject
 %
 %   Options are set using the option name followed by the value.
-%       radius_surround: distance (centre-to-centre) between the centre and 
+%       radius_surround: distance (centre-to-centre) between the centre and
 %                        surround electrodes (optional; standard: 50 mm)
 %                        either a single number or an array with N entries
-%                        (N: number of electrodes)             
-%       pos_dir_1stsurround: position indicating the direction in which 
-%                            the first surround electrode should be placed 
-%                            (optional; standard: [])                        
+%                        (N: number of electrodes)
+%       pos_dir_1stsurround: position indicating the direction in which
+%                            the first surround electrode should be placed
+%                            (optional; standard: [])
 %       N: number of surround electrodes (optional; standard: 4)
-%       multichannel: when set to true: Simulation of multichannel stimulator 
+%       multichannel: when set to true: Simulation of multichannel stimulator
 %                     with each suround channel receiving 1/N-th of the
-%                     center channel (optional; standard: false, i.e. all 
+%                     center channel (optional; standard: false, i.e. all
 %                     surround electrodes connected to the same channel)
-%       phis_surround: Angles in degree at which the electrodes will be placed 
+%       phis_surround: Angles in degree at which the electrodes will be placed
 %                      relative to the direction defined by pos_dir_1stsurround.
 %                      (optional; standard: [], resulting in equal distances
 %                       between surround electrodes)
 %    Examples:
 %       tdcslist = expand_to_center_surround(tdcslist,subpath,'multichannel',true)
-                     
+
 if nargin<2
     error('at least 2 inputs needed: TDCSLIST and subpath')
 end
@@ -54,9 +54,13 @@ for k=1:numel(fn)
                 cmdstr = [cmdstr ' --' fn{k}];
             end
         else
-            hlpstr = mat2str(s.(fn{k}));
-            if length(s.(fn{k})) > 1
+            try
+              hlpstr = mat2str(s.(fn{k}),6); % gives errors for electrode names on Octave
+              if length(s.(fn{k})) > 1
                 hlpstr=hlpstr(2:end-1);
+              end
+            catch
+              hlpstr = s.(fn{k});
             end
             cmdstr = [cmdstr ' --' fn{k} ' ' hlpstr];
         end

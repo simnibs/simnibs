@@ -58,9 +58,12 @@ def get_libmkl():
         try:
             return ctypes.CDLL('mkl_rt.dll')
         except:
-            return ctypes.CDLL('mkl_rt.1.dll')
+            return ctypes.CDLL('mkl_rt.2.dll')
     else:
-        return ctypes.CDLL('libmkl_rt.so')
+        try:
+            return ctypes.CDLL('libmkl_rt.so')
+        except:
+            return ctypes.CDLL('libmkl_rt.so.2')
 
 
 class Solver:
@@ -77,13 +80,12 @@ class Solver:
         Type of matrix. Please see
         https://software.intel.com/en-us/mkl-developer-reference-fortran-pardiso
     """
-    # I get segfaults if mtype=2, so usng mtype=11
-    def __init__(self, A, mtype=2, isSymmetric=True):
+    def __init__(self, A, mtype=2, isSymmetric=True, log_level=20):
 
         self._libmkl = get_libmkl()
-
         self._mkl_pardiso = self._libmkl.pardiso
-
+        self.log_level = log_level
+        
         # determine 32bit or 64bit architecture
         if ctypes.sizeof(ctypes.c_void_p) == 8:
             self._pt_type = (ctypes.c_int64, np.int64)
@@ -117,11 +119,11 @@ class Solver:
 
         self._check_A(A)
         self._A = A.copy()
-        logger.info('Factorizing matrix using MKL PARDISO')
+        logger.log(self.log_level, 'Factorizing matrix using MKL PARDISO')
         start = time.time()
         b = np.zeros((A.shape[0],1))
         self._call_pardiso(b, 12)     
-        logger.info(f'{time.time()-start:.2f} seconds to factorize matrix')
+        logger.log(self.log_level, f'{time.time()-start:.2f} seconds to factorize matrix')
 
     def solve(self, b):
         """ solve Ax=b for x
@@ -137,11 +139,11 @@ class Solver:
            solution of the system of linear equations, same shape as input b
         """
 
-        logger.info('Solving system using MKL PARDISO')
+        logger.log(self.log_level, 'Solving system using MKL PARDISO')
         start = time.time()
         b = self._check_b(b)
         x = self._call_pardiso(b, 33)
-        logger.info(f'{time.time()-start:.2f} seconds to solve system')
+        logger.log(self.log_level, f'{time.time()-start:.2f} seconds to solve system')
         return x
 
 
@@ -237,10 +239,10 @@ class Solver:
             return np.ascontiguousarray(x) # change memory-layout back from fortran to c order
 
     def __del__(self):
-        self._A = sp.csr_matrix((0,0))
-        b = np.zeros(0)
-        self._call_pardiso(b, 0)
-
+        pass
+        # self._A = sp.csr_matrix((0,0))
+        # b = np.zeros(0)
+        # self._call_pardiso(b, 0)
 
 
 class PardisoWarning(UserWarning):

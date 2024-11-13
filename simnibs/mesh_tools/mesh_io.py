@@ -33,7 +33,6 @@ import threading
 from itertools import combinations
 from typing import Union
 from functools import partial
-from pathlib import Path
 
 import numpy as np
 from numpy.lib import recfunctions
@@ -44,11 +43,11 @@ import scipy.sparse.csgraph
 import scipy.interpolate
 import nibabel
 import h5py
+
 from simnibs.utils import file_finder
-
 from simnibs.utils.mesh_element_properties import ElementTags
-from ..utils.spawn_process import spawn_process
 
+from ..utils.spawn_process import spawn_process
 from ..utils.transformations import nifti_transform
 from . import gmsh_view
 from ..utils.file_finder import HEMISPHERES, get_reference_surf, path2bin, SubjectFiles, FreeSurferSubject
@@ -322,7 +321,7 @@ class Elements:
             axis=1)
 
         th_with_node = \
-            np.in1d(self.elm_number[elm_with_node], self.elm_number[self.elm_type == 4])
+            np.isin(self.elm_number[elm_with_node], self.elm_number[self.elm_type == 4])
 
         return self.elm_number[elm_with_node][th_with_node]
 
@@ -761,11 +760,11 @@ class Msh:
         wheather or not the mesh was in binary format
    """
 
-    def __init__(self, nodes=None, elements=None, fn=None):
+    def __init__(self, nodes:Nodes=None, elements:Elements=None, fn=None):
         self.nodes = Nodes()
         self.elm = Elements()
-        self.nodedata = []
-        self.elmdata = []
+        self.nodedata: list[NodeData] = []
+        self.elmdata: list[ElementData] = []
         self.fn = ''  # file name to save msh
 
         if nodes is not None:
@@ -832,16 +831,16 @@ class Msh:
         elm_keep = np.zeros((self.elm.nr, ), dtype=bool)
 
         if tags is not None:
-            elm_keep += np.in1d(self.elm.tag1, tags)
+            elm_keep += np.isin(self.elm.tag1, tags)
 
         if elm_type is not None:
-            elm_keep += np.in1d(self.elm.elm_type, elm_type)
+            elm_keep += np.isin(self.elm.elm_type, elm_type)
 
         if nodes is not None:
-            elm_keep += np.any(np.in1d(self.elm.node_number_list, nodes).reshape(-1, 4), axis=1)
+            elm_keep += np.any(np.isin(self.elm.node_number_list, nodes).reshape(-1, 4), axis=1)
 
         if elements is not None:
-            elm_keep += np.in1d(self.elm.elm_number, elements)
+            elm_keep += np.isin(self.elm.elm_number, elements)
 
         if not np.any(elm_keep):
             raise ValueError("Could not find any element to crop!")
@@ -1004,21 +1003,21 @@ class Msh:
         elm_keep = np.ones((self.elm.nr, ), dtype=bool)
 
         if tags is not None:
-            elm_keep *= ~np.in1d(self.elm.tag1, tags)
+            elm_keep *= ~np.isin(self.elm.tag1, tags)
 
         if elm_type is not None:
-            elm_keep *= ~np.in1d(self.elm.elm_type, elm_type)
+            elm_keep *= ~np.isin(self.elm.elm_type, elm_type)
 
         if nodes is not None:
             elm_keep *= ~np.all(
-                np.in1d(
+                np.isin(
                     self.elm.node_number_list,
                     np.append(nodes, -1)
                 ).reshape(-1, 4), axis=1
             )
 
         if elements is not None:
-            elm_keep *= ~np.in1d(self.elm.elm_number, elements)
+            elm_keep *= ~np.isin(self.elm.elm_number, elements)
 
         keep = self.elm.elm_number[elm_keep]
         mesh = self.crop_mesh(elements=keep)
@@ -1166,12 +1165,12 @@ class Msh:
         if elm_type is not None:
             elements_to_return = np.logical_and(
                 elements_to_return,
-                np.in1d(self.elm.elm_type, elm_type))
+                np.isin(self.elm.elm_type, elm_type))
 
         if tag is not None:
             elements_to_return = np.logical_and(
                 elements_to_return,
-                np.in1d(self.elm.tag1, tag))
+                np.isin(self.elm.tag1, tag))
 
         tmp_node_coord = np.vstack((self.nodes.node_coord, [0, 0, 0]))
 
@@ -1805,7 +1804,7 @@ class Msh:
                 to_crop.append(t - 1600)
             # Select triangles and tetrahedra with tags
             th_of_interest = np.where((self.elm.elm_type == 4) *
-                                      np.in1d(self.elm.tag1, to_crop))[0]
+                                      np.isin(self.elm.tag1, to_crop))[0]
             if len(th_of_interest) == 0:
                 continue
             tr_of_interest = np.where((self.elm.elm_type == 2) *
@@ -1819,7 +1818,7 @@ class Msh:
             tr = self.elm.node_number_list[tr_of_interest, :3]
             tr_hash_array = _hash_rows(tr)
             # This will check if all triangles have a corresponding face
-            has_tetra = np.in1d(tr_hash_array, faces_hash_array)
+            has_tetra = np.isin(tr_hash_array, faces_hash_array)
             faces_argsort = faces_hash_array.argsort()
             faces_hash_array = faces_hash_array[faces_argsort]
             tr_search = np.searchsorted(faces_hash_array, tr_hash_array[has_tetra])
@@ -1976,7 +1975,7 @@ class Msh:
         if len(th_indices) > 0:
             M = scipy.sparse.csr_matrix((self.nodes.nr + 1, self.elm.nr))
             th_nodes = self.elm[th_indices] - 1
-            outside_points_mask = np.in1d(th_nodes, points_outside).reshape(-1, 4)
+            outside_points_mask = np.isin(th_nodes, points_outside).reshape(-1, 4)
             # This will map all points outside to the first position
             masked_th_nodes = np.copy(th_nodes)
             masked_th_nodes[outside_points_mask] = -1
@@ -2058,7 +2057,7 @@ class Msh:
 
             # Assigns the average value to the points in the outside surface
             tr_nodes = self.elm[tr_indices] - 1
-            only_surf_mask = np.in1d(tr_nodes, only_in_surf).reshape(-1, 4)
+            only_surf_mask = np.isin(tr_nodes, only_in_surf).reshape(-1, 4)
 
             masked_tr_nodes = np.copy(tr_nodes)
             masked_tr_nodes[~only_surf_mask] = -1
@@ -2133,7 +2132,7 @@ class Msh:
 
         else:
             # get the mask of elements in the volume defined by 'th_indices'
-            is_in = np.in1d(self.elm.elm_number, th_indices)
+            is_in = np.isin(self.elm.elm_number, th_indices)
 
             # get the 'elm_number' of the tetrahedra in 'self' which has 'is_in' == True
             elm_in_volume = self.elm.elm_number[is_in]
@@ -2349,21 +2348,29 @@ class Msh:
 
         return np.where(has_far)[0], far
 
-    def get_min_distance_on_grid(self, resolution=1.0, AABBTree=None):
-        """Generates a distance field on a grid to the mesh surface
+    def get_min_distance_on_grid(self, distance_offset=0.0, resolution=1.0, order=3, AABBTree=None):
+        """Generates a distance to surface field on a grid
 
         Parameters
         ----------
+        distance_offset : float, optional
+            A distance offset that is subtracted from the actuall distance, by default 0.0 
         resolution : float, optional
             The resolution of the grid, by default 1.0
+        order : int
+            The order of the interpolation for the min_distance_on_grid funktion
         AABBTree : pyAABBTree, optional
             A pre-calculated AABBTree, will be generated if None, by default None
 
         Returns
         -------
-        Callable
+        min_distance_on_grid : Callable
             The signed gridded distance field function (inside is negative)
-        pyAABBTree
+        grid : npt.NDArray[np.float_]
+            The voxelized surface distance
+        affine : npt.NDArray[np.float_]
+            The affine transformation from voxel to world coordinates
+        AABBTree : pyAABBTree
             The AABBTree used
         """
 
@@ -2392,13 +2399,14 @@ class Msh:
         inside = scipy.ndimage.distance_transform_edt(grid)
         outside = scipy.ndimage.distance_transform_edt(1 - grid)
         grid = -inside + outside
+        grid = (grid * resolution) - distance_offset
 
         def min_distance_on_grid(x):
             x_coords, y_coords, z_coords = iM[:3, :3] @ x.T + iM[:3, 3, None]
             width, height, depth = grid.shape
 
-            # Filter coordinates that are inside the image boundaries
-            inside_image_mask = (
+            # Filter coordinates that are outside the image boundaries
+            outside_image_mask = ~(
                     (x_coords >= 0)
                     & (x_coords < width)
                     & (y_coords >= 0)
@@ -2407,53 +2415,93 @@ class Msh:
                     & (z_coords < depth)
             )
 
-            mapped_values_inside = scipy.ndimage.map_coordinates(
+            mapped_values = scipy.ndimage.map_coordinates(
                 grid,
                 (
-                    x_coords[inside_image_mask],
-                    y_coords[inside_image_mask],
-                    z_coords[inside_image_mask],
+                    x_coords,
+                    y_coords,
+                    z_coords,
                 ),
-                order=1,
+                order=order, mode='nearest', prefilter=False
             )
 
-            outside_image_indices = ~inside_image_mask
-            outside_x = x_coords[outside_image_indices]
-            outside_y = y_coords[outside_image_indices]
-            outside_z = z_coords[outside_image_indices]
-
-            x1 = np.clip(np.floor(outside_x), 0, width - 1).astype(np.int_)
-            x2 = np.clip(np.floor(outside_x), 1, width - 2).astype(np.int_)
-            x2[np.floor(outside_x) == 0] = 0
-            x2[np.floor(width - 1) == 0] = width - 1
-            y1 = np.clip(np.floor(outside_y), 0, height - 1).astype(np.int_)
-            y2 = np.clip(np.floor(outside_y), 1, height - 2).astype(np.int_)
-            y2[np.floor(outside_y) == 0] = 0
-            y2[np.floor(height - 1) == 0] = height - 1
-            z1 = np.clip(np.floor(outside_z), 0, depth - 1).astype(np.int_)
-            z2 = np.clip(np.floor(outside_z), 1, depth - 2).astype(np.int_)
-            z2[np.floor(outside_z) == 0] = 0
-            z2[np.floor(depth - 1) == 0] = depth - 1
-
-            dx = np.abs(outside_x - x1)
-            dy = np.abs(outside_y - y1)
-            dz = np.abs(outside_z - z1)
-
-            extrapolation_values = (
-                    grid[x1, y1, z1]
-                    + dx * (grid[x1, y1, z1] - grid[x2, y1, z1])
-                    + dy * (grid[x1, y1, z1] - grid[x1, y2, z1])
-                    + dz * (grid[x1, y1, z1] - grid[x1, y1, z2])
+            mapped_values[outside_image_mask] += np.sqrt(
+                np.maximum(x_coords[outside_image_mask] - width, 0)**2 +
+                np.maximum(y_coords[outside_image_mask] - height, 0)**2 +
+                np.maximum(z_coords[outside_image_mask] - depth, 0)**2
             )
-
-            # Create an array for all coordinates with extrapolation
-            mapped_values = np.empty_like(x_coords)
-            mapped_values[inside_image_mask] = mapped_values_inside
-            mapped_values[outside_image_indices] = extrapolation_values
 
             return mapped_values
 
-        return min_distance_on_grid, AABBTree
+        return min_distance_on_grid, grid, M, AABBTree
+
+    def get_voxel_volume(self, resolution:float=1.0, dither_skip:int=0, AABBTree=None):
+        """Generates a distance field on a grid to the mesh surface
+
+        Parameters
+        ----------
+        resolution : float, optional
+            The resolution of the grid, by default 1.0
+        dither_skip : int, optional
+            How many voxel positions should be skipped when creating the volume representation.
+            When set to 0, no dithering will be applied, by default 0
+        AABBTree : pyAABBTree, optional
+            A pre-calculated AABBTree, will be generated if None, by default None
+
+        Returns
+        -------
+        npt.NDArray[np.bool_]
+            The binary voxel volume
+        npt.NDArray[np.float_]
+            The affine transformation from voxel to world space
+        voxel_dither_factors : npt.NDArray[np.float_]
+            The spacial factor that describes how many voxel are described by each interior dithered voxel for each voxel inside the volume
+        pyAABBTree
+            The AABBTree used
+        """
+
+        if AABBTree is None:
+            AABBTree = self.get_AABBTree()
+        xmin = self.nodes.node_coord.min(0)
+        xmax = self.nodes.node_coord.max(0)
+        xyz = np.meshgrid(
+            *[
+                np.arange(np.floor(x[0]), x[1], resolution)
+                for x in zip(xmin - 5, xmax + 5)
+            ],
+            indexing="ij",
+        )
+        xyzc = np.array(xyz).reshape(3, -1).T
+        M = np.identity(4) * resolution
+        M[3, 3] = 1
+        M[:3, 3] = np.floor(xmin - 5)
+
+        grid = np.zeros(xyz[0].shape, dtype=np.bool_)
+
+        np.put(grid, AABBTree.points_inside(xyzc), 1)
+        bc_grid = scipy.ndimage.binary_closing(grid, iterations=3)
+        grid = np.logical_or(grid, bc_grid)
+
+        if dither_skip > 1:
+            edges = grid & ~scipy.ndimage.binary_erosion(grid)
+            edge_indexes = np.argwhere(edges).astype(np.int32)
+
+            dithered_grid = np.zeros_like(grid)
+            dithered_grid[dither_skip // 2::dither_skip, ::dither_skip, ::dither_skip] = True
+            dithered_grid[::dither_skip, dither_skip // 2::dither_skip, ::dither_skip] = True
+            dithered_grid[::dither_skip, ::dither_skip, dither_skip // 2::dither_skip] = True
+            dithered_grid[dither_skip // 2::dither_skip, dither_skip // 2::dither_skip, dither_skip // 2::dither_skip] = True
+            voxel_indexes = np.argwhere(scipy.ndimage.binary_erosion(grid) & dithered_grid).astype(np.int32)
+            voxel_length = len(voxel_indexes)
+            voxel_indexes = np.append(voxel_indexes, edge_indexes, axis=0)
+            voxel_dither_factors = np.ones(len(voxel_indexes))
+            voxel_dither_factors[:voxel_length] = dither_skip * (dither_skip / 2) ** 2
+        else:
+            voxel_indexes = np.argwhere(grid).astype(np.int32)
+            voxel_dither_factors = np.ones(len(voxel_indexes))
+
+
+        return grid, M, voxel_indexes, voxel_dither_factors,  AABBTree
 
     def pts_inside_surface(self, pts, AABBTree=None):
         """
@@ -2506,7 +2554,7 @@ class Msh:
         directions[:,2] = 1
 
         if pts.ndim == 1:
-            pts = points[None, :]
+            pts = pts[None, :]
         if directions.ndim == 1:
             directions = directions[None, :]
         if not (pts.shape[1] == 3 and directions.shape[1] == 3):
@@ -2601,6 +2649,32 @@ class Msh:
         # the indices are into self
         return v_in, v_out, f_in, f_out
 
+    def relabel_internal_air(self, label_skin=None, label_new=1099):
+        """
+        Relabels skin in internal air cavities to something else;
+        relevant for charm meshes and TES optimization to determine valid skin region.
+
+        PARAMETERS
+        ----------
+        label_skin : int, optional, default: ElementTags.SCALP_TH_SURFACE
+            Label of skin surface (e.g. 1005) with internal air.
+        label_new : int, optional, default: 1009
+            Label of internal skin surface.
+
+        RETURNS
+        -------
+        m : Msh object
+            New Msh object with relabeled internal air.
+        """
+
+        if label_skin is None:
+            label_skin = ElementTags.SCALP_TH_SURFACE
+
+        m = copy.copy(self)
+        _, _, f_in, _ = self.partition_skin_surface()  # internal air triangles
+        m.elm.tag1[f_in - 1] = label_new
+        m.elm.tag2[:] = m.elm.tag1
+        return m
 
     def get_AABBTree(self):
         """
@@ -2628,7 +2702,8 @@ class Msh:
     def view(self,
              visible_tags=None,
              visible_fields=[],
-             cond_list=None):
+             cond_list=None,
+             add_logo=False):
         ''' Visualize mesh in Gmsh
 
         Parameters
@@ -2651,7 +2726,7 @@ class Msh:
         >>> vis = mesh.view()
         >>> vis.show()
         '''
-        vis = gmsh_view.Visualization(self,cond_list)
+        vis = gmsh_view.Visualization(self,cond_list,add_logo)
         if visible_tags is not None:
             vis.visibility = visible_tags
         vis.View = []
@@ -2806,29 +2881,16 @@ class Msh:
             focality = f.get_focality(focality_cutoffs, 99.9)
             focality_table.append([fn] + [f'{fv:.2e}{units_mesh}' for fv in focality])
 
-        def format_table(table):
-            entry_sizes = np.array([[len(e) for e in row] for row in table])
-            col_sizes = np.max(entry_sizes, axis=0)
-            align_string = ['{:<' + str(cs) + '}' for cs in col_sizes]
-            t = ''
-            for i, row in enumerate(table):
-                t += '|'
-                t += ' |'.join(a_s.format(col) for a_s, col in zip(align_string, row))
-                t += ' |\n'
-                if i == 0:
-                    t += '|' + '|'.join((cs+1) * '-' for cs in col_sizes) + '|\n'
-            return t
-
         string = ''
         string += 'Field Percentiles\n'
         string += '-----------------\n'
         string += 'Top percentiles of the field (or field magnitude for vector fields)\n'
-        string += format_table(percentiles_table)
+        string += _format_table(percentiles_table)
         string += '\n'
         string += 'Field Focality\n'
         string += '---------------\n'
         string += 'Mesh volume or area with a field >= X% of the 99.9th percentile\n'
-        string += format_table(focality_table)
+        string += _format_table(focality_table)
 
         return string
 
@@ -2893,7 +2955,7 @@ class Msh:
         if len(unique_tags) == 0:
             raise InvalidMeshError('Could not find any tetraheda in mesh')
         if tags is not None:
-            unique_tags = unique_tags[np.in1d(unique_tags, tags)]
+            unique_tags = unique_tags[np.isin(unique_tags, tags)]
         if len(unique_tags) == 0:
             raise ValueError('Could not find given tags in mesh')
 
@@ -2955,7 +3017,7 @@ class Msh:
     #         idx_keep[test_tri] = True
 
     #         other_tri = np.where((tag_tr != i) & np.logical_not(idx_done))[0]
-    #         idx_tricopies = np.in1d(hash_tr[other_tri], hash_tr[test_tri])
+    #         idx_tricopies = np.isin(hash_tr[other_tri], hash_tr[test_tri])
     #         idx_done[other_tri[idx_tricopies]] = True
 
     #     if np.sum(idx_done) != idx_done.shape[0]:
@@ -3080,7 +3142,7 @@ class Msh:
         # Surface nodes and surface node mask
         idx = self.elm.elm_type == 2
         if tags is not None:
-            idx *= np.in1d(self.elm.tag1, tags)
+            idx *= np.isin(self.elm.tag1, tags)
         surf_nodes = np.unique(self.elm.node_number_list[idx,:3]) - 1
         nodes_mask = np.zeros(self.nodes.nr, dtype=bool)
         nodes_mask[surf_nodes] = True
@@ -3194,7 +3256,7 @@ class Msh:
         # Surface nodes and surface node mask
         idx = self.elm.elm_type == 2
         if tags is not None:
-            idx *= np.in1d(self.elm.tag1, tags)
+            idx *= np.isin(self.elm.tag1, tags)
         surf_nodes = np.unique(self.elm.node_number_list[idx,:3]) - 1
 
         if nodes_mask is not None:
@@ -3469,7 +3531,7 @@ class Data(object):
                          out_original=None, tags=None, order=1,
                          method='linear', continuous=False,
                          inverse_warp=None, reference_original=None,
-                         binary=False):
+                         binary=False, fix_boundary_zeros=True):
         ''' Interpolates field to a grid and apply non-linear interpolation
 
         We first interpolate to a grid and then apply the transformation in order to
@@ -3493,7 +3555,7 @@ class Data(object):
         tags: list (optional)
             Mesh tags to be transformed. Defaut: transform the entire mesh
         order: int (optional)
-            Interpolation order to be used. Default: 1
+            Interpolation order to be used for transformation. Default: 1
         method: {'assign' or 'linear'} (Optional)
             Method for gridding the data.
             If 'assign', gives to each voxel the value of the element that contains
@@ -3509,7 +3571,13 @@ class Data(object):
         reference_original: str
             Name of nifti file with reference in the original space. Used to determine
             the dimensions and affine transformation for the initial griding
-
+        binary: bool (optional)
+            If True, thresholds the image at 0.5 and converts to np.uint8. Default: False
+        fix_boundary_zeros: bool (Optional)
+            Whether to replace zeros at boundaries of deformation field by values
+            of clostest non-zero voxel; relevant only for non-linear transforms
+            (Default: True)
+        
         Returns
         --------
         img: nibabel.Nifti1Pair
@@ -3554,7 +3622,8 @@ class Data(object):
         img = nifti_transform(
             (image, affine),
             warp, reference, out=out, order=order,
-            inverse_warp=inverse_warp, binary=binary)
+            inverse_warp=inverse_warp, binary=binary,
+            fix_boundary_zeros=fix_boundary_zeros)
 
         del image
         gc.collect()
@@ -4015,7 +4084,7 @@ class ElementData(Data):
 
         # Get the point in the outside surface
         points_outside = np.unique(msh.elm.get_outside_faces())
-        outside_points_mask = np.in1d(msh.elm[msh.elm.tetrahedra],
+        outside_points_mask = np.isin(msh.elm[msh.elm.tetrahedra],
                                       points_outside).reshape(-1, 4)
         masked_th_nodes = np.copy(msh.elm[msh.elm.tetrahedra])
         masked_th_nodes[outside_points_mask] = -1
@@ -4234,7 +4303,7 @@ class ElementData(Data):
 
                     msh.add_element_field(self.value, self.field_name)
 
-                    is_in = np.in1d(msh.elm.elm_number, th_indices)
+                    is_in = np.isin(msh.elm.elm_number, th_indices)
                     elm_in_volume = msh.elm.elm_number[is_in]
                     msh_in_volume = msh.crop_mesh(elements=elm_in_volume)
 
@@ -4744,7 +4813,7 @@ class NodeData(Data):
 
                     msh.add_node_field(self.value, self.field_name)
 
-                    is_in = np.in1d(msh.elm.elm_number, th_indices)
+                    is_in = np.isin(msh.elm.elm_number, th_indices)
                     elm_in_volume = msh.elm.elm_number[is_in]
                     msh_in_volume = msh.crop_mesh(elements=elm_in_volume)
 
@@ -6054,6 +6123,91 @@ def read_res_file(fn_res, fn_pre=None):
 
     return v
 
+def write_vtk(msh: Msh, file_name):
+    import pyvista as pv
+
+    type_mapping = np.zeros(16, dtype=np.int64)
+    type_mapping[15] = pv.CellType.VERTEX 
+    type_mapping[1] = pv.CellType.LINE 
+    type_mapping[2] = pv.CellType.TRIANGLE 
+    type_mapping[4] = pv.CellType.TETRA
+
+    point_number_mapping = np.zeros(16, dtype=np.int64)
+    point_number_mapping[15] = 1
+    point_number_mapping[1] = 2
+    point_number_mapping[2] = 3
+    point_number_mapping[4] = 4
+
+    cell_types = type_mapping[msh.elm.elm_type]
+    cells = np.column_stack((point_number_mapping[msh.elm.elm_type], msh.elm.node_number_list - 1)).ravel()
+    cells = cells[cells >= 0]
+
+    grid = pv.UnstructuredGrid(cells, cell_types, msh.nodes.node_coord)
+
+    for node_data in msh.nodedata:
+        grid[node_data.field_name] = node_data.value
+
+    for elm_data in msh.elmdata:
+        grid[elm_data.field_name] = elm_data.value
+
+    grid['tag'] = msh.elm.tag1
+
+    grid.save(file_name)
+
+def read_vtk(file_name):
+    import pyvista as pv
+
+    type_mapping = np.zeros(pv.CellType.BEZIER_PYRAMID, dtype=np.int64)
+    type_mapping[pv.CellType.VERTEX] = 15
+    type_mapping[pv.CellType.LINE] = 1
+    type_mapping[pv.CellType.TRIANGLE] = 2
+    type_mapping[pv.CellType.TETRA] = 4
+
+    point_number_mapping = np.zeros(5, dtype=np.int64)
+    point_number_mapping[1] = 15
+    point_number_mapping[2] = 1
+    point_number_mapping[3] = 2
+    point_number_mapping[4] = 4
+
+    grid = pv.read(file_name)
+
+    node_number_list = np.full((grid.n_cells, 4), -1)
+    elm_type = np.full(grid.n_cells, 0)
+    i = 0
+    k = 0
+    while i < len(grid.cells):
+        node_number_list[k,0:grid.cells[i]] = grid.cells[i+1:i+1+grid.cells[i]]
+        elm_type[k] = point_number_mapping[grid.cells[i]]
+        k += 1
+        i += grid.cells[i] + 1
+
+    node_number_list[node_number_list != -1] += 1
+     
+    elm = Elements()
+    elm.node_number_list = node_number_list
+    elm.elm_type = elm_type
+    if 'tag' in grid.cell_data:
+        elm.tag1 = grid.cell_data['tag']
+    else:
+        elm.tag1 = np.zeros(elm.nr)
+    elm.tag2 = elm.tag1.copy()
+    
+    elm_data = []
+    for key in grid.cell_data:
+        if key == 'tag':
+            continue
+        elm_data.append(ElementData(grid.cell_data[key], key))
+
+    node_data = []
+    for key in grid.point_data:
+        node_data.append(NodeData(grid.point_data[key], key))
+
+    msh = Msh(Nodes(grid.points), elm)
+    msh.elmdata = elm_data
+    msh.nodedata = node_data
+
+    return msh
+
 
 def write_geo_spheres(positions, fn, values=None, name="", mode='bw'):
     """ Writes a .geo file with spheres in specified positions
@@ -6089,7 +6243,7 @@ def write_geo_spheres(positions, fn, values=None, name="", mode='bw'):
 
 
 def write_geo_vectors(positions, values, fn, name="", mode='bw'):
-    """ Writes a .geo file with spheres in specified positions
+    """ Writes a .geo file with vectors in specified positions
 
     Parameters
     ------------
@@ -6124,6 +6278,52 @@ def write_geo_vectors(positions, values, fn, name="", mode='bw'):
             f.write(
                 ("VP(" + ", ".join([str(i) for i in p]) + ")"
                  "{" + ", ".join([str(i) for i in v]) + "};\n").encode('ascii'))
+        f.write(b"};\n")
+
+
+def write_geo_axis_vectors(affine_matrix, fn, values=None, name="", mode='bw'):
+    """ Writes a .geo file with axis vectors transformed with the affine matrix
+
+    Parameters
+    ------------
+    affine_matrix: 4x4 ndarray:
+        affine matrix to transform the axis vectors
+    fn: str
+        name of file to be written
+    values: 1x3 ndarray
+        scale factors to be assigned to the vectors and the center sphere.
+    name: str (optional)
+        Name of the view
+    mode: str (optional)
+        Mode in which open the file. Default: 'bw'
+
+    """
+    if affine_matrix.shape[0] != 4 or affine_matrix.shape[1] != 4:
+        raise ValueError('Affine matrix must have size (4x4)')
+    
+    if values is None:
+        values = np.ones(4)
+    else:
+        values = np.array(values)
+
+    if values.shape[0] != 4:
+        raise ValueError('values must have length 4')
+
+    positions = np.tile(affine_matrix[:3, 3], (3,1))
+    vectors = [
+        (affine_matrix @ np.array([1,0,0,0]))[:3] * values[0],
+        (affine_matrix @ np.array([0,1,0,0]))[:3] * values[1],
+        (affine_matrix @ np.array([0,0,1,0]))[:3] * values[2],
+    ]
+
+    with open(fn, mode) as f:
+        f.write(('View"' + name + '"{\n').encode('ascii'))
+        for p, v in zip(positions, vectors):
+            f.write(
+                ("VP(" + ", ".join([str(i) for i in p]) + ")"
+                 "{" + ", ".join([str(i) for i in v]) + "};\n").encode('ascii'))
+        f.write(("SP(" + ", ".join([str(i) for i in positions[0]]) +
+                     "){" + str(values[3]) + "};\n").encode('ascii'))
         f.write(b"};\n")
 
 
@@ -6354,7 +6554,7 @@ def write_gifti_surface(msh, fn, ref_image=None):
         coordsys = nibabel.gifti.GiftiCoordSystem(0, 3, np.eye(4))
     # This metadata is needed for FreeView
     # NOT WORKING! I NEDD TO PUT THESE THINGS IN A CDATA FIELD SOMEHOW
-    metadata = nibabel.gifti.GiftiMetaData.from_dict({
+    metadata = nibabel.gifti.GiftiMetaData({
         'VolGeomWidth': '256', 'VolGeomHeight': '256', 'VolGeomWidth': '256',
         'VolGeomXsize': '1.0', 'VolGeomYsize': '1.0', 'VolGeomZsize': '1.0',
         'VolGeomX_R': '-1.0', 'VolGeomX_A': '0.0', 'VolGeomX_S': '0.0',
@@ -6733,7 +6933,7 @@ def _hash_rows(array, mult=1000003, dtype=np.uint64):
         hash_array = np.bitwise_xor(hash_array, sorted[:, i]) * mult
         mult += dtype(82520 + i + i)
     hash_array += dtype(97531)
-    hash_array[hash_array == -1] = -2
+    hash_array[hash_array == -1] = np.array(-2).astype(dtype)
     return hash_array
 
 
@@ -6983,3 +7183,22 @@ def split(m: Msh, iterations: int = 1, hierarchy: tuple[int] = None, skin_tag: i
     tmp_file.close()
 
     return m
+
+
+def _format_table(table):
+    """helper function for Msh.fields_summary and 
+    tes_flex_optimization.get_summary_text
+    
+    converts a table into a string for printing
+    """    
+    entry_sizes = np.array([[len(e) for e in row] for row in table])
+    col_sizes = np.max(entry_sizes, axis=0)
+    align_string = ['{:<' + str(cs) + '}' for cs in col_sizes]
+    t = ''
+    for i, row in enumerate(table):
+        t += '|'
+        t += ' |'.join(a_s.format(col) for a_s, col in zip(align_string, row))
+        t += ' |\n'
+        if i == 0:
+            t += '|' + '|'.join((cs+1) * '-' for cs in col_sizes) + '|\n'
+    return t

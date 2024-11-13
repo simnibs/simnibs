@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Install Using Conda (Advanced) &#8212; SimNIBS 4.1.0 documentation</title>
+    <title>Install Using Conda (Advanced) &#8212; SimNIBS 0) documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
-    <script src="../_static/documentation_options.js?v=42d1b3bd"></script>
+    <script src="../_static/documentation_options.js?v=e6165c10"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="icon" href="../_static/favicon.ico"/>
@@ -117,32 +117,11 @@ postinstall_simnibs<span class="w"> </span>--setup-links<span class="w"> </span>
 <ol class="arabic simple">
 <li><p>Download and install the <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">Miniconda</a> <strong>Python 3</strong> distribution.</p></li>
 <li><p>Download the <a class="reference external" href="https://github.com/simnibs/simnibs/releases/latest/download/environment_macOS.yml">SimNIBS OSX environment file</a></p></li>
-<li><p>If you are using an Intel-based Mac (x86_64), run the following in a terminal window:</p></li>
+<li><p>Run in a terminal window:</p></li>
 </ol>
 <blockquote>
 <div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/miniconda/bin:</span><span class="nv">$PATH</span><span class="s2">&quot;</span><span class="w"> </span><span class="c1"># This part can change depending on your miniconda installation</span>
 conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>~/Downloads/environment_macOS.yml
-conda<span class="w"> </span>activate<span class="w"> </span>simnibs_env
-pip<span class="w"> </span>install<span class="w"> </span>-f<span class="w"> </span>https://github.com/simnibs/simnibs/releases/latest<span class="w"> </span>simnibs
-</pre></div>
-</div>
-<p></p>
-</div></blockquote>
-<p>If you are using an ARM-based Mac, you will have to create an x86_64 environment in order to build simnibs. Run this instead</p>
-<blockquote>
-<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/miniconda/bin:</span><span class="nv">$PATH</span><span class="s2">&quot;</span><span class="w"> </span><span class="c1"># This part can change depending on your miniconda installation</span>
-conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>~/Downloads/environment_macOS.yml<span class="w"> </span>--platform<span class="w"> </span>osx-64
-conda<span class="w"> </span>activate<span class="w"> </span>simnibs_env
-pip<span class="w"> </span>install<span class="w"> </span>-f<span class="w"> </span>https://github.com/simnibs/simnibs/releases/latest<span class="w"> </span>simnibs
-</pre></div>
-</div>
-<p></p>
-</div></blockquote>
-<p>If the <code class="code docutils literal notranslate"><span class="pre">--platform</span></code> argument is not available in your version of conda, use the following workaround</p>
-<blockquote>
-<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/miniconda/bin:</span><span class="nv">$PATH</span><span class="s2">&quot;</span><span class="w"> </span><span class="c1"># This part can change depending on your miniconda installation</span>
-<span class="nv">CONDA_SUBDIR</span><span class="o">=</span>osx-64<span class="w"> </span>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>~/Downloads/environment_macOS.yml
-conda<span class="w"> </span>env<span class="w"> </span>config<span class="w"> </span>vars<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">CONDA_SUBDIR</span><span class="o">=</span>osx-64<span class="w"> </span>-n<span class="w"> </span>simnibs_env
 conda<span class="w"> </span>activate<span class="w"> </span>simnibs_env
 pip<span class="w"> </span>install<span class="w"> </span>-f<span class="w"> </span>https://github.com/simnibs/simnibs/releases/latest<span class="w"> </span>simnibs
 </pre></div>
@@ -209,7 +188,7 @@ postinstall_simnibs<span class="w"> </span>--setup-links<span class="w"> </span>
 <li class="toctree-l2"><a class="reference internal" href="throubleshooting.html">Troubleshooting</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../dataset.html">Example Dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorial/tutorial.html">Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../documentation/documentation.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>

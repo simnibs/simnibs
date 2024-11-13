@@ -49,7 +49,7 @@ def _remove_unconnected_triangles(mesh, roi_triangles, center,
     return roi_nodes, triangles, roi_triangles
         
 def _get_nodes_in_surface(mesh, surface_tags):
-    tr_of_interest = (mesh.elm.elm_type == 2) * (np.in1d(mesh.elm.tag1, surface_tags))
+    tr_of_interest = (mesh.elm.elm_type == 2) * (np.isin(mesh.elm.tag1, surface_tags))
     nodes_in_surface = np.unique(mesh.elm.node_number_list[tr_of_interest, :3])
     return nodes_in_surface
 
@@ -90,11 +90,13 @@ def _get_transform(center, y_axis, mesh, mesh_surface=[ElementTags.SCALP, Elemen
         alpha = 0
         nr_iter = 0
         y_ref = c
-        nodes_in_surface = _get_nodes_in_surface(mesh, mesh_surface)
-        kd_tree = scipy.spatial.cKDTree(mesh.nodes[nodes_in_surface])
+        # nodes_in_surface = _get_nodes_in_surface(mesh, mesh_surface)
+        # kd_tree = scipy.spatial.cKDTree(mesh.nodes[nodes_in_surface])
         while np.linalg.norm(c - y_ref) < 1e-5:
-            _, y_ref_idx = kd_tree.query(y_axis + alpha * (y_axis - center))
-            y_ref = mesh.nodes.node_coord[nodes_in_surface - 1][y_ref_idx]
+            # _, y_ref_idx = kd_tree.query(y_axis + alpha * (y_axis - center))
+            # y_ref = mesh.nodes.node_coord[nodes_in_surface - 1][y_ref_idx]
+            y_ref = project_points_on_surface(mesh, y_axis + alpha * (y_axis - center),
+                                              surface_tags=mesh_surface).flatten()
             alpha += 1.
             nr_iter += 1
             if nr_iter == 10:
@@ -142,10 +144,10 @@ def _get_roi(center, radius, mesh, mesh_surface=[5, 1005], min_cos=.1):
                             (center_normal.dot(normals.T) > min_cos)]
 
     tr_in_roi = np.any(
-        np.in1d(mesh.elm[mesh.elm.triangles, :3], nodes_in_roi).reshape(-1, 3), axis=1)
+        np.isin(mesh.elm[mesh.elm.triangles, :3], nodes_in_roi).reshape(-1, 3), axis=1)
 
     th_in_roi = np.any(
-        np.in1d(mesh.elm[mesh.elm.tetrahedra], nodes_in_roi_ext).reshape(-1, 4), axis=1)
+        np.isin(mesh.elm[mesh.elm.tetrahedra], nodes_in_roi_ext).reshape(-1, 4), axis=1)
 
     roi_tr_nodes, roi_triangles_reordering = \
         np.unique(mesh.elm[mesh.elm.triangles[tr_in_roi], :3], return_inverse=True)
@@ -461,7 +463,7 @@ def _move_point(new_position, to_be_moved, tr_nodes, th_nodes, roi_tr_nodes, roi
                                edge_list=edge_list, kdtree=kdtree)
     tr_with_node = np.where(np.any(triangles == to_be_moved, axis=1))[0]
     adj_tr_nodes = triangles[tr_with_node]
-    if not np.in1d(tr, tr_with_node):
+    if not np.isin(tr, tr_with_node):
         return None, None
     
     # node movement in 2D electrode plane

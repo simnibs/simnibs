@@ -33,7 +33,7 @@ import scipy.spatial
 from scipy.sparse import coo_matrix, csr_matrix
 from typing import Union
 
-from simnibs.utils.mesh_element_properties import ElementTags
+from ..utils.mesh_element_properties import ElementTags
 from ..utils.simnibs_logger import logger
 from ..utils.file_finder import templates, SubjectFiles, get_reference_surf
 from ..utils.csv_reader import write_csv_positions, read_csv_positions
@@ -43,16 +43,17 @@ __all__ = [
     'warp_coordinates',
     'subject2mni_coords',
     'mni2subject_coords',
+    'mni2subject_coilpos',
     'subject_atlas',
     'middle_gm_interpolation'
-
 ]
 
 
 def volumetric_nonlinear(image, deformation, target_space_affine=None,
                          target_dimensions=None, intorder=1, cpus=1,
                          inverse_deformation=None,
-                         keep_vector_length=True):
+                         keep_vector_length=True,
+                         fix_boundary_zeros=True):
     ''' Applies a volumetric non-linear transformation
 
     Parameters
@@ -76,9 +77,13 @@ def volumetric_nonlinear(image, deformation, target_space_affine=None,
         original space and specifies in each voxel the equivalent coordinates (x, y, z)
         of the target space. This is used ony to rotate vectors accordingly. If not set,
         vectors wil not be rotated
-    keep_vector_length: bool
+    keep_vector_length: bool (Optional)
         Whether to keep the length of the vectors unchanged. Only comes into effect if the
-        image is 3 dimensional and inverse_deformation is set.
+        image is 3 dimensional and inverse_deformation is set. (Default: True)
+    fix_boundary_zeros: bool (Optional)
+        Whether to replace zeros at boundaries of deformation field by values
+        of clostest non-zero voxel (Default: True)
+    
     Returns
     ------
     outdata: ndarray
@@ -89,7 +94,12 @@ def volumetric_nonlinear(image, deformation, target_space_affine=None,
     df_data, df_affine = deformation
     if len(df_data.shape) > 4:
         df_data = df_data.squeeze()
-
+    
+    # boundaries of deformation fields sometimes contain voxels with 0,0,0
+    # --> replace by Infs
+    if fix_boundary_zeros:
+        df_data = _fix_boundary_zeros(df_data)
+    
     # If the resolution is to be changed
     if target_dimensions is None:
         target_dimensions = df_data.shape[:3]
@@ -110,7 +120,7 @@ def volumetric_nonlinear(image, deformation, target_space_affine=None,
         f = partial(scipy.ndimage.map_coordinates,
                     coordinates=t,
                     output=np.float32, order=1,
-                    mode='constant', cval=np.nan)
+                    mode='constant', cval=np.inf)
         voxvals = np.array([f(df_data[..., i]) for i in range(3)])
         # Figure out the voxel coordinates in original space
         iM = np.linalg.inv(im_affine)
@@ -166,10 +176,39 @@ def volumetric_nonlinear(image, deformation, target_space_affine=None,
             im_data = im_data_rotated
 
     # Interpolate to the target space
+    coords[np.isnan(coords)] = np.inf # inf is for sure outside volume, behavior for nan is unclear
     outdata = _interpolate(im_data, coords, intorder, target_dimensions, cpus)
     del im_data
     gc.collect()
     return outdata
+
+
+def _fix_boundary_zeros(df_data):
+    """
+    replace zeros at boundaries of deformation fields by Inf
+
+    Parameters
+    ----------
+    df_data : array
+        deformation field image
+
+    Returns
+    -------
+    df_data : array
+        updated deformation field image
+
+    """
+    assert df_data.ndim == 4
+    assert df_data.shape[3] == 3
+    
+    mask_imgregion = ~np.all(df_data == 0, axis=3)
+    mask_imgregion = scipy.ndimage.binary_fill_holes(mask_imgregion)    
+    if not np.all(mask_imgregion):
+        df_data[~mask_imgregion,:] = np.inf
+    del mask_imgregion
+    gc.collect()
+    
+    return df_data
 
 
 def volumetric_affine(image, affine, target_space_affine,
@@ -249,7 +288,7 @@ def _interpolate(im_data, coords, intorder, outdim, cpus=1):
 
 
 def nifti_transform(image, warp, ref, out=None, mask=None, order=1, inverse_warp=None,
-                    binary=False):
+                    binary=False, fix_boundary_zeros=True):
     ''' Transforms a nifti file to the reference space usign the defined warp
 
     Parameters
@@ -275,6 +314,13 @@ def nifti_transform(image, warp, ref, out=None, mask=None, order=1, inverse_warp
         Name of nifti file with inverse the transformation. Used to rotate vectors to the
         target space in the case of non-liner transformations. If the transformation is
         linear, the inverse matrix is used.
+    binary: bool (optional)
+        If True, thresholds the image at 0.5 and converts to np.uint8. (Default: False)
+    fix_boundary_zeros: bool (Optional)
+        Whether to replace zeros at boundaries of deformation field by values
+        of clostest non-zero voxel; relevant only for non-linear transforms
+        (Default: True)
+            
     Returns
     ------
     img: nibabel.Nifti1Pair
@@ -331,7 +377,8 @@ def nifti_transform(image, warp, ref, out=None, mask=None, order=1, inverse_warp
             target_space_affine=reference_nifti.affine,
             target_dimensions=reference_nifti.header['dim'][1:4],
             intorder=order,
-            inverse_deformation=inverse_warp)
+            inverse_deformation=inverse_warp,
+            fix_boundary_zeros=fix_boundary_zeros)
 
     if binary:
         image = (image >= .5).astype(np.uint8)
@@ -1026,6 +1073,111 @@ def mni2subject_coords(coordinates, m2m_folder, transformation_type='nonl'):
     return transformed
 
 
+def _convert_to_coord(coilpos,coil_skin_distance):
+    '''' convert coil position to input format for warp_coordinates'''
+    type_coilpos = type(coilpos)
+    coilpos = np.squeeze(np.asarray(coilpos, dtype=float))
+    coil_skin_distance = np.squeeze(np.asarray(coil_skin_distance, dtype=float))
+    coil_skin_distance = np.reshape(coil_skin_distance,(-1,1)) # ensure size (N,1)
+     
+    if coilpos.ndim != 2 and coilpos.ndim != 3:
+          raise ValueError('unknown format of coil position')
+          
+    coord = [[], [], [], ['pos1'], [], []]
+    if type_coilpos == list or type_coilpos == np.ndarray:
+        # matsimnibs
+        if coilpos.ndim == 2:
+            coilpos = np.reshape(coilpos,(1,coilpos.shape[0],coilpos.shape[1]))  # ensure size (1,4,4)
+        coord[1] = coilpos[:,:3,3]
+        
+        if len(coil_skin_distance) == 1:
+            coil_skin_distance = np.repeat(coil_skin_distance, coord[1].shape[0],axis=0)
+        coord[2] = np.hstack((coilpos[:,:3,2], coilpos[:,:3,1], coil_skin_distance))
+    elif type_coilpos == tuple:
+        # (center_pos, ydir, zdir)
+        coord[1] = coilpos[0].reshape(-1,3) # ensure size (N,3)
+        
+        if len(coil_skin_distance) == 1:
+            coil_skin_distance = np.repeat(coil_skin_distance, coord[1].shape[0],axis=0)
+        coord[2] = np.hstack((coilpos[2].reshape(-1,3), coilpos[1].reshape(-1,3), coil_skin_distance))
+    else:
+        raise ValueError('unknown format of coil position')
+    coord[0] = ['CoilPos']*coord[1].shape[0]
+    coord[3] = ['pos'+str(r) for r in range(coord[1].shape[0])]
+    return coord
+
+          
+def mni2subject_coilpos(coilpos, m2m_dir, coil_skin_distance=0., transformation_type='nonl'):
+    """
+    Converts one or more coil positions to subject space.
+    
+    NOTE: Coil centers are projected on the head surface as standard. Set
+          coil_skin_dist to ensure a specific distance of the coil center
+          to the head surface. 
+          
+          Coil centers away from the head are best defined by providing the 
+          closest positon on the surface of the MNI head and the desired 
+          coil-skin-distance.
+          
+          Non-linear transformations (used as default) are accurate for 
+          positions in the head and on its surface, but not outside the 
+          head. Thus, coil centers are automatically projected on the head 
+          surface during transformation.
+          
+    Parameters
+    ----------
+    coilpos : One or more coil positions, provided as:
+        - matsimnibs (4x4 numpy array or list of lists)
+        - list of several matsimnibs
+        - tuple (center, ydir, zdir)
+            center, ydir and zdir:
+                vectors (length 3) in case of a single postion, or
+                arrays (N,3) for N positions
+                
+    m2m_dir :  str
+        Path to the m2m_{subject_id} folder, generated during the segmentation
+        
+    coil_skin_distance : float or list, optional
+        skin-coil distance in [mm]. In case of several coil positions, either
+        a single value can be supplied that is used for all positions, or a
+        list with one value per position can be supplied. The default is 0..
+        
+    transformation_type : {'nonl', '6dof', '12dof'}, optional
+        Type of tranformation: non-linear, 6 or 12 degrees of freedom. The default is 'nonl'.
+    
+    Returns
+    -------
+    matsimnibs : numpy array (4x4) or list of numpy arrays
+        TMS coil matrix (or list of matrices) in subject space.
+    """
+    out_csv = None
+    out_geo = None
+    # for debugging: uncomment both to get geo-file for visual control
+    #out_csv = 'debug.csv'
+    #out_geo = 'debug.geo'
+    
+    coord = _convert_to_coord(coilpos, coil_skin_distance)
+    center, zdir_ydir = warp_coordinates(coord, m2m_dir,
+                                         transformation_direction='mni2subject',
+                                         transformation_type='nonl',
+                                         out_name=out_csv, out_geo=out_geo)[1:3]
+    mat_list = []
+    for k in range(len(center)):
+        mat = np.eye(4)
+        mat[:3, 3] = center[k]
+        mat[:3, 2] = zdir_ydir[k][:3]
+        mat[:3, 1] = zdir_ydir[k][3:6]
+        mat[:3, 0] = np.cross(zdir_ydir[k][3:6], zdir_ydir[k][:3])
+        # ensure right-handedness (just to be sure; should always be OK)
+        if np.linalg.det(mat[:3, :3]) <= 0:
+            raise ValueError(f'position {k}: matsimnibs is not a right-handed coordinate system')
+        mat_list.append(mat)
+    if len(mat_list) == 1:
+        mat_list = mat_list[0]
+        
+    return mat_list
+
+
 def warp_coordinates(coordinates, m2m_folder,
                      transformation_direction='subject2mni',
                      transformation_type='nonl',
@@ -1039,7 +1191,7 @@ def warp_coordinates(coordinates, m2m_folder,
     --------
     coordinates: str, list or ndarray
         if list or ndarray (Nx3 format):
-            Will do a simple transformation of the
+            Will do a simple transformation of the positions
         If path to csv file:
             The CSV file must have at least 4 columns, dependind on the type of data to
             be transformed
@@ -1056,7 +1208,7 @@ def warp_coordinates(coordinates, m2m_folder,
             CoilPos:
                 Type, pos_x, pos_y, pos_z, ez_x, ez_y, ez_z, ey_x, ey_y, ey_z, dist, name, ...
             if the direction is mni2subject: position will be adjusted after transformation
-            to have specified distance to skin (mni2subject_coords ignores distances)
+            to have specified distance to skin (subject2mni_coords ignores distances)
 
             You can also input a list with the same structure as the csv files
 
@@ -2187,3 +2339,36 @@ def _sliced_argmin(x: np.ndarray, indptr: np.ndarray):
     """
     assert x.ndim == 1
     return np.array([x[i:j].argmin() + i for i, j in zip(indptr[:-1], indptr[1:])])
+
+
+def create_new_connectivity_list_point_mask(points, con, point_mask):
+    """
+    Creates a new point and connectivity list when applying a point mask (changes indices of points)
+
+    Parameters
+    ----------
+    points : np.ndarray of float [n_points x 3]
+        Point coordinates
+    con : np.ndarray of float [n_tri x 3]
+        Connectivity of triangles
+    point_mask : nparray of bool [n_points]
+        Mask of (True/False) which points are kept in the mesh
+
+    Returns
+    -------
+    points_new : np.ndarray of float [n_points_new x 3]
+        New point array containing the remaining points after applying the mask
+    con_new : np.ndarray of float [n_tri_new x 3]
+        New connectivity list containing the remaining points (includes reindexing)
+    """
+    con_global = con[point_mask[con].all(axis=1), :]
+    unique_points = np.unique(con_global)
+    points_new = points[unique_points, :]
+
+    con_new = np.zeros(con_global.shape).astype(int)
+
+    for i, idx in enumerate(unique_points):
+        idx_where = np.where(con_global == idx)
+        con_new[idx_where[0], idx_where[1]] = i
+
+    return points_new, con_new

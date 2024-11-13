@@ -12,7 +12,7 @@ import numpy as np
 
 from simnibs import SIMNIBSDIR
 
-from . import samseg
+from . import simnibs_samseg
 from . import charm_utils
 from .. import __version__
 from .. import utils
@@ -147,14 +147,14 @@ def run(
     # by default this is all, but can be changed in the .ini
     num_threads = settings["general"]["threads"]
     if isinstance(num_threads, int) and num_threads > 0:
-        samseg.setGlobalDefaultNumberOfThreads(num_threads)
+        simnibs_samseg.setGlobalDefaultNumberOfThreads(num_threads)
         logger.info("Using %d threads, instead of all available." % num_threads)
 
     # TODO: Setup the visualization tool. This needs some pyqt stuff to be
     # installed. Don't know if we want to expose this in the .ini
     showFigs = False
     showMovies = False
-    visualizer = samseg.initVisualizer(showFigs, showMovies)
+    visualizer = simnibs_samseg.initVisualizer(showFigs, showMovies)
 
     (
         template_name,
@@ -253,7 +253,7 @@ def run(
         cat_structs = atlas_settings["CAT_structures"]
         tissue_settings = atlas_settings["conductivity_mapping"]
         csf_factor = segment_settings["csf_factor"]
-        samseg.simnibs_segmentation_utils.writeBiasCorrectedImagesAndSegmentation(
+        simnibs_samseg.simnibs_segmentation_utils.writeBiasCorrectedImagesAndSegmentation(
             bias_corrected_image_names,
             sub_files.labeling,
             segment_parameters_and_inputs,
@@ -269,7 +269,7 @@ def run(
         # Write out MNI warps
         logger.info("Writing out MNI warps.")
         os.makedirs(sub_files.mni_transf_folder, exist_ok=True)
-        samseg.simnibs_segmentation_utils.saveWarpField(
+        simnibs_samseg.simnibs_segmentation_utils.saveWarpField(
             template_name,
             sub_files.mni2conf_nonl,
             sub_files.conf2mni_nonl,
@@ -551,7 +551,7 @@ def run(
             skin_facet_size = None
         facet_distances = mesh_settings["facet_distances"]
         optimize = mesh_settings["optimize"]
-        apply_cream = mesh_settings["remove_spikes"]
+        apply_cream = mesh_settings["apply_cream"]
         remove_spikes = mesh_settings["remove_spikes"]
         skin_tag = mesh_settings["skin_tag"]
         if not skin_tag:
@@ -596,7 +596,7 @@ def run(
 
         logger.info("Writing mesh")
         write_msh(final_mesh, sub_files.fnamehead)
-        v = final_mesh.view(cond_list=cond_utils.standard_cond())
+        v = final_mesh.view(cond_list=cond_utils.standard_cond(), add_logo=True)
         v.write_opt(sub_files.fnamehead)
 
         logger.info("Transforming EEG positions")

@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 """
-Created on Thu Jun 23 17:41:21 2022
+Example for calculating TI envelopes from pre-calculated leadfields
 
-@author: axthi
+Copyright (c) 2022 SimNIBS developers. Licensed under the GPL v3.
 """
 
 import copy

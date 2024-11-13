@@ -1,0 +1,23 @@
+﻿simnibs.opt\_struct
+===================
+
+.. automodule:: simnibs.opt_struct
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

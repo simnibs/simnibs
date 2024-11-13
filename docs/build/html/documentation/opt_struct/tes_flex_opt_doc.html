@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>TesFlexOptimization &#8212; SimNIBS 0) documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../_static/documentation_options.js?v=e6165c10"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="icon" href="../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="TmsFlexOptimization" href="tms_flex_opt_doc.html" />
+    <link rel="prev" title="TMSoptimize" href="tmsoptimize.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+              <div class="related top">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="tmsoptimize.html" title="Previous document">TMSoptimize</a>
+        </li>
+        <li>
+          <a href="tms_flex_opt_doc.html" title="Next document">TmsFlexOptimization</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+
+          <div class="body" role="main">
+            
+  <section id="tesflexoptimization">
+<span id="tes-flex-opt-doc"></span><h1>TesFlexOptimization<a class="headerlink" href="#tesflexoptimization" title="Link to this heading">¶</a></h1>
+<section id="initialization">
+<h2>Initialization<a class="headerlink" href="#initialization" title="Link to this heading">¶</a></h2>
+<ul>
+<li><p><strong>Python</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">opt_struct</span>
+<span class="n">opt</span> <span class="o">=</span> <span class="n">opt_struct</span><span class="o">.</span><span class="n">TesFlexOptimization</span><span class="p">()</span>
+</pre></div>
+</div>
+<p></p>
+</li>
+<li><p><strong>MATLAB</strong></p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TesFlexOptimization&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p></p>
+</li>
+</ul>
+</section>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="simnibs.opt_struct.TesFlexOptimization">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">simnibs.opt_struct.</span></span><span class="sig-name descname"><span class="pre">TesFlexOptimization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">settings_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#simnibs.opt_struct.TesFlexOptimization" title="Link to this definition">¶</a></dt>
+<dd><p>Defines a TES optimization problem using node-wise current sources.</p>
+<section id="parameters-general">
+<h3>Parameters (general)<a class="headerlink" href="#parameters-general" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>electrode<span class="classifier">Electrode Object</span></dt><dd><p>Electrode object containing ElectrodeArray instances
+(pre-implemented layouts: ElectrodeArrayPair, CircularArray)</p>
+</dd>
+<dt>roi<span class="classifier">list of RegionOfInterest class instances</span></dt><dd><p>Region of interest(s) the field is evaluated in.</p>
+</dd>
+<dt>goal<span class="classifier">list of str [n_roi], or FunctionType, optional, default: [“mean”]</span></dt><dd><p>Implemented or user provided goal functions:</p>
+<ul class="simple">
+<li><p>“mean”: maximize mean e-field in ROI</p></li>
+<li><p>“max”: maximize 99.9 percentile of electric field in ROI</p></li>
+<li><p>“focality”: Maximize focality  (goal: sensitivity = specificity = 1). NOTE: “focality” needs excatly two ROIs: The first will be treated as ROI, the second as non-ROI.</p></li>
+<li><p>“focality_inv”: Maximize inverse focality (goal: sensitivity(ROI) = 1, sensitivity(nonROI) = 1). NOTE: “focality” needs excatly two ROIs: The first will be treated as ROI, the second as non-ROI.</p></li>
+<li><p>user provided function taking e-field as an input which is  a list of list of np.ndarrays of float [n_channel_stim][n_roi] containing np.array with e-field</p></li>
+</ul>
+</dd>
+<dt>e_postproc<span class="classifier">str, optional, default: “norm”</span></dt><dd><p>Specifies how the raw e-field in the ROI (Ex, Ey, Ez) is post-processed:</p>
+<ul class="simple">
+<li><p>“norm”: electric field magnitude (default)</p></li>
+<li><p>“normal”: determine normal component (requires surface ROIS)</p></li>
+<li><p>“tangential”: determine tangential component (requires surface ROIS)</p></li>
+<li><p>“max_TI”: maximum envelope for temporal interference fields</p></li>
+<li><p>“dir_TI”: directional sensitive maximum envelope for temporal interference fields (requires surface ROIS)</p></li>
+</ul>
+</dd>
+<dt>min_electrode_distance<span class="classifier">float, optional, default: 5.0</span></dt><dd><p>Minimally ensured distance between electrodes of different arrays (in mm).</p>
+</dd>
+<dt>constrain_electrode_locations<span class="classifier">bool, optional, default: False</span></dt><dd><p>Constrains the possible locations of freely movable electrode arrays. Recommended for TTF optimizations,
+where two pairs of large electrode arrays are optimized. If True, parameter bounds for the optimization
+will be specified restricting the array locations to be frontal, parietal and occipital.</p>
+</dd>
+<dt>overlap_factor<span class="classifier">float, optional, default: 1</span></dt><dd><p>Factor of overlap of allowed lambda regions to place electrodes. (1 corresponds to neatless regions,
+&lt;1 regions have a gap in between, &gt;1 regions are overlapping)</p>
+</dd>
+<dt>weights<span class="classifier">np.array of float [n_roi], optional, default: equal weights for each ROI</span></dt><dd><p>Weights for optimizer for ROI specific goal function weighting
+NOTE: Will be ignored for “focality” and “focality_inv” goals (see below),
+where ROI and non-ROI are combined into a single goal function value</p>
+</dd>
+</dl>
+</section>
+<section id="parameters-optimizer-fem">
+<h3>Parameters (optimizer + FEM)<a class="headerlink" href="#parameters-optimizer-fem" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>optimizer<span class="classifier">str, optional, default: “differential_evolution”</span></dt><dd><p>Gobal optimization algorithm</p>
+</dd>
+<dt>polish<span class="classifier">bool, optional, default: False</span></dt><dd><p>If True, then scipy.optimize.minimize with the L-BFGS-B method is used to polish the best
+population member at the end, which can improve the minimization.</p>
+</dd>
+<dt>run_final_electrode_simulation<span class="classifier">bool, optional, default: True</span></dt><dd><p>Runs final simulation with optimized parameters using real electrode model including remeshing.
+Note: This is required to get final e-fields for visualization</p>
+</dd>
+<dt>anisotropy_type<span class="classifier">str, optional, default: ‘scalar’</span></dt><dd><p>Specify type of anisotropy for simulation (‘scalar’, ‘vn’ or ‘mc’)</p>
+</dd>
+<dt>disable_SPR_for_volume_roi<span class="classifier">bool, optional, default: True</span></dt><dd><p>Whether to use SPR interpolation for volume rois</p>
+</dd>
+</dl>
+</section>
+<section id="parameters-debugging">
+<h3>Parameters (debugging)<a class="headerlink" href="#parameters-debugging" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>initial_x0: numpy.array, optional, default: None</dt><dd><p>starting values for optimization (will be automatically determined per default)</p>
+</dd>
+<dt>detailed_results<span class="classifier">bool, optional, default: False</span></dt><dd><p>write detailed results into subfolder of output folder for visualization and control</p>
+</dd>
+<dt>track_focality<span class="classifier">bool, optional, default: False</span></dt><dd><p>Tracks focality for each goal function value (requires ROI and non-ROI definition)</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
+</section>
+</section>
+
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+        <li>
+          &larr;
+          <a href="tmsoptimize.html" title="Previous document">TMSoptimize</a>
+        </li>
+        <li>
+          <a href="tms_flex_opt_doc.html" title="Next document">TmsFlexOptimization</a>
+          &rarr;
+        </li>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/logo.png" alt="Logo" />
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../installation/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial/tutorial.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../documentation.html">Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../gui.html">Graphical User Interface Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../command_line/command_line.html">Command Line Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../sim_struct/sim_struct.html">Simulation Data Structures</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="opt_struct.html">Optimization Data Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../neuronavigation/neuronavigation.html">Neuronavigation Data Import/Export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../output_files.html">Output Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../file_formats.html">File Formats in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../coordinates.html">Coordinates in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../conductivity.html">Standard Conductivity Values</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../coils.html">Coil Models Included in SimNIBS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../python_lib/python_lib.html">Python Library Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gallery.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors and Funding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contact.html">Contact</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../documentation.html">Documentation</a><ul>
+  <li><a href="opt_struct.html">Optimization Data Structures</a><ul>
+      <li>Previous: <a href="tmsoptimize.html" title="previous chapter">TMSoptimize</a></li>
+      <li>Next: <a href="tms_flex_opt_doc.html" title="next chapter">TmsFlexOptimization</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2020, SimNIBS Developers.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../../_sources/documentation/opt_struct/tes_flex_opt_doc.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

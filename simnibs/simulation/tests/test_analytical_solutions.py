@@ -5,6 +5,7 @@ import pytest
 import numpy as np
 
 from .. import analytical_solutions
+import scipy.special
 
 
 @pytest.fixture(scope='module')
@@ -30,6 +31,32 @@ def quadrant_points():
                   [-1, -1, -1],
                   [1, -1, -1]], dtype=float)
     return q / np.sqrt(3)
+
+
+class Testlpmn:
+    @pytest.mark.parametrize("m", [1, 5])
+    @pytest.mark.parametrize("n", [10, 100])
+    def test_lpmn_scipy(self, n, m):
+        """Test lpmn against the one in scipy.special."""
+
+        x = np.linspace(-1, 1, 100)
+        A = np.stack([scipy.special.lpmn(m, n, j)[0] for j in x], axis=2)
+        B = analytical_solutions.lpmn(m, n, x)
+        np.testing.assert_allclose(A, B, atol=1e-8)
+
+    def test_lpmn_analytical(self):
+        """Test first few degree polynomials."""
+        m = 1
+        n = 5
+        x = np.linspace(-1, 1, 100)
+        P = analytical_solutions.lpmn(m, n, x)
+
+        np.testing.assert_allclose(P[0,0], 1.0)
+        np.testing.assert_allclose(P[0,1], x)
+        np.testing.assert_allclose(P[0,2], 0.5 * (3*x**2 - 1))
+        np.testing.assert_allclose(P[0,3], 0.5 * (5 * x**3 - 3 * x))
+        np.testing.assert_allclose(P[0,4], 1/8.0 * (35 * x**4 - 30 * x**2 + 3))
+        np.testing.assert_allclose(P[0,5], 1/8.0 * (63 * x**5 - 70 * x**3 + 15 * x))
 
 
 class TestSphereSurfaceElectrodes:
@@ -182,7 +209,7 @@ class TestDipole3Layers:
         v = analytical_solutions.potential_dipole_3layers(
             [0.8, 0.9, 1], 1., 1., [0, 0, 0], [0, 0, 1], points, 1)
         v_simple = 3 / (4 * np.pi * 1e-6) * (1 / np.sqrt(2))
-        assert np.abs((v[0] - v_simple) / v_simple) < 1e-3
+        assert np.abs((v - v_simple) / v_simple) < 1e-3
 
 
     def test_symmetry_z_axis(self, quadrant_points):
@@ -313,7 +340,7 @@ class Test_TMS_field:
         dipole_moment = np.array([1, 0, 0])
         E = analytical_solutions.tms_E_field(dipole_pos, dipole_moment, 1, quadrant_points)
         E_simple = -1e-7 * np.cross(dipole_pos - quadrant_points, dipole_moment) \
-                / np.linalg.norm(quadrant_points - dipole_pos, axis=1)[:, None]**3  
+                / np.linalg.norm(quadrant_points - dipole_pos, axis=1)[:, None]**3
         # Explanation for the minus: see appendix 1 in Heller and Hulsteyn
         assert np.allclose(E, E_simple)
 

@@ -137,7 +137,7 @@ def get_maxTI(E1_org,E2_org):
     return TImax
     
 
-def get_dirTI(E1,E2,dirvec_org):
+def get_dirTI(E1, E2, dirvec_org):
     """
     calculates the TI envelope amplitude along the direction 
     specified by vector n
@@ -151,7 +151,7 @@ def get_dirTI(E1,E2,dirvec_org):
         positions at which the field was calculated
     E2 : np.ndarray
         field of electrode pair 2 (N x 3) 
-    n : np.ndarray or list
+    dirvec_org : np.ndarray or list
         can be either a single vector (1 x 3) that is applied to all positions
         or one vector per position (N x 3) 
 

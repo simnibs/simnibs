@@ -1,3 +1,9 @@
+''' 
+    example for  determining auxiliary results from a gPC-based uncertainty quantification
+
+    Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
+'''
+
 import numpy as np
 import simnibs
 from simnibs.simulation import gpc

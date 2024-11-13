@@ -1,7 +1,6 @@
 % Example of a SimNIBS tDCS optimization with a distributed target in Python
-
-%    Copyright (C) 2020 Guilherme B Saturnino
-
+%
+%  Copyright (c) 2020 SimNIBS developers. Licensed under the GPL v3.
 
 % Initialize structure
 opt = opt_struct('TDCSDistributedOptimize');

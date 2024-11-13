@@ -3,7 +3,7 @@
 % several post-processing options and the modeling of more 
 % complex electrode shapes
 % 
-% A. Thielscher, 2021
+% Copyright (c) 2021 SimNIBS developers. Licensed under the GPL v3.
 %
 
 %% General information

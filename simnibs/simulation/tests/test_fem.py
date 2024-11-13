@@ -12,11 +12,7 @@ import scipy.sparse as sparse
 from ... import SIMNIBSDIR
 from .. import fem
 from .. import analytical_solutions
-from .. import coil_numpy as coil_lib
-from .. import petsc_solver
 from ...mesh_tools import mesh_io
-
-fem._initialize_petsc()
 
 @pytest.fixture
 def sphere3_msh():
@@ -226,26 +222,32 @@ class TestDirichlet:
 
 
 class TestSolve:
-    def test_solve_petsc_diagonal(self):
+    @pytest.mark.parametrize("ksp_type", ["cg"])
+    @pytest.mark.parametrize("pc_type", ["ilu"])
+    def test_solve_petsc_diagonal(self, ksp_type, pc_type):
         n = 5
         A = sparse.diags(2 * np.ones(n)).tocsr()
         b = np.ones(n)
-        options = '-ksp_type cg -pc_type ilu -ksp_rtol 1e-10'
-        x = petsc_solver.petsc_solve(options, A, b).squeeze()
+        ksp = fem.KSPSolver(A, ksp_type, pc_type)
+        x = ksp.solve(b).squeeze()
         assert np.allclose(A.dot(x), b)
 
-    def test_solve_petsc_random(self):
+    @pytest.mark.parametrize("ksp_type", ["gmres"])
+    @pytest.mark.parametrize("pc_type", ["ilu"])
+    def test_solve_petsc_random(self, ksp_type, pc_type):
         np.random.seed(0)
         n = 5
         A = np.random.random((5, 5))
         A += A.T
         A = sparse.csr_matrix(A)
         b = np.ones(n)
-        options = '-ksp_type gmres -pc_type ilu -ksp_rtol 1e-10'
-        x = petsc_solver.petsc_solve(options, A, b).squeeze()
+        ksp = fem.KSPSolver(A, ksp_type, pc_type)
+        x = ksp.solve(b).squeeze()
         assert np.allclose(A.dot(x), b)
 
-    def test_multiple_rhs(self):
+    @pytest.mark.parametrize("ksp_type", ["gmres"])
+    @pytest.mark.parametrize("pc_type", ["ilu"])
+    def test_multiple_rhs(self, ksp_type, pc_type):
         np.random.seed(0)
         n = 5
         A = np.random.random((n, n))
@@ -253,8 +255,8 @@ class TestSolve:
         A = sparse.csr_matrix(A)
         b = np.random.random((n, 3))
         #b = np.ones((n, 3))
-        options = '-ksp_type gmres -pc_type ilu -ksp_rtol 1e-10'
-        x = petsc_solver.petsc_solve(options, A, b)
+        ksp = fem.KSPSolver(A, ksp_type, pc_type)
+        x = ksp.solve(b).squeeze()
         assert np.allclose(A.dot(x), b)
 
 
@@ -435,6 +437,7 @@ class TestFEMSystem:
 
         nodes_top = cube_msh_all_nodes_at_tag(m, 1100)
         nodes_bottom = cube_msh_all_nodes_at_tag(m, 1101)
+        electrodes = [nodes_top, nodes_bottom]
 
         if current_type == "float":
             currents = [1, -1]
@@ -446,8 +449,8 @@ class TestFEMSystem:
             weigh_by_area=False
         else:
             raise ValueError
-        S = fem.TDCSFEMNeumann(m, cond, nodes_top, input_type="nodes", weigh_by_area=weigh_by_area)
-        b = S.assemble_rhs(nodes_bottom, currents[1:])
+        S = fem.TDCSFEMNeumann(m, cond, electrodes[0], input_type="nodes", weigh_by_area=weigh_by_area)
+        b = S.assemble_rhs(electrodes[1:], currents[1:])
         x = S.solve(b)
         sol = (m.nodes.node_coord[:, 1] - 50) / 10
         m.nodedata = [mesh_io.NodeData(x, 'FEM'), mesh_io.NodeData(sol, 'Analytical')]
@@ -714,7 +717,7 @@ class TestLeadfield:
 class TestTMSMany:
     @pytest.mark.parametrize('post_pro', [False, True])
     @pytest.mark.parametrize('n_workers', [1, 2])
-    @patch.object(coil_lib, 'set_up_tms')
+    @patch.object(fem, '_get_da_dt_from_coil')
     def test_many_simulations(self, mock_set_up, n_workers, post_pro, tms_sphere):
         if sys.platform in ['win32', 'darwin'] and n_workers > 1:
             ''' Same as above, does not work on windows '''

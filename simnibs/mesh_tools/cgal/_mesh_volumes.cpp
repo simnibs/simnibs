@@ -6,7 +6,7 @@
 #include <CGAL/make_mesh_3.h>
 #include <CGAL/Image_3.h>
 
-#ifdef CGAL_CONCURRENT_MESH_3
+#ifdef CGAL_LINKED_WITH_TBB
 #include "tbb/task_arena.h"
 #include "tbb/task_group.h"
 #include "tbb/global_control.h"
@@ -59,7 +59,9 @@ int _mesh_image(
   }
 
   // Set max number of threads
+  #ifdef CGAL_LINKED_WITH_TBB
   tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, num_threads);
+  #endif
 
   // Mesh domain
   Mesh_domain_img domain = Mesh_domain_img::create_labeled_image_mesh_domain(image, 1e-10);
@@ -79,7 +81,7 @@ int _mesh_image(
     // https://github.com/CGAL/cgal/issues/4566
     // When the bug gets fixed, please remove this whole block and only keep the simple version below
     // CGAL::lloyd_optimize_mesh_3(c3t3, domain);
-    #ifdef CGAL_CONCURRENT_MESH_3
+    #ifdef CGAL_LINKED_WITH_TBB
       tbb::task_arena limited(1);        // No more than 2 threads in this arena.
       tbb::task_group tg;
       limited.execute([&]{ // Use at most 2 threads for this job.
@@ -149,7 +151,9 @@ int _mesh_image_sizing_field(
   }
 
   // Set max number of threads
+  #ifdef CGAL_LINKED_WITH_TBB
   tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, num_threads);
+  #endif
 
   // Mesh domain
   Mesh_domain_img domain = Mesh_domain_img::create_labeled_image_mesh_domain(image, 1e-10);
@@ -191,7 +195,7 @@ int _mesh_image_sizing_field(
     // https://github.com/CGAL/cgal/issues/4566
     // When the bug gets fixed, please remove this whole block and only keep the simple version
     // CGAL::lloyd_optimize_mesh_3(c3t3, domain);
-    #ifdef CGAL_CONCURRENT_MESH_3
+    #ifdef CGAL_LINKED_WITH_TBB
       tbb::task_arena limited(1);        // No more than 2 threads in this arena.
       tbb::task_group tg;
       limited.execute([&]{ // Use at most 2 threads for this job.

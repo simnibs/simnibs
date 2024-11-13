@@ -1,3 +1,7 @@
+''' Example of an optimization with two targets
+
+Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
+'''
 import simnibs
 
 opt = simnibs.opt_struct.TDCSoptimize()

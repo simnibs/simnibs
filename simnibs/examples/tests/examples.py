@@ -1,4 +1,6 @@
 ''' Automated testing of the examples
+
+Copyright (c) 2019-2024 SimNIBS developers. Licensed under the GPL v3.
 '''
 import sys
 import os
@@ -6,41 +8,12 @@ import stat
 import subprocess
 import shutil
 import glob
-import tempfile
-import requests
-import functools
-import zipfile
 
 import pytest
 from simnibs.utils.file_finder import path2bin
 import simnibs
 
 EXAMPLES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-
-@pytest.fixture(scope="module")
-def example_dataset():
-    url = (
-        f'https://github.com/simnibs/example-dataset/releases/'
-        'download/v4.0-lowres/ernie_lowres_V2.zip'
-    )
-    fn_folder = os.path.abspath(os.path.join(os.path.dirname(__file__),'test_data'))
-    tmpname = tempfile.mktemp(".zip")
-    # Download the dataset
-    with requests.get(url, stream=True) as r:
-        r.raw.read = functools.partial(r.raw.read, decode_content=True)
-        with open(tmpname, 'wb') as f:
-            shutil.copyfileobj(r.raw, f)
-    # Unzip the dataset
-    with zipfile.ZipFile(tmpname) as z:
-        z.extractall(fn_folder, )
-    os.remove(tmpname)
-    yield fn_folder
-    try:
-        shutil.rmtree(fn_folder)
-        pass
-    except:
-        print('Could not remove example dataset folder')
-
 
 @pytest.fixture
 def replace_gmsh():
@@ -56,7 +29,7 @@ def replace_gmsh():
     else:
         with open(fn_gmsh, 'w') as f:
             f.write('#! /bin/bash -e\n')
-            f.write(f'"echo" "$@"')
+            f.write('"echo" "$@"')
         os.chmod(
             fn_gmsh,
             os.stat(fn_gmsh).st_mode |
@@ -117,7 +90,17 @@ class TestPythonErnie:
 
     def test_transform_coordinates(self, example_dataset):
         os.chdir(example_dataset)
-        ret = self.run_script('analysis', 'transform_coordinates.py')
+        ret = self.run_script('utilities', 'transform_coordinates.py')
+        assert ret.returncode == 0
+        
+    def test_transform_coilpos(self, example_dataset):
+        os.chdir(example_dataset)
+        ret = self.run_script('utilities', 'transform_coilpos.py')
+        assert ret.returncode == 0
+        
+    def test_roi_definition(self, example_dataset):
+        os.chdir(example_dataset)
+        ret = self.run_script('utilities', 'roi_definition.py')
         assert ret.returncode == 0
 
     def test_tDCS(self, example_dataset, replace_gmsh):
@@ -144,15 +127,35 @@ class TestPythonErnie:
         os.chdir(example_dataset)
         ret = self.run_script('simulations', 'TMS.py', 'tms_simu')
         assert ret.returncode == 0
-
+        
+    def test_TMS_MNI(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('simulations', 'TMS_MNI.py', 'tms_hand')
+        assert ret.returncode == 0
+    
+    def test_TI(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('simulations', 'TI.py', 'TI')
+        assert ret.returncode == 0
+            
     def test_tDCS_ring(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
         ret = self.run_script('simulations', 'tDCS_ring.py', 'tdcs_ring')
         assert ret.returncode == 0
 
-    def test_TMS_MNI(self, example_dataset, replace_gmsh):
+    def test_tDCS_advanced(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
-        ret = self.run_script('simulations', 'TMS_MNI.py', 'tms_hand')
+        ret = self.run_script('simulations', 'tDCS_advanced.py', 'tdcs_advanced_simu')
+        assert ret.returncode == 0
+        
+    def test_tDCS_Nx1(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('simulations', 'tDCS_Nx1.py', 'tdcs_Nx1')
+        assert ret.returncode == 0
+        
+    def test_tACSchallenge(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('simulations', 'tACSchallenge.py', 'TACSchallenge')
         assert ret.returncode == 0
 
     def test_leadfield(self, example_dataset, replace_gmsh):
@@ -195,11 +198,35 @@ class TestPythonErnie:
         ret = self.run_script('optimization', 'tdcs_optimize_distributed.py')
         assert ret.returncode == 0
 
+    def test_tms_optimize_with_region(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('optimization', 'tms_optimization_with_region.py')
+        assert ret.returncode == 0
+
     def test_tms_optimize_ADM(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
         ret = self.run_script('optimization', 'tms_optimization_adm.py', 'tms_optimization_adm')
         assert ret.returncode == 0
-
+        
+    def test_tms_flex_fig8coil_emag(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tms_flex_optimization', 'tms_flex_fig8coil_emag.py', 'tms_optimization')
+        assert ret.returncode == 0
+        
+    def test_tms_flex_roundcoil_distance(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tms_flex_optimization', 'tms_flex_roundcoil_distance.py', 'tms_optimization')
+        assert ret.returncode == 0
+    
+    def test_tms_flex_Brainsway_H1_distance(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tms_flex_optimization', 'tms_flex_Brainsway_H1_distance.py', 'tms_optimization_H1')
+        assert ret.returncode == 0   
+    
+    def test_tms_flex_MagVenture_MST_emag(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tms_flex_optimization', 'tms_flex_MagVenture_MST_emag.py', 'tms_optimization_MSTemag')
+        assert ret.returncode == 0  
 
 class TestMatlabErnie:
     def run_script(self, script_folder, script_name, clean=None):
@@ -213,7 +240,17 @@ class TestMatlabErnie:
 
     def test_transform_coordinates(self, example_dataset):
         os.chdir(example_dataset)
-        ret = self.run_script('analysis', 'transform_coordinates.m')
+        ret = self.run_script('utilities', 'transform_coordinates.m')
+        assert ret.returncode == 0
+        
+    def test_transform_coilpos(self, example_dataset):
+        os.chdir(example_dataset)
+        ret = self.run_script('utilities', 'transform_coilpos.m')
+        assert ret.returncode == 0
+        
+    def test_roi_definition(self, example_dataset):
+        os.chdir(example_dataset)
+        ret = self.run_script('utilities', 'roi_definition.m')
         assert ret.returncode == 0
 
     def test_tDCS(self, example_dataset, replace_gmsh):
@@ -240,15 +277,35 @@ class TestMatlabErnie:
         os.chdir(example_dataset)
         ret = self.run_script('simulations', 'TMS.m', 'tms_simu')
         assert ret.returncode == 0
-
-    def test_tDCS_ring(self, example_dataset, replace_show_surface):
+    
+    def test_TMS_MNI(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('simulations', 'TMS_MNI.m', 'tms_hand')
+        assert ret.returncode == 0
+    
+    def test_TI(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('simulations', 'TI.m', 'TI')
+        assert ret.returncode == 0
+            
+    def test_tDCS_ring(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
         ret = self.run_script('simulations', 'tDCS_ring.m', 'tdcs_ring')
         assert ret.returncode == 0
 
-    def test_TMS_MNI(self, example_dataset, replace_gmsh):
+    def test_tDCS_advanced(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
-        ret = self.run_script('simulations', 'TMS_MNI.m', 'tms_hand')
+        ret = self.run_script('simulations', 'tDCS_advanced.m', 'tdcs_advanced_simu')
+        assert ret.returncode == 0
+        
+    def test_tDCS_Nx1(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('simulations', 'tDCS_Nx1.m', 'tdcs_Nx1')
+        assert ret.returncode == 0
+        
+    def test_tACSchallenge(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('simulations', 'tACSchallenge.m', 'TACSchallenge')
         assert ret.returncode == 0
 
     def test_leadfield(self, example_dataset, replace_gmsh):
@@ -294,4 +351,167 @@ class TestMatlabErnie:
     def test_tms_optimize_ADM(self, example_dataset, replace_gmsh):
         os.chdir(example_dataset)
         ret = self.run_script('optimization', 'tms_optimization_adm.m', 'tms_optimization_adm')
+        assert ret.returncode == 0
+    
+    def test_tms_flex_fig8coil_emag(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tms_flex_optimization', 'tms_flex_fig8coil_emag.m', 'tms_optimization')
+        assert ret.returncode == 0
+        
+    def test_tms_flex_roundcoil_distance(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tms_flex_optimization', 'tms_flex_roundcoil_distance.m', 'tms_optimization')
+        assert ret.returncode == 0
+    
+    def test_tms_flex_Brainsway_H1_distance(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tms_flex_optimization', 'tms_flex_Brainsway_H1_distance.m', 'tms_optimization_H1')
+        assert ret.returncode == 0   
+    
+    def test_tms_flex_MagVenture_MST_emag(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tms_flex_optimization', 'tms_flex_MagVenture_MST_emag.m', 'tms_optimization_MSTemag')
+        assert ret.returncode == 0  
+        
+
+class TestTESflexoptimize:
+    def run_script(self, script_folder, script_name, clean=None):
+        if clean is not None and os.path.exists(clean):
+            shutil.rmtree(clean)
+        fn = os.path.join(EXAMPLES_DIR, script_folder, script_name)
+        print(fn)
+        return subprocess.run([sys.executable, fn])
+
+    def test_tes_flex_hdtes_focality(self, example_dataset):
+        os.chdir(example_dataset)
+        ret = self.run_script(
+            "tes_flex_optimization",
+            "tes_flex_4x1tes_focality.py",
+            "tes_optimze_4x1tes_focality")
+        assert ret.returncode == 0
+
+    def test_tes_flex_hdtes_intensity(self, example_dataset):
+        os.chdir(example_dataset)
+        ret = self.run_script(
+            "tes_flex_optimization",
+            "tes_flex_4x1tes_intensity.py",
+            "tes_optimze_4x1tes_intensity")
+        assert ret.returncode == 0
+    
+    def test_tes_flex_ttf_intensity(self, example_dataset):
+        os.chdir(example_dataset)
+        ret = self.run_script(
+            "tes_flex_optimization",
+            "tes_flex_ttf_intensity.py",
+            "tes_flex_ttf_intensity")
+        assert ret.returncode == 0
+    
+    def test_tes_flex_ti_intensity(self, example_dataset):
+        os.chdir(example_dataset)
+        ret = self.run_script(
+            "tes_flex_optimization",
+            "tes_flex_ti_intensity.py",
+            "tes_flex_ti_intensity")
+        assert ret.returncode == 0
+    
+    def test_tes_flex_tes_Enormal_intensity(self, example_dataset):
+        os.chdir(example_dataset)
+        ret = self.run_script(
+            "tes_flex_optimization",
+            "tes_flex_tes_Enormal_intensity.py",
+            "tes_flex_tes_Enormal_intensity")
+        assert ret.returncode == 0
+
+
+class TestMatlabTESflexoptimize:
+    def run_script(self, script_folder, script_name, clean=None):
+        if clean is not None and os.path.exists(clean):
+            shutil.rmtree(clean)
+        shutil.copy(
+            os.path.join(EXAMPLES_DIR, script_folder, script_name),
+            script_name
+        )
+        return subprocess.run(octave_call(script_name), shell=True)
+    
+    def test_tes_flex_4x1tes_intensity(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tes_flex_optimization', 'tes_flex_4x1tes_intensity.m', 'tes_optimze_4x1tes_intensity')
+        assert ret.returncode == 0   
+    
+    def test_tes_flex_4x1tes_focality(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tes_flex_optimization', 'tes_flex_4x1tes_focality.m', 'tes_optimze_4x1tes_focality')
+        assert ret.returncode == 0  
+        
+    def test_tes_flex_tes_Enormal_intensity(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tes_flex_optimization', 'tes_flex_tes_Enormal_intensity.m', 'tes_optimize_tes_Enormal_intensity')
+        assert ret.returncode == 0
+        
+    def test_tes_flex_tes_focality(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tes_flex_optimization', 'tes_flex_tes_focality.m', 'tes_optimize_tes_focality')
+        assert ret.returncode == 0
+        
+    def test_tes_flex_tes_intensity(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tes_flex_optimization', 'tes_flex_tes_intensity.m', 'tes_optimize_tes_intensity')
+        assert ret.returncode == 0              
+     
+    def test_tes_flex_ti_focality(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tes_flex_optimization', 'tes_flex_ti_focality.m', 'tes_optimize_ti_focality')
+        assert ret.returncode == 0
+     
+    def test_tes_flex_ti_intensity(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tes_flex_optimization', 'tes_flex_ti_intensity.m', 'tes_optimize_ti_intensity')
+        assert ret.returncode == 0     
+
+    def test_tes_flex_ttf_intensity(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tes_flex_optimization', 'tes_flex_ttf_intensity.m', 'tes_optimize_ttf_intensity')
+        assert ret.returncode == 0   
+        
+    def test_tes_flex_ttf_focality(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tes_flex_optimization', 'tes_flex_ttf_focality.m', 'tes_optimize_ttf_focality')
+        assert ret.returncode == 0   
+
+    def test_tes_flex_tes_geo_opt_intensity(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('tes_flex_optimization', 'tes_flex_tes_geo_opt_intensity.m', 'tes_optimize_tes_geo_opt_intensity')
+        assert ret.returncode == 0   
+        
+class TestCoils:
+    def run_script(self, script_folder, script_name, clean=None):
+        if clean is not None and os.path.exists(clean):
+            shutil.rmtree(clean)
+        fn = os.path.join(EXAMPLES_DIR, script_folder, script_name)
+        print(fn)
+        return subprocess.run([sys.executable, fn])
+    
+    def test_create_deformable_figure_of_8_coil(self, replace_gmsh):
+        ret = self.run_script('coils', 'create_deformable_figure_of_8_coil.py', 'coil_example')
+        shutil.rmtree('coil_example')
+        assert ret.returncode == 0
+
+    def test_create_simple_circular_coil(self, replace_gmsh):
+        ret = self.run_script('coils', 'create_simple_circular_coil.py', 'coil_example')
+        shutil.rmtree('coil_example')
+        assert ret.returncode == 0
+
+    def test_create_simple_figure_of_8_coil(self, replace_gmsh):
+        ret = self.run_script('coils', 'create_simple_figure_of_8_coil.py', 'coil_example')
+        shutil.rmtree('coil_example')
+        assert ret.returncode == 0
+
+    def test_create_two_stimulator_coil(self, replace_gmsh):
+        ret = self.run_script('coils', 'create_two_stimulator_coil.py', 'coil_example')
+        shutil.rmtree('coil_example')
+        assert ret.returncode == 0
+
+    def test_tms_multi_stimulator_simulation(self, example_dataset, replace_gmsh):
+        os.chdir(example_dataset)
+        ret = self.run_script('coils', 'tms_multi_stimulator_simulation.py', 'tms_simu')
         assert ret.returncode == 0

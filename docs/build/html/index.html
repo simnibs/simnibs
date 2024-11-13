@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>SimNIBS 4 &#8212; SimNIBS 4.1.0 documentation</title>
+    <title>SimNIBS 4.5 &#8212; SimNIBS 0) documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
-    <script src="_static/documentation_options.js?v=42d1b3bd"></script>
+    <script src="_static/documentation_options.js?v=e6165c10"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="icon" href="_static/favicon.ico"/>
@@ -43,10 +43,10 @@
 
           <div class="body" role="main">
             
-  <section id="simnibs-4">
-<h1>SimNIBS 4<a class="headerlink" href="#simnibs-4" title="Link to this heading">¶</a></h1>
-<p><strong>SimNIBS 4</strong> is a free and open source software package for the Simulation of Non-invasive Brain Stimulation. It allows for realistic calculations of the electric field induced by transcranial magnetic stimulation (TMS) and transcranial electric stimulation (TES).</p>
-<p>A SimNIBS workflow consists of three main parts:</p>
+  <section id="simnibs-4-5">
+<h1>SimNIBS 4.5<a class="headerlink" href="#simnibs-4-5" title="Link to this heading">¶</a></h1>
+<p><strong>SimNIBS v4.5</strong> is a free and open source software package for the Simulation of Non-invasive Brain Stimulation. It allows for realistic calculations of the electric field induced by transcranial magnetic stimulation (TMS) and transcranial electric stimulation (TES).</p>
+<p>A basic SimNIBS workflow consists of three main parts:</p>
 <blockquote>
 <div><ul class="simple">
 <li><p><a class="reference internal" href="tutorial/head_meshing.html#head-modeling-tutorial"><span class="std std-ref">Generate high-quality head models</span></a> from MR images.</p></li>
@@ -54,7 +54,7 @@
 <li><p><a class="reference internal" href="tutorial/visualization.html#visualization-tutorial"><span class="std std-ref">Visualize simulation results</span></a>, and easily transform them to <em>FsAverage</em> or <em>MNI</em> space via in-built functions.</p></li>
 </ul>
 </div></blockquote>
-<p>SimNIBS offers several advanced options such as <a class="reference internal" href="tutorial/tms_optimization.html#tms-optimize"><span class="std std-ref">Optimizations of TMS coil positions</span></a>, or TES optimizations for <a class="reference internal" href="tutorial/optimization.html#tdcs-opt"><span class="std std-ref">single and multiple targets</span></a> and <a class="reference internal" href="tutorial/advanced/tdcs_distributed_opt.html#tdcs-distributed-opt"><span class="std std-ref">brain network targeting</span></a>.</p>
+<p>In addition, SimNIBS offers several advanced options such as <a class="reference internal" href="tutorial/tms_optimization.html#tms-optimize"><span class="std std-ref">Optimizations of TMS coil positions</span></a>, or TES optimizations for <a class="reference internal" href="tutorial/tdcs_opt.html#tdcs-opt"><span class="std std-ref">single and multiple targets</span></a> and <a class="reference internal" href="tutorial/tdcs_distributed_opt.html#tdcs-distributed-opt"><span class="std std-ref">brain network targeting</span></a>.</p>
 <embed>
 <style>
 .slideshow {
@@ -162,10 +162,17 @@ SimNIBS is being developed at the <a href="https://www.drcmr.dk">Danish Research
 <h1>News<a class="headerlink" href="#news" title="Link to this heading">¶</a></h1>
 <blockquote>
 <div><ul class="simple">
-<li><p><strong>Version 4.1.0</strong> improves the mesh quality and adds the option to use FreeSurfer results for more accurate representation of smaller sulci in the head meshes</p></li>
+<li><dl class="simple">
+<dt><strong>Version 4.5.0</strong> introduces exciting new optimization methods for <a class="reference internal" href="tutorial/tms_flex_opt.html#tms-flex-opt"><span class="std std-ref">TMS</span></a>  and <a class="reference internal" href="tutorial/tes_flex_opt.html#tes-flex-opt"><span class="std std-ref">TES</span></a>.</dt><dd><ul>
+<li><p>They enable the <a class="reference internal" href="tutorial/tms_flex_opt.html#tms-flex-opt"><span class="std std-ref">optimization of TMS coil positions also for bent and flexible coils</span></a>, thereby systematically avoiding intersections of the coil with the head.</p></li>
+<li><p>In addition, they support the <a class="reference internal" href="tutorial/tes_flex_opt.html#tes-flex-opt"><span class="std std-ref">optimization of several TES montages</span></a>, including those with rectangular electrodes, center-surround montages, temporal interference stimulation and electrode arrays for tumor treating field therapies.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>As part of the update to 4.5.0, several new TMS coil models and new <a class="reference internal" href="dataset.html#dataset"><span class="std std-ref">datasets</span></a> were added.</p></li>
+<li><p>Version 4.1.0 improves the mesh quality and adds the option to use FreeSurfer results for more accurate representation of smaller sulci in the head meshes</p></li>
 <li><p>Version 4.0.0 is a major update that introduces our new head modeling approach <a class="reference internal" href="tutorial/head_meshing.html#head-modeling-tutorial"><span class="std std-ref">charm</span></a>. In contrast to the previous methods, <em>charm</em> does not have any external dependencies (matlab, freesurfer) and is ready-to-run directly after installation. Head models created by <em>charm</em> are more accurate for non-brain tissues and include additional tissue types such as large blood vessels and spongy bone.</p></li>
-<li><p><em>Charm</em> replaces the previous methods <em>mri2mesh</em> and <em>headreco</em> which are discontinued. Use the tool <a class="reference internal" href="documentation/command_line/convert_3_to_4.html#convert-3-to-4"><span class="std std-ref">convert_3_to_4</span></a> to convert old head models for use in SimNIBS4 simulations.</p></li>
-<li><p>Further major new features are the inclusion of <a class="reference internal" href="documentation/coils.html#coil-fies"><span class="std std-ref">many new TMS coil models</span></a> and a <a class="reference internal" href="tutorial/advanced/fix_headmodel.html#fixheadmodel-tutorial"><span class="std std-ref">flexible meshing approach</span></a> to simplify manual editing and inclusion of custom tissue types in the head mesh. Basic I/O functions for <a class="reference internal" href="documentation/neuronavigation/neuronavigation.html#nnav-docs"><span class="std std-ref">neuronavigation data</span></a> are now also available in python.</p></li>
 </ul>
 </div></blockquote>
 <p>Please see details in the <a class="reference internal" href="changelog.html#changelog"><span class="std std-ref">changelog</span></a>.</p>
@@ -208,7 +215,7 @@ SimNIBS is being developed at the <a href="https://www.drcmr.dk">Danish Research
 <h3>Navigation</h3>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="installation/installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dataset.html">Example Dataset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dataset.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial/tutorial.html">Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="documentation/documentation.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>

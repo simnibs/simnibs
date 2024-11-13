@@ -6,16 +6,16 @@ import numpy as np
 global logger
 logger = logging.getLogger('simnibs')
 sh = logging.StreamHandler()
-formatter = logging.Formatter('[ %(name)s ]%(levelname)s: %(message)s')
+formatter = logging.Formatter('[ %(name)s ] %(levelname)s: %(message)s')
 sh.setFormatter(formatter)
 sh.setLevel(logging.INFO)
 logger.addHandler(sh)
 logger.setLevel(logging.DEBUG)
 logging.addLevelName(25, 'SUMMARY')
-
+logging.addLevelName(26, 'SUMMARY')
 
 def log_warnings(message, category, filename, lineno, file=None, line=None):
-    logger.warn(warnings.formatwarning(message, category, filename, lineno))
+    logger.warning(warnings.formatwarning(message, category, filename, lineno))
 
 
 # This is causing errors in pytest

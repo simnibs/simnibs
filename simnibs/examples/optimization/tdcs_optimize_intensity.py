@@ -1,6 +1,6 @@
 ''' Example of optimizaion maximizing intensity in the target
 
-    Copyright (C) 2019 Guilherme B Saturnino
+    Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.
 '''
 import simnibs
 

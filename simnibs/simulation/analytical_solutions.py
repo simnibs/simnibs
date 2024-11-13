@@ -1,11 +1,9 @@
-from __future__ import division
-
-
 import math
-
+from numbers import Integral
 import warnings
 
 import numpy as np
+import numpy.typing as npt
 import scipy.special as sp
 
 
@@ -182,7 +180,7 @@ def potential_homogeneous_dipole(sphere_radius, conductivity, dipole_pos, dipole
         cos_phi = dipole_pos.dot(detector_positions.T) / \
             (np.linalg.norm(dipole_pos) * np.linalg.norm(detector_positions, axis=1))
     second_term = 1. / (rp[:, None] * R ** 2) * \
-            (detector_positions + (detector_positions * r0 * cos_phi[:, None] - R * dipole_pos) / 
+            (detector_positions + (detector_positions * r0 * cos_phi[:, None] - R * dipole_pos) /
                                      (R + rp - r0 * cos_phi)[:, None])
     V = dipole_moment.dot((2 * (detector_positions - dipole_pos) / (rp ** 3)[:, None] +
                            second_term).T).T
@@ -280,6 +278,7 @@ def fibonacci_sphere(nr_points, R=1):
         points.append((x, y, z))
     return np.array(points, dtype = float)
 
+
 def tms_E_field(dipole_pos, dipole_moment, didt, positions):
     """Calculates the E field in a sphere caused by external magnetic dipoles
 
@@ -321,14 +320,14 @@ def tms_E_field(dipole_pos, dipole_moment, didt, positions):
     dm = np.atleast_2d(dipole_moment)
 
     r1 = positions
-    
+
     for m, r2 in zip(dm, dp):
         a = r2 - r1
         norm_a = np.linalg.norm(a, axis=1)[:, None]
 
         norm_r1 = np.linalg.norm(r1, axis=1)[:, None]
         norm_r2 = np.linalg.norm(r2)
-        
+
         r2_dot_a = np.sum(r2 * a, axis=1)[:, None]
         F = norm_a * (norm_r2 * norm_a + r2_dot_a)
         grad_F = (norm_a ** 2 / norm_r2 + 2 * norm_a + 2 * norm_r2 + r2_dot_a / norm_a)\
@@ -340,101 +339,187 @@ def tms_E_field(dipole_pos, dipole_moment, didt, positions):
         # time rate of change"
     return E
 
-def potential_dipole_3layers(radii, cond_brain_scalp, cond_skull, dipole_pos,
-                             dipole_moment, surface_points, nbr_polynomials=100):
-    """Calculates the electric potential in a 3-layered sphere caused by a dipole
-    Calculations assumes dimensions in SI units
+
+def lpmn(m: int, n: int, x: float | npt.ArrayLike):
+    """Like scipy.special.lpmn but vectorized in x. Does not calculate
+    derivative values. Does not accept negative values of m.
+
+
+    PARAMETERS
+    ----------
+    m : int
+        Order.
+    n : int
+        Degree.
+    x : float | ndarray
+        Value(s) for which to calculate function values.
+
+    RETURNS
+    -------
+    pmn : (m+1, n+1[, x.shape]) array
+        Function values for orders [0, 1, ..., m] and degrees [0, 1, ..., n].
+
+
+    References
+    ----------
+    Identities taken from
+        https://en.wikipedia.org/wiki/Associated_Legendre_polynomials
+    """
+    assert isinstance(m, Integral) and isinstance(n, Integral)
+    assert 0 <= m <= n
+    x = np.array(x)
+
+    pmn = np.zeros((m+1, n+1, *x.shape))
+
+    # diagonal (identity 1)
+    pmn[0,0] = 1
+    for i in range(m):
+        pmn[i+1, i+1] = -(2*i+1) * np.sqrt(1-x**2) * pmn[i, i]
+
+    # n+1 diagonal (identity 3)
+    for i in range(m if m == n else m+1):
+        pmn[i, i+1] = x * (2*i+1) * pmn[i, i]
+
+    # upper triangle (recurrence formula 1)
+    for i in range(m+1):
+        for j in range(i+1, n):
+            pmn[i, j+1] = ((2*j+1) * x * pmn[i, j] - (j+i) * pmn[i, j-1]) / (j-i+1)
+
+    return pmn
+
+
+def potential_dipole_3layers(
+    radii: npt.ArrayLike | list[float] | tuple,
+    cond_brain_scalp: float,
+    cond_skull: float,
+    dipole_pos: npt.ArrayLike,
+    dipole_moment: npt.ArrayLike,
+    surface_points: npt.ArrayLike,
+    nbr_polynomials: int = 100,
+):
+    """Calculates the electric potential in a 3-layered sphere caused by a
+    dipole.
+
+    Inputs in mm - calculations performed in SI units.
+
+    Implements eqs. 2 and 2a from Ary et al.
 
 
     Parameters
-    -------------------------------
-    radii: list of length = 3
-        Radius of each of the 3 layers (innermost to outermost), in mm
-    cond_brain_scalp: float 
-        Conductivity of the brain and scalp layers, in S/m
-    cond_skull: float 
-        Conductivity of the skull layer, in S/m
-    dipole_pos: 3x1 ndarray
-        position of the dipole, in mm
-    dipole_moment: 3x1 ndarray
-        moment of dipole, in C x m
-    surface_points: (Nx3)ndarray
-        List of positions where the poteitial should be calculated, in mm
-    nbr_polynomials: int
-        Number of of legendre polynomials to use (default = 100)
+    ----------
+    radii : npt.ArrayLike | list[float] | tuple
+        _description_ (in mm).
+    cond_brain_scalp : float
+        Conductivity of brain (inner) and scalp (outer) (in S/m).
+    cond_skull : float
+        Conductivity of skull (middle) (in S/m).
+    dipole_pos : npt.ArrayLike
+        Positions of dipoles (in mm).
+    dipole_moment : npt.ArrayLike
+        Dipole moment (in C x m)
+    surface_points : npt.ArrayLike
+        Points on the surface (in mm) to estimate the potential at (electrodes).
+    nbr_polynomials : int, optional
+        Number of Legendre polynomials to use (default = 100).
 
     Returns
-    ------------------------------
-    (Nx1) ndarray
-        Values of the electric potential, in V
+    -------
+    _type_
+        The potentials at the surface points for each dipole.
+
+    Notes
+    -----
+    Vectorized (in dipole positions and surface points) version of Guilherme's
+    original implementation.
+
 
     Reference
-    ------------------------------
-    Ary, James P., Stanley A. Klein, and Derek H. Fender. 
-    "Location of sources of evoked scalp potentials: corrections for skull and scalp thicknesses." Biomedical Engineering 28.6 (1981).
-    eq. 2 and 2a
+    ---------
+    Ary, J. et al. Location of sources of evoked scalp potentials: corrections
+        for skull and scalp thicknesses. Biomedical Engineering 28.6 (1981).
+
+
+    Raises
+    ------
+    ValueError
+        _description_
     """
+    dipole_pos = np.atleast_2d(dipole_pos).astype(float)
+    dipole_moment = np.array(dipole_moment, dtype=float)
+    surface_points = np.atleast_2d(surface_points).astype(float)
+
     assert len(radii) == 3
     assert radii[0] < radii[1] and radii[1] < radii[2]
-    assert len(dipole_moment) == 3
-    assert len(dipole_pos) == 3
+    assert dipole_moment.ndim == 1 and dipole_moment.shape[0] == 3
+    assert dipole_pos.shape[1] == 3
     assert surface_points.shape[1] == 3
-    assert np.linalg.norm(dipole_pos) < radii[0], "Dipole must be inside inner sphere"
 
-    xi = float(cond_skull) / float(cond_brain_scalp)
-    R = float(radii[2] * 1e-3)
-    f1 = float(radii[0] * 1e-3) / R
-    f2 = float(radii[1] * 1e-3) / R
-    b = np.linalg.norm(dipole_pos) * 1e-3 / R
-    
-    if not np.allclose(np.linalg.norm(surface_points, axis=1), R * 1e3, rtol=1e-2):
-        warnings.warn('Some points are not in the surface!!')
+    dipole_moment_norm = np.linalg.norm(dipole_moment)
+    dipole_pos_norm = np.linalg.norm(dipole_pos, axis=1)
 
-   
-    if np.isclose(b, 0):
-        r_dir = np.array(dipole_moment, dtype=float)
-        r_dir /= np.linalg.norm(r_dir)
+    assert np.all(dipole_pos_norm < radii[0]), "All dipoles must be inside the inner sphere"
+
+    xi = cond_skull / cond_brain_scalp
+    R = radii[2] * 1e-3
+    f1 = radii[0] * 1e-3 / R
+    f2 = radii[1] * 1e-3 / R
+    b = dipole_pos_norm * 1e-3 / R
+
+    if not np.allclose(np.linalg.norm(surface_points, axis=1), R * 1e3):
+        raise ValueError('Some points are not on the surface!')
+
+    at_origin = np.isclose(b, 0)
+    if at_origin.any():
+        r_dir = np.zeros_like(dipole_pos)
+        r_dir[at_origin] = dipole_moment / dipole_moment_norm
+        r_dir[~at_origin] = dipole_pos[~at_origin] / dipole_pos_norm[~at_origin, None]
     else:
-        r_dir = dipole_pos / np.linalg.norm(dipole_pos)
-    m_r = np.dot(dipole_moment, r_dir)
-    cos_alpha = surface_points.dot(r_dir) / R * 1e-3
+        r_dir = dipole_pos / dipole_pos_norm[:, None]
 
-    t_dir = dipole_moment - m_r * r_dir
-    # if the dipole is radial only
-    if np.isclose(np.linalg.norm(dipole_moment), np.abs(np.dot(r_dir, dipole_moment))):
+    m_r = r_dir @ dipole_moment
+    cos_alpha = surface_points @ r_dir.T / R * 1e-3
+    t_dir = dipole_moment[None] - m_r[:, None] * r_dir
+
+    is_radial = np.isclose(dipole_moment_norm, np.abs(r_dir @ dipole_moment))
+    if is_radial.any():
         # try to set an axis in x, if the dipole is not in x
-        if not np.allclose(np.abs(r_dir.dot([1, 0, 0])), 1):
-            t_dir = np.array([1., 0., 0.], dtype=float)
+        in_x = np.isclose(np.abs(r_dir @ np.array([1, 0, 0])), 1)
+        t_dir[is_radial & ~in_x] = np.array([1, 0, 0], dtype=float)
+
         # otherwise, set it in y
-        else:
-            t_dir = np.array([0., 1., 0.], dtype=float)
-        t_dir = t_dir - r_dir.dot(t_dir)
-    t_dir /= np.linalg.norm(t_dir)
+        t_dir[is_radial & in_x] = np.array([0, 1, 0], dtype=float)
+        t_dir -= np.sum(r_dir * t_dir, 1)[:, None]
+
+    t_dir /= np.linalg.norm(t_dir, axis=1, keepdims=True)
     t2_dir = np.cross(r_dir, t_dir)
-    m_t = np.dot(dipole_moment, t_dir)
-    beta = np.arctan2(surface_points.dot(t2_dir), surface_points.dot(t_dir))
+    m_t = t_dir @ dipole_moment
+    beta = np.arctan2(surface_points @ t2_dir.T, surface_points @ t_dir.T)
     cos_beta = np.cos(beta)
-    def d(n):
-        d_n = ((n + 1) * xi + n) * ((n * xi) / (n + 1) + 1) +\
-                (1 - xi) * ((n + 1) * xi + n) * (f1 ** (2 * n + 1) - f2 ** (2 * n + 1)) -\
-                n * (1 - xi) ** 2 * (f1 / f2) ** (2 * n + 1)
+
+    def d(nbrs, f1, f2):
+        d_n = ((nbrs + 1) * xi + nbrs) * ((nbrs * xi) / (nbrs + 1) + 1) + \
+              (1 - xi) * ((nbrs + 1) * xi + nbrs) * (f1 ** (2 * nbrs + 1) - f2 ** (2 * nbrs + 1)) - \
+              nbrs * (1 - xi) ** 2 * (f1 / f2) ** (2 * nbrs + 1)
         return d_n
 
-    potentials = np.zeros(surface_points.shape[0], dtype='float64')
+    P = lpmn(1, nbr_polynomials, cos_alpha)
+    P = P[:, 1:] # discard 0th order polynomium
 
-    P = np.zeros((2, nbr_polynomials + 1, surface_points.shape[0]), dtype='float64')
-    for ii, ca in enumerate(cos_alpha):
-        P[:, :, ii], _ = sp.lpmn(1, nbr_polynomials, ca)
+    nbrs = np.arange(1, nbr_polynomials+1)
 
-    for ii in range(1, nbr_polynomials + 1):
-        n = float(ii)
-        potentials += np.nan_to_num(
-            (2 * n + 1) / n * b ** (n - 1) * ((xi * (2 * n + 1) ** 2) / (d(n) * (n + 1))) * 
-            (n * m_r * P[0, ii, :] - m_t * P[1, ii, :] * cos_beta))
+    # dimensions of the lines in the sum:
+    # poly, dipole
+    # poly
+    # poly, elec, dipole
+    potentials = np.nan_to_num(
+        np.sum(
+            ((2 * nbrs[:, None] + 1) / nbrs[:, None] * b[None] ** (nbrs[:, None] - 1))[:, None] * \
+            ((xi * (2 * nbrs + 1) ** 2) / (d(nbrs, f1, f2) * (nbrs + 1)))[:, None, None] * \
+            (nbrs[:, None, None] * m_r[None, None] * P[0] - m_t[None, None] * P[1] * cos_beta[None]),
+            axis=0)
+        )
         # Why should it be a minus there?
 
     potentials /= 4 * np.pi * cond_brain_scalp * R ** 2
 
-
-    return potentials
- 
+    return np.squeeze(potentials)

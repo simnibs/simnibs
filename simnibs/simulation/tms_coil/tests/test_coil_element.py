@@ -121,6 +121,77 @@ class TestCalcdAdt:
         np.testing.assert_allclose(da_dt[:, 2], 3e6, atol=1e-6)
 
 
+class TestCalcBAdt:
+    
+
+    def test_calc_dAdBdt_single_line_segment_fmm(self):
+        
+        #loop with r=0.001 at 0,0,0 with 1000 elements will be evaluated by fmm method
+        #to evaluate with the direct method fewer elements should be used
+        w = np.linspace(0, 2 * np.pi, 1000, endpoint=True)
+        r = 0.001
+        x = np.array((r * np.cos(w), r * np.sin(w), 0*w))
+        seg_dir = np.diff(x,axis=1).T * 1e3 #in mm
+        seg_pos = x[:, :-1].T * 1e3 #in mm
+
+        line_segments = LineSegmentElements(TmsStimulator(None), seg_pos, seg_dir)
+        line_segments.stimulator.di_dt = 1
+        
+        # 100mmx100mm 10x10 grid for testing centered at 0, 0, 0.1
+        # Note that this should not hit 0,0 as the relative difference can be 
+        # large there even though the absolute is extremely small
+        gx = np.linspace(-0.1, 0.1, 10)
+        grid = np.array(np.meshgrid(gx, gx, 0.1, indexing='ij'))
+
+
+        target_pos = grid.reshape(3,-1).T * 1e3 #in mm
+        coil_matrix = np.eye(4)
+
+        
+        #Naive Biot-Savart integral implementation
+        def A_biot_savart_path(lsegments, points):
+            r1 = np.sqrt(np.sum((points[:,:,None]-lsegments[:,None,:])**2,axis=0))
+            dl = np.zeros(lsegments.shape)
+            dl[:,:-1] = np.diff(lsegments,axis=1)
+            dl[:,-1] = lsegments[:,0]-lsegments[:,-1]
+            A = np.sum(dl[:,None,:]/r1[None],axis=2)
+            A *= 1e-7
+            return A
+        
+        def B_biot_savart_path(lsegments, points):
+            r = points[:,:,None]-lsegments[:,None,:]
+            r3 = np.sum(r**2,axis=0)**1.5
+            dl = np.zeros(lsegments.shape)
+            dl[:,:-1] = np.diff(lsegments,axis=1)
+            dl[:,-1] = lsegments[:,0]-lsegments[:,-1]
+            dl = dl[:,None,:]
+            B = np.sum(np.cross(dl, r, axis=0)/r3[None],axis=2)
+            B *= 1e-7
+            return B
+        
+        A = A_biot_savart_path(x, grid.reshape(3,-1)).T
+        np.testing.assert_allclose(line_segments.get_da_dt(target_pos, coil_matrix), A)
+        
+        B = B_biot_savart_path(x, grid.reshape(3,-1)).T
+        np.testing.assert_allclose(line_segments.get_db_dt(target_pos, coil_matrix), B)
+        
+        #testing direct method by just sampling 100 elements
+        w = np.linspace(0, 2 * np.pi, 100, endpoint=True)
+        x = np.array((r * np.cos(w), r * np.sin(w), 0*w))
+        seg_dir = np.diff(x,axis=1).T * 1e3 #in mm
+        seg_pos = x[:, :-1].T * 1e3 #in mm
+
+        line_segments = LineSegmentElements(TmsStimulator(None), seg_pos, seg_dir)
+        line_segments.stimulator.di_dt = 1
+        
+        A = A_biot_savart_path(x, grid.reshape(3,-1)).T
+        np.testing.assert_allclose(line_segments.get_da_dt(target_pos, coil_matrix), A)
+        
+        B = B_biot_savart_path(x, grid.reshape(3,-1)).T
+        np.testing.assert_allclose(line_segments.get_db_dt(target_pos, coil_matrix), B)
+
+
+
 class TestTransformationAndDeformation:
     def test_freeze_element_dipole(sself):
         element = DipoleElements(
@@ -744,7 +815,6 @@ class TestGetMesh:
         (
             casing,
             min_distance_points,
-            intersection_points,
         ) = small_functional_3_element_coil.elements[0].get_casing_coordinates()
 
         np.testing.assert_allclose(
@@ -752,7 +822,6 @@ class TestGetMesh:
             small_functional_3_element_coil.elements[0].casing.mesh.nodes.node_coord,
         )
         assert len(min_distance_points) == 0
-        assert len(intersection_points) == 0
 
     def test_get_mesh_deformed(self, small_functional_3_element_coil: TmsCoil):
         coil = deepcopy(small_functional_3_element_coil)
@@ -765,7 +834,9 @@ class TestGetMesh:
                 [-20.0, 20.0, -40.0],
                 [20.0, 20.0, 0.0],
                 [20.0, 20.0, -40.0],
+                [0.0, 40.0, -20.0],
             ],
+            atol=1e-10
         )
 
     def test_dipole_element_mesh(self):

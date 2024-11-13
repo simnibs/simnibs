@@ -3,10 +3,10 @@ import os
 import tempfile
 import subprocess
 import threading
-
 import numpy as np
-from ..utils.file_finder import path2bin
+import shutil
 
+from ..utils.file_finder import path2bin, Templates
 
 class Visualization:
     ''' Defines a visualization for a 3D mesh
@@ -33,11 +33,11 @@ class Visualization:
     merge: list
         Files to be merged
     '''
-    def __init__(self, mesh, cond=None):
+    def __init__(self, mesh, cond=None,add_logo=False):
         if isinstance(mesh, str):
             if not mesh.endswith('.msh'):
                 raise ValueError('mesh file name should end with .msh')
-        self.General = General()
+        self.General = General(add_logo)
         self.Mesh = Mesh()
         self.View = View()
         self.PhysicalNames = PhysicalNames(mesh, cond)
@@ -53,15 +53,6 @@ class Visualization:
         except:
             string += str(self.View)
         return string
-
-    def _apply(self):
-        # Not implemented yet
-        self.General._apply()
-        self.Mesh._apply()
-        try:
-            self.View._apply()
-        except AttributeError:
-            [v._apply() for v in self.View]
 
     def show(self, new_thread=False):
         ''' Shows the mesh in gmsh
@@ -80,12 +71,17 @@ class Visualization:
         geo_fn = mesh_fn + '.opt'
         self._write(geo_fn)
         command = [path2bin('gmsh'), mesh_fn]
+        
+        fn_list = [mesh_fn, geo_fn]
+        if hasattr(self.General, 'BackgroundImageFileName'):
+            fn_list.append(os.path.join(os.path.dirname(mesh_fn), '.lg.png'))
+            
         if new_thread:
             t = threading.Thread(
-                target=_run, args=(command, [mesh_fn, geo_fn]))
+                target=_run, args=(command, fn_list))
             t.start()
         else:
-            _run(command, [mesh_fn, geo_fn])
+            _run(command, fn_list)
 
     def write_opt(self, fn_mesh):
         ''' Writes a .opt file
@@ -159,9 +155,19 @@ class Visualization:
             except TypeError:
                 f.write(str(self.View))
             f.write(self._visibility_str())
+            
+        if hasattr(self.General, 'BackgroundImageFileName'):
+            try:
+                shutil.copyfile(Templates().simnibs_logo,
+                                os.path.join(os.path.dirname(fn), '.lg.png')
+                                )
+            except:
+                pass
+                    
+                
 
     def _visibility_str(self):
-        if self.visibility is None:
+        if self.visibility is None or len(self.visibility) == 0:
             return ""
         vis_str = "{" + ",".join([f"{v}" for v in self.visibility]) + "}"
         view = "\n".join(
@@ -206,8 +212,19 @@ class Visualization:
             f.write('Exit;\n')
             geo_fn = f.name
 
-        _run([path2bin('gmsh'), geo_fn], [geo_fn])
+        if hasattr(self.General, 'BackgroundImageFileName'):
+            try:
+                shutil.copyfile(Templates().simnibs_logo,
+                                os.path.join(os.path.dirname(mesh_fn), '.lg.png')
+                                )
+            except:
+                pass
 
+        fn_list = [mesh_fn, geo_fn]
+        if hasattr(self.General, 'BackgroundImageFileName'):
+            fn_list.append(os.path.join(os.path.dirname(mesh_fn), '.lg.png'))
+        
+        _run([path2bin('gmsh'), geo_fn], fn_list)
 
 
 class General(object):
@@ -216,6 +233,10 @@ class General(object):
 
     Attributes
     -----------
+    Color: dict
+        gmsh General.Color options (so far "Background" and "Foreground") 
+    BackgroundGradient: 0,1,2 or 3
+        type of background color gradient (0: no gradient)
     FieldWidth: int
         Width (in pixels) of the field window
     MaxX: float
@@ -271,7 +292,11 @@ class General(object):
     ------------
      `Gmsh documentation <http://gmsh.info/doc/texinfo/gmsh.html>`_
     '''
-    def __init__(self, **kwargs):
+    def __init__(self, add_logo = False, **kwargs):
+        self.Color = {'Background': 'White',
+                      'Foreground': 'Black'
+                      }
+        self.BackgroundGradient = 0
         self.FieldWidth = 449
         self.MaxX = 15.0
         self.MaxY = 150.0
@@ -296,19 +321,24 @@ class General(object):
         self.VisibilityPositionY = 443
         self.VectorType = 1
         self.SmallAxes = 1
+        if add_logo:
+            self.BackgroundImageFileName = "\".lg.png\"";
+            self.BackgroundImageWidth = 160;
+            self.BackgroundImageHeight = 27;
+            self.BackgroundImagePositionX = -180;
+            self.BackgroundImagePositionY = 20;
         self.__dict__.update(kwargs)
 
     def __str__(self):
         string = ''
         for k, v in self.__dict__.items():
-            string += 'General.{0} = {1};\n'.format(k, v)
+            if isinstance(v, dict):
+                for k2, v2 in v.items():
+                    string += 'General.{0}.{1} = {2};\n'.format(k, k2, v2)
+            else:
+                string += 'General.{0} = {1};\n'.format(k, v)
         return string
 
-    def apply(self):
-        from . import gmsh
-        for k, v in self.__dict__.items():
-            name = 'General.{0}'.format(k)
-            gmsh.option.setNumber(name, v)
 
 class Mesh(object):
     ''' Mesh Gmsh visualization options.
@@ -359,12 +389,6 @@ class Mesh(object):
 
         return string
 
-    def apply(self):
-        from . import gmsh
-        for k, v in self.__dict__.items():
-            name = 'Mesh.{0}'.format(k)
-            gmsh.option.setNumber(name, v)
-
 
 class Color(object):
     ''' Gmsh visualization Color options.
@@ -410,14 +434,6 @@ class Color(object):
             st = st.replace('[', '{').replace(']', '}')
             string += st
         return string
-
-    def apply(self):
-        from . import gmsh
-        # NOT WORKING
-        for k, v in self.__dict__.items():
-            name = 'Mesh.Color.{0}'.format(k)
-            string = str(v).replace('[', '{').replace(']', '}')
-            gmsh.option.setString(name, string)
 
 
 class View(object):
@@ -504,26 +520,6 @@ class View(object):
                 st = add + '{0} = {1};\n'.format(k, v)
                 string += st
         return string
-
-    def apply(self):
-        from . import gmsh
-        for k, v in self.__dict__.items():
-            if self.indx is None:
-                name = 'View.{0}'.format(k)
-            else:
-                name = 'View[{0}].{1}'.format(self.indx, k)
-
-            if k == 'ColorTable':
-                if v is not None:
-                    string = self._color_table_string()
-                    gmsh.option.setString(name, string)
-
-            elif k == 'indx':
-                pass
-
-            else:
-                gmsh.option.setNumber(name, v)
-
 
 
 class PhysicalNames(object):
