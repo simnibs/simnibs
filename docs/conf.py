@@ -1,4 +1,5 @@
 import sys
+from importlib.metadata import version as get_version
 
 # -*- coding: utf-8 -*-
 #
@@ -26,7 +27,7 @@ copyright = '2020, SimNIBS Developers'
 author = 'SimNIBS Developers'
 
 # The full version, including alpha/beta/rc tags
-release = open("../simnibs/_version.py").readlines()[-1].split()[-1].strip("\"'")
+release: str = get_version("simnibs")
 
 # The short X.Y version
 version = '.'.join(release.split('.')[:2])
