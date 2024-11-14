@@ -120,7 +120,7 @@ def create_scripts(dest_dir):
     if sys.platform == 'win32':
         executables_dir = os.path.dirname(sys.executable)
         python_interpreter = f'"{os.path.join(executables_dir, "python.exe")}"'
-        with open(os.path.join(dest_dir, 'simnibs_jupyter'), 'w') as f:
+        with open(os.path.join(dest_dir, 'simnibs_jupyter.cmd'), 'w') as f:
             f.write("@echo off\n")
             f.write(f'"{python_interpreter}" -m jupyter lab')
     else:
