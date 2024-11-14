@@ -115,6 +115,20 @@ def create_scripts(dest_dir):
         os.symlink(
             sys.executable,
             os.path.join(dest_dir, 'simnibs_python'))
+        
+    # simnibs_jupyter link
+    if sys.platform == 'win32':
+        executables_dir = os.path.dirname(sys.executable)
+        python_interpreter = f'"{os.path.join(executables_dir, "python.exe")}"'
+        with open(os.path.join(dest_dir, 'simnibs_jupyter'), 'w') as f:
+            f.write("@echo off\n")
+            f.write(f'"{python_interpreter}" -m jupyter lab')
+    else:
+        if os.path.lexists(os.path.join(dest_dir, 'simnibs_jupyter')):
+            os.remove(os.path.join(dest_dir, 'simnibs_jupyter'))
+        os.symlink(
+            os.path.join(os.path.dirname(sys.executable), 'jupyter-lab'),
+            os.path.join(dest_dir, 'simnibs_jupyter'))
 
 
 def _write_unix_sh(python_cli, bash_cli, commands='"$@"'):
