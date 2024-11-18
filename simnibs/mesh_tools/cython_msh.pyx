@@ -33,13 +33,13 @@ def interp_grid(np.ndarray[long int, ndim=1] n_voxels,
             np.linalg.inv(
                 np.transpose(th_coords[:, :3, :3] - th_coords[:, 3, None, :], (0, 2, 1)))
 
-    cdef np.ndarray[int, ndim=2] th_boxes_min = np.rint(
+    cdef np.ndarray[long int, ndim=2] th_boxes_min = np.rint(
         np.min(th_coords, axis=1)).astype(int)
 
-    cdef np.ndarray[int, ndim=2] th_boxes_max = np.rint(
+    cdef np.ndarray[long int, ndim=2] th_boxes_max = np.rint(
         np.max(th_coords, axis=1)).astype(int)
 
-    cdef np.ndarray[int, ndim=1] in_roi = np.where(
+    cdef np.ndarray[long int, ndim=1] in_roi = np.where(
         np.all((th_boxes_min <= n_voxels) * (th_boxes_max >= 0), axis=1))[0].astype(int)
 
     th_boxes_max = np.minimum(th_boxes_max, np.array(n_voxels) - 1)
