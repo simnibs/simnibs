@@ -15,7 +15,6 @@ import conda_pack
 from setuptools_scm import get_version
 
 
-
 def build(simnibs_dist_dir, include_spyder=False, developer_id=None):
     simnibs_root_dir = os.path.normpath(os.path.join(
         os.path.abspath(os.path.dirname(__file__)),
@@ -26,9 +25,17 @@ def build(simnibs_dist_dir, include_spyder=False, developer_id=None):
     pack_dir = os.path.abspath('simnibs_installer')
     env_prefix = os.path.join(pack_dir, 'simnibs_env_tmp')
     simnibs_dist_dir = os.path.abspath(simnibs_dist_dir)
-    # Create a new environment
+
+    wheels = glob.glob(
+        os.path.join(simnibs_dist_dir, f'simnibs-{version}*.whl')
+    )
+    if len(wheels) == 0:
+        raise FileNotFoundError(f'Did not find any wheels for version {version}')
+
+    # Create temporary environment
     if os.path.isdir(pack_dir):
         shutil.rmtree(pack_dir)
+
     if sys.platform == 'linux':
         os_name = 'linux'
     elif sys.platform == 'darwin':
@@ -37,31 +44,22 @@ def build(simnibs_dist_dir, include_spyder=False, developer_id=None):
         os_name = 'win'
     else:
         raise OSError('OS not supported!')
-    # Create temporary environment
-
     env = os.path.join(
         simnibs_root_dir, f'environment_{os_name}.yml'
     )
-
-    # Install requirements
     subprocess.run(
         f'conda env create -p {env_prefix} -f {env} --force',
         check=True,
         shell=True
     )
-    # Install SimNIBS
-    wheels = glob.glob(
-        os.path.join(simnibs_dist_dir, f'simnibs-{version}*.whl')
-    )
-
-    if len(wheels) == 0:
-        raise FileNotFoundError(f'Did not find any wheels for version {version}')
     if sys.platform == 'win32':
         env_pip = os.path.join(env_prefix, 'Scripts', 'pip.exe')
     else:
-        env_pip = os.path.join(env_prefix, 'bin', 'pip') 
+        env_pip = os.path.join(env_prefix, 'bin', 'pip')
+
+    # Install SimNIBS
     subprocess.run(
-        f'{env_pip} install simnibs --no-cache-dir --no-index --upgrade --find-links={simnibs_dist_dir}',
+        f'{env_pip} install simnibs=={version} --no-deps --no-index --find-links={simnibs_dist_dir}',
         check=True,
         shell=True
     )
@@ -174,8 +172,8 @@ def build(simnibs_dist_dir, include_spyder=False, developer_id=None):
                 '--root', pack_dir,
                 '--identifier', f'org.SimNIBS.{version}',
                 '--version', version,
-                '--scripts', tmpdir, 
-                '--install-location', 
+                '--scripts', tmpdir,
+                '--install-location',
                 '/Applications/SimNIBS-'+ '.'.join(version.split('.')[:2]),
                 os.path.join(tmpdir, 'simnibs_installer_macos.pkg')
                 ],
@@ -184,7 +182,7 @@ def build(simnibs_dist_dir, include_spyder=False, developer_id=None):
             print('Running productbuid')
             if developer_id is not None:
                 sign = ['--sign', developer_id]
-            else:    
+            else:
                 sign = []
             subprocess.run([
                 'productbuild',
