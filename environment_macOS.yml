@@ -3,12 +3,12 @@ channels:
   - conda-forge
 dependencies:
   - python=3.11
-  - cgal=5.5.1
+  - cgal-cpp=5.5.1
   - cython=3.0.11
   - h5py=3.11.0
   - jsonschema=4.23.0
   - libwebp=1.4.0
-  - matplotlib=3.9.2
+  - matplotlib-base=3.9.2
   - mock=5.1.0
   - nibabel=5.3.0
   - numba=0.60.0
@@ -27,5 +27,5 @@ dependencies:
   - pip:
     - simnibs/external/wheels/fmm3dpy-1.0.0-cp311-cp311-macosx_11_0_arm64.whl
     - samseg==0.4a0
-    - pygpc==0.3.9
+    - pygpc==0.4.1
     - https://github.com/simnibs/petsc4py/releases/download/v3.21.5/petsc4py-3.21.5-cp311-cp311-macosx_14_0_arm64.whl
