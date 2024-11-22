@@ -15,7 +15,7 @@ import conda_pack
 from setuptools_scm import get_version
 
 
-def build(simnibs_dist_dir, include_spyder=False, developer_id=None):
+def build(simnibs_dist_dir, developer_id=None):
     simnibs_root_dir = os.path.normpath(os.path.join(
         os.path.abspath(os.path.dirname(__file__)),
         '..'
@@ -48,7 +48,7 @@ def build(simnibs_dist_dir, include_spyder=False, developer_id=None):
         simnibs_root_dir, f'environment_{os_name}.yml'
     )
     subprocess.run(
-        f'conda env create -p {env_prefix} -f {env} --force',
+        f'conda env create -p {env_prefix} -f {env} --yes',
         check=True,
         shell=True
     )
@@ -63,17 +63,7 @@ def build(simnibs_dist_dir, include_spyder=False, developer_id=None):
         check=True,
         shell=True
     )
-    if include_spyder:
-        subprocess.run(
-            f'{env_pip} install --upgrade '
-            'pyqt5==5.12 '
-            'pyqtwebengine==5.12 '
-            'pyflakes==2.2 '
-            'spyder==4.1',
-            check=True,
-            shell=True
-        )
-        # Spyder can be started with simnibs_python -m spyder.app.start
+
     # Pack
     # I use .tar because MacOS erases the execute permission in .zip
     conda_pack.pack(
@@ -224,7 +214,6 @@ if __name__ == '__main__':
         description="Prepare a SimNIBS intaller"
     )
     parser.add_argument("dist_dir", help="Directory with the SimNIBS wheels to be packed")
-    parser.add_argument("--include-spyder", action="store_true", help="Includes the Spyder IDE")
     parser.add_argument("--developer-id", default=None, help="Developer ID for signing in MacOS, DOES NOT SUPPORT NOTARIZATION (optional)")
     args = parser.parse_args(sys.argv[1:])
-    build(args.dist_dir, args.include_spyder, args.developer_id)
+    build(args.dist_dir, args.developer_id)

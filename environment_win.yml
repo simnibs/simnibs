@@ -9,7 +9,7 @@ dependencies:
   - h5py=3.11.0
   - jsonschema=4.23.0
   - libwebp=1.4.0
-  - matplotlib=3.9.2
+  - matplotlib-base=3.9.2
   - mkl=2024.2.1
   - mock=5.1.0
   - nibabel=5.2.1
@@ -30,6 +30,6 @@ dependencies:
   - pip:
     - fmm3dpy==1.0.0
     - samseg==0.4a0
-    - pygpc==0.3.9
+    - pygpc==0.4.1
     - PyQt5
     - https://github.com/simnibs/petsc4py/releases/download/v3.21.5/petsc4py-3.21.5-cp311-cp311-win_amd64.whl
