@@ -51,6 +51,7 @@ var hwnd_associatefiles
 var hwnd_messagestring
 var messagestring
 var postinstall_options
+var python_note
 
 Function ShowOptions
     !insertmacro MUI_HEADER_TEXT "Post-Installation Options" ""
