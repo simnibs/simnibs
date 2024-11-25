@@ -587,18 +587,22 @@ def setup_file_association(force=False, silent=False):
             winreg.CreateKey(reg, rf'SimNIBS.Gmsh.v{MINOR_VERSION}\shell\open\command')
             winreg.SetValue(reg, rf'SimNIBS.Gmsh.v{MINOR_VERSION}\shell\open\command', winreg.REG_SZ, f'"{gmsh_bin}" "%1"')
             for ext in extensions:
-                try:
-                    value = winreg.QueryValue(reg, ext)
-                except FileNotFoundError:
+                if force:
                     register = True
                 else:
-                    if value:
-                        register = _get_input(
-                            f'Found other association for "{ext}" files, overwrite it?',
-                            silent
-                        )
-                    else:
+                    try:
+                        value = winreg.QueryValue(reg, ext)
+                    except FileNotFoundError:
                         register = True
+                    else:
+                        if value:
+                            register = _get_input(
+                                f'Found other association for "{ext}" files, overwrite it?',
+                                silent
+                            )
+                        else:
+                            register = True
+                            
                 if register:
                     winreg.CreateKey(reg, ext)
                     winreg.SetValue(reg, ext, winreg.REG_SZ, fr'SimNIBS.Gmsh.v{MINOR_VERSION}')

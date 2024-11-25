@@ -25,6 +25,7 @@ RequestExecutionLevel user
 ; UI pages
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_DIRECTORY
+Page Custom ShowOptions
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
 !insertmacro MUI_LANGUAGE "English"
@@ -41,6 +42,81 @@ RequestExecutionLevel user
 
 !include LogicLib.nsh
 !include x64.nsh
+
+var hwnd_dialog
+var hwnd_gmshoptions
+var hwnd_systempath
+var hwnd_shortcut
+var hwnd_associatefiles
+var hwnd_messagestring
+var messagestring
+var postinstall_options
+
+Function ShowOptions
+    !insertmacro MUI_HEADER_TEXT "Post-Installation Options" ""
+	nsDialogs::Create 1018
+	Pop $hwnd_dialog
+	
+	${NSD_CreateCheckbox} 0 0 50% 6% "Copy gmsh_options file"
+		Pop $hwnd_gmshoptions
+		${NSD_Check} $hwnd_gmshoptions
+		${NSD_OnClick} $hwnd_gmshoptions UpdateText
+		
+	${NSD_CreateCheckbox} 0 10% 50% 6% "Add SimNIBS to the system PATH"
+        Pop $hwnd_systempath
+        ${NSD_Check} $hwnd_systempath
+        ${NSD_OnClick} $hwnd_systempath UpdateText
+        
+   	${NSD_CreateCheckbox} 0 20% 50% 6% "Add SimNIBS shortcut icons"
+        Pop $hwnd_shortcut
+        ${NSD_Check} $hwnd_shortcut
+        ${NSD_OnClick} $hwnd_shortcut UpdateText
+ 
+    ${NSD_CreateCheckbox} 0 30% 50% 6% "Associate .msh, .stl and .geo files"
+        Pop $hwnd_associatefiles
+        ${NSD_Check} $hwnd_associatefiles
+        ${NSD_OnClick} $hwnd_associatefiles UpdateText
+        
+    ${NSD_CreateLabel} 0 50% 100% 30% ""
+        Pop $hwnd_messagestring
+     
+    StrCpy $python_note "NOTE: The installer will run SimNIBS configuration scripts. Windows might ask therefore ask"
+    StrCpy $python_note "$python_note for your OK to run python during installation."
+    ${NSD_CreateLabel} 0 80% 100% 20% $python_note
+    
+	nsDialogs::Show
+FunctionEnd
+
+Function UpdateText
+    StrCpy $messagestring ""
+    StrCpy $postinstall_options ""
+    
+    ${NSD_GetState} $hwnd_gmshoptions $0
+    ${If} $0 == 0
+        StrCpy $messagestring "$messagestring Visualization of head models and simulation results will be affected!$\n"
+        StrCpy $postinstall_options "$postinstall_options --no-copy-gmsh-options"
+    ${EndIf}
+    
+    ${NSD_GetState} $hwnd_systempath $0
+    ${If} $0 == 0
+        StrCpy $messagestring "$messagestring SimNIBS functions will not be callable from the terminal!$\n"
+        StrCpy $postinstall_options "$postinstall_options --no-add-to-path"
+    ${EndIf}
+    
+    ${NSD_GetState} $hwnd_shortcut $0
+    ${If} $0 == 0
+        StrCpy $messagestring "$messagestring SimNIBS icons will not be found in the Start Menu!$\n"
+        StrCpy $postinstall_options "$postinstall_options --no-shortcut-icons"
+    ${EndIf}
+    
+    ${NSD_GetState} $hwnd_associatefiles $0
+    ${If} $0 == 0
+        StrCpy $messagestring "$messagestring Models and simulation results will not be associated with Gmsh!$\n"
+        StrCpy $postinstall_options "$postinstall_options --no-associate-files"
+    ${EndIf}
+    
+    ${NSD_SetText} $hwnd_messagestring $messagestring
+FunctionEnd
 
 
 Name "SimNIBS ${PRODUCT_VERSION}"
@@ -74,6 +150,7 @@ Section "!${PRODUCT_NAME}" sec_app
   ; These steps rely on the fix_entrypoints.py and postinstall_simnibs.py being moved to the simnibs_env dir
   ; The sitecustomize.py also needs to be moved to simnibs_env/Lib/site-packages in order for the postinstall_simnibs.py to run
   DetailPrint "Fixing Scripts"
+  DetailPrint 'Running "$INSTDIR\simnibs_env\python.exe" "$INSTDIR\simnibs_env\fix_entrypoints.py" "$INSTDIR\simnibs_env\Scripts"  "$INSTDIR\simnibs_env"'
   nsExec::ExecToLog '"$INSTDIR\simnibs_env\python.exe" "$INSTDIR\simnibs_env\fix_entrypoints.py" "$INSTDIR\simnibs_env\Scripts"  "$INSTDIR\simnibs_env"'
   Pop $0
   ${IfNot} $0 == 0
@@ -83,12 +160,13 @@ Section "!${PRODUCT_NAME}" sec_app
       Call DumpLog
       Abort
   ${EndIf}
+  
   DetailPrint "Installing the SimNIBS package..."
   ${If} ${Silent}
-    nsExec::ExecToLog '"$INSTDIR\simnibs_env\Scripts\postinstall_simnibs.exe" --silent --force -d "$INSTDIR" --setup-links'
-  ${Else}
-    nsExec::ExecToLog '"$INSTDIR\simnibs_env\Scripts\postinstall_simnibs.exe" -d "$INSTDIR" --setup-links'
+    StrCpy $postinstall_options ""
   ${EndIf}
+  DetailPrint 'Running "$INSTDIR\simnibs_env\Scripts\postinstall_simnibs.exe" --silent --force -d "$INSTDIR" --setup-links $postinstall_options'
+  nsExec::ExecToLog '"$INSTDIR\simnibs_env\Scripts\postinstall_simnibs.exe" --silent --force -d "$INSTDIR" --setup-links $postinstall_options'
   Pop $0
   ${IfNot} $0 == 0
       MessageBox MB_ICONSTOP "There was an error installing SimNIBS"

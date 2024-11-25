@@ -21,7 +21,7 @@ jobs:
 
   - script: |
       call activate simnibs_env
-      python -m pip wheel . -w dist  --no-deps --use-feature=in-tree-build
+      python -m pip wheel . -w dist  --no-deps
       pip install jinja2 conda-pack setuptools-scm
       python packing\pack.py dist\
       copy dist\* $(Build.ArtifactStagingDirectory)
