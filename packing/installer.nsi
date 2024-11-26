@@ -81,7 +81,7 @@ Function ShowOptions
     ${NSD_CreateLabel} 0 50% 100% 30% ""
         Pop $hwnd_messagestring
      
-    StrCpy $python_note "NOTE: The installer will run SimNIBS configuration scripts. Windows might ask therefore ask"
+    StrCpy $python_note "NOTE: The installer will run SimNIBS configuration scripts. Windows might therefore ask"
     StrCpy $python_note "$python_note for your OK to run python during installation."
     ${NSD_CreateLabel} 0 80% 100% 20% $python_note
     
