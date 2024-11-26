@@ -13,4 +13,5 @@ Installation
    optional
    uninstall
    conda
+   setup_spyder
    throubleshooting

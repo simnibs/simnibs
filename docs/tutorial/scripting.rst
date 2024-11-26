@@ -17,7 +17,7 @@ Running Scripts
 Python
 ''''''
 
-Run SimNIBS *Python* scripts using the :ref:`simnibs_python <simnibs_python_cli>` command so that your scripts run in the correct *Python* interpreter.
+Run SimNIBS *Python* scripts using the :ref:`simnibs_python <simnibs_python_cli>` command in a terminal window so that your scripts run in the correct *Python* interpreter. In case you have Spyder installed, you can also :ref:`set it up to use the SimNIBS installation <setup_spyder>`.
 
 MATLAB
 ''''''
