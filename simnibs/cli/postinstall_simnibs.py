@@ -27,7 +27,8 @@ import stat
 import re
 import subprocess
 import tempfile
-
+import json
+from pathlib import Path
 from simnibs import SIMNIBSDIR
 from simnibs import __version__
 from simnibs import file_finder
@@ -903,6 +904,34 @@ if GUI:
         else:
             raise Exception('uninstall cancelled by user')
 
+def _fix_kernel_config(jupyter_core_paths: list[str], install_dir: str) -> None:
+    """ This function takes in a list of core jupyter paths,
+    finds the one that points to the simnibs install locations
+    (if it exists) and fixes the python interpreter path in the
+    kernel config json.
+    """
+
+    simnibs_env_path = list(filter(lambda x: 'simnibs_env' in x, jupyter_core_paths))
+    # If the path doesn't exist just stop
+    if not simnibs_env_path:
+        return
+
+    config_json = Path(simnibs_env_path[0]) / 'kernels' / 'python3' / 'kernel.json'
+
+    # Double-check that this thing exists
+    if config_json.exists():
+        with open(config_json) as f:
+            config = json.load(f)
+
+        # This is the field we need to set correctly
+        # It's basically just missing the install_dir
+        config['argv'][0] = install_dir + '/' + config['argv'][0]
+
+        # Dump it back
+        with open(config_json, 'w') as f:
+            json.dump(config, f)
+
+
 def install(install_dir,
             force,
             silent,
@@ -938,6 +967,15 @@ def install(install_dir,
         subprocess.run([pythonw, '-m', 'pytest'] + test_call)
     shutil.rmtree(os.path.join(install_dir, '.pytest_cache'), True)
     create_scripts(scripts_dir)
+
+    # Check for jupyter kernel specs json file and fix it (if it exists)
+    # Try importing the jupyter paths, if it fails just skip the fixing
+    try:
+        from jupyter_core.paths import jupyter_path
+        _fix_kernel_config(jupyter_path(), install_dir)
+    except ImportError:
+        print('Jupyter not found. Will skip kernel configuration')
+
     if add_to_path:
         try:
             added_to_path = path_setup(scripts_dir, force, silent)
