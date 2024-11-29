@@ -925,7 +925,9 @@ def _fix_kernel_config(jupyter_core_paths: list[str], install_dir: str) -> None:
 
         # This is the field we need to set correctly
         # It's basically just missing the install_dir
-        config['argv'][0] = install_dir + '/' + config['argv'][0]
+        config['argv'][0] = os.path.join(install_dir, config['argv'][0])
+        # and set an informative name
+        config['display_name'] = "SimNIBS python"
 
         # Dump it back
         with open(config_json, 'w') as f:
