@@ -1530,7 +1530,6 @@ class TesFlexOptimization:
         lb = np.delete(lb, idx_alpha_remove)
         ub = np.delete(ub, idx_alpha_remove)
 
-        # TODO: think this works only for one channel_stim right now (HDTES), test with 2 channel stim and adapt (KW)
         # add bounds of geometry parameters of electrode (if any)
         for i_channel_stim in range(self.n_channel_stim):
             if self.electrode[i_channel_stim]._any_free_geometry:
@@ -1589,7 +1588,6 @@ class TesFlexOptimization:
                 )
                 i_para += i_para_increment
 
-        # TODO: same here I think it only works for one channel_stim (KW)
         # extract geometrical electrode parameters from optimal parameters and update electrode
         for i_channel_stim in range(self.n_channel_stim):
             if self.electrode[i_channel_stim]._any_free_geometry:
