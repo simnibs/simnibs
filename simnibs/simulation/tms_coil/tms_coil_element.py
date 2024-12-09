@@ -7,7 +7,6 @@ import zlib
 import fmm3dpy
 import numpy as np
 import numpy.typing as npt
-from simnibs.simulation.numba_fem_utils import map_coord_lin_trans
 
 from simnibs.mesh_tools.mesh_io import Elements, Msh, Nodes
 from simnibs.simulation.tms_coil.tcd_element import TcdElement
@@ -137,7 +136,7 @@ class TmsCoilElements(ABC, TcdElement):
             The B field at every target positions in Tesla*meter
         """
         pass
-    
+
     def get_db_dt(
         self,
         target_positions: npt.NDArray[np.float_],
@@ -583,7 +582,7 @@ class DipoleElements(PositionalTmsCoilElements):
         A *= -1e-7
 
         return A
-    
+
     def get_b_field(
         self,
         target_positions: npt.NDArray[np.float_],
@@ -854,7 +853,7 @@ class LineSegmentElements(PositionalTmsCoilElements):
                 eps=eps,
                 pgt=2,
             )
-            
+
         B = np.empty((target_positions_m.shape[0], 3), dtype=float)
 
         B[:, 0] = out.gradtarg[1][2] - out.gradtarg[2][1]
@@ -963,6 +962,10 @@ class SampledGridPointElements(TmsCoilElements):
         casing: Optional[TmsCoilModel] = None,
         deformations: Optional[list[TmsCoilDeformation]] = None,
     ):
+        # TODO: import here as numba interacts badly with pyqt (GUI). move to
+        # start of file once this is resolved.
+        from simnibs.simulation.numba_fem_utils import map_coord_lin_trans
+
         super().__init__(stimulator, name, casing, deformations)
         self.data = data
         self.affine = np.array(affine, dtype=np.float64)
@@ -1023,7 +1026,7 @@ class SampledGridPointElements(TmsCoilElements):
 
         # Rotates the field
         return out.T  # @ combined_affine[:3, :3].T
-    
+
     def get_b_field(
         self,
         target_positions: npt.NDArray[np.float_],

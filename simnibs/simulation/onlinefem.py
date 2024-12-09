@@ -15,7 +15,6 @@ from simnibs.mesh_tools.mesh_io import Msh, read_msh
 from simnibs.utils import simnibs_logger
 from simnibs.utils.simnibs_logger import logger
 from simnibs.utils.file_finder import Templates, SubjectFiles
-from simnibs.simulation.numba_fem_utils import sumf, sumf2, node2elmf, sumf3, postp, postp_mag, spmatmul
 
 from .fem import get_dirichlet_node_index_cog, TDCSFEMNeumann, TMSFEM
 from .sim_struct import SimuList
@@ -26,10 +25,10 @@ class OnlineFEM:
 
     !!! NOTE !!!
     TMS:
-        The mesh used in the OnlineFem and in the FemTargetPointCloud have to have the same node coordinates and the same node ordering. 
-        They also have to have the same elements and the same element ordering. 
+        The mesh used in the OnlineFem and in the FemTargetPointCloud have to have the same node coordinates and the same node ordering.
+        They also have to have the same elements and the same element ordering.
     TES:
-        The mesh used in the OnlineFem and in the FemTargetPointCloud have to have the same node coordinates and the same node ordering. 
+        The mesh used in the OnlineFem and in the FemTargetPointCloud have to have the same node coordinates and the same node ordering.
 
     Parameters
     ----------
@@ -65,6 +64,10 @@ class OnlineFEM:
         """
         Constructor of the OnlineFEM class
         """
+        # TODO: import here as numba interacts badly with pyqt (GUI). move to
+        # start of file once this is resolved.
+        from simnibs.simulation.numba_fem_utils import sumf, sumf2, node2elmf, sumf3, postp, postp_mag, spmatmul
+
         self.method = method                        # 'TES' or 'TMS'
         self.dataType = dataType                    # calc. magn. of e-field for dataType=0 otherwise return Ex, Ey, Ez
         self.cond = cond
@@ -735,16 +738,16 @@ class OnlineFEM:
         """
         Set matrices and initialize the pardiso solver for update_position in self.solver.
         """
-        
-        if self.cond is None:    
+
+        if self.cond is None:
             # prepare FEM
             self.simulist = SimuList(mesh=self.mesh)
-    
+
             # prepare conductivity (scalar or anisotropic)
             self.simulist.anisotropy_type = self.anisotropy_type
             self.simulist.fn_tensor_nifti = self.fn_tensor_nifti
             self.cond = self.simulist.cond2elmdata()
-        
+
         if self.method == "TMS":
             self.cond = self.cond.value.squeeze()
 
@@ -776,14 +779,14 @@ class OnlineFEM:
             # set the force integrals. We use the force integrals to assemble the right hand side force vector
             if self.cond.ndim == 1:
                 self.force_integrals = get_force_integrals(self.volume, self.gradient, self.cond)
-                
+
             self.fem = TMSFEM(mesh=self.mesh,
                               cond=self.cond,
                               solver_options=self.solver_options,
                               solver_loglevel=self.solver_loglevel,
                               dirichlet_node=self.dirichlet_node
                               )
-            
+
             self.fem.prepare_solver()
             self.solver = self.fem._solver
 
@@ -1002,10 +1005,10 @@ class FemTargetPointCloud:
 
     !!! NOTE !!!
     TMS:
-        The mesh used in the OnlineFem and in the FemTargetPointCloud have to have the same node coordinates and the same node ordering. 
-        They also have to have the same elements and the same element ordering. 
+        The mesh used in the OnlineFem and in the FemTargetPointCloud have to have the same node coordinates and the same node ordering.
+        They also have to have the same elements and the same element ordering.
     TES:
-        The mesh used in the OnlineFem and in the FemTargetPointCloud have to have the same node coordinates and the same node ordering. 
+        The mesh used in the OnlineFem and in the FemTargetPointCloud have to have the same node coordinates and the same node ordering.
 
     Parameters
     ----------
@@ -1018,7 +1021,7 @@ class FemTargetPointCloud:
     nearest_neighbor : bool
         Whether to use SPR interpolation or nearest neighbor
     fill_nearest : boolean
-        Whether to fill values outside the mesh with the nearest value or assign zeros to these points. 
+        Whether to fill values outside the mesh with the nearest value or assign zeros to these points.
         If set to True then use nearest neighbor assigns the nearest value; otherwise assign to 0
 
     Attributes
@@ -1154,7 +1157,7 @@ class FemTargetPointCloud:
             e = fields
             if not self.fill_nearest and self.any_outside:
                 e[~self.inside] = 0
-        
+
         return e
 
     def _get_sF_matrix(self, msh, center, fill_nearest, tags=None):
@@ -1173,7 +1176,7 @@ class FemTargetPointCloud:
         center : np.array of float [n_center_ROI x 3]
             The coordinates of the points that we want to interpolate.
         fill_nearest : boolean
-            Whether to fill values outside the mesh with the nearest value or assign zeros to these points. 
+            Whether to fill values outside the mesh with the nearest value or assign zeros to these points.
             If set to True then use nearest neighbor assigns the nearest value; otherwise assign to 0
         tags : list or None, optional, default: None
             The tissue type defines the selected volume in the loaded mesh. Defaults to None.
