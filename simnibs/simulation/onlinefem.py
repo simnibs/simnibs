@@ -19,6 +19,10 @@ from simnibs.utils.file_finder import Templates, SubjectFiles
 from .fem import get_dirichlet_node_index_cog, TDCSFEMNeumann, TMSFEM
 from .sim_struct import SimuList
 
+# TODO: import here as numba interacts badly with pyqt (GUI). remove comment
+# here once this is resolved.
+# from simnibs.simulation.numba_fem_utils import sumf, sumf2, node2elmf, sumf3, postp, postp_mag, spmatmul
+
 class OnlineFEM:
     """
     OnlineFEM class for fast FEM calculations using the Pardiso solver of the MKL library
@@ -64,9 +68,6 @@ class OnlineFEM:
         """
         Constructor of the OnlineFEM class
         """
-        # TODO: import here as numba interacts badly with pyqt (GUI). move to
-        # start of file once this is resolved.
-        from simnibs.simulation.numba_fem_utils import sumf, sumf2, node2elmf, sumf3, postp, postp_mag, spmatmul
 
         self.method = method                        # 'TES' or 'TMS'
         self.dataType = dataType                    # calc. magn. of e-field for dataType=0 otherwise return Ex, Ey, Ez
@@ -301,6 +302,10 @@ class OnlineFEM:
         b : np.array of float [n_nodes - 1]
             Right hand side of equation system (without Dirichlet node)
         """
+        # TODO: import here as numba interacts badly with pyqt (GUI). remove
+        # here once this is resolved.
+        from simnibs.simulation.numba_fem_utils import sumf2, node2elmf, sumf3
+
         if self.method == "TES":
             # gather electrode currents and associated node indices
             electrodes = []
@@ -822,6 +827,9 @@ def assemble_force_vector(force_integrals, reshaped_node_numbers, dadt):
     forcevec: np.array [n_nodes - 1]
         Right-hand side (without the Dirichlet node)
     """
+    # TODO: import here as numba interacts badly with pyqt (GUI). remove once
+    # this is resolved.
+    from simnibs.simulation.numba_fem_utils import sumf
 
     # integrate in each node of each element, the value for repeated nodes will be summed
     # together later
@@ -1044,6 +1052,7 @@ class FemTargetPointCloud:
         Number of tetrahedra in the whole head mesh
     """
     def __init__(self, mesh, center=None, gradient=None, nearest_neighbor=False, fill_nearest=False):
+
         self.center = center
         self.sF = None
         self.n_center = None
@@ -1122,6 +1131,10 @@ class FemTargetPointCloud:
         e : np.ndarray of float [center]
             Electric field in the target positions
         """
+        # TODO: import here as numba interacts badly with pyqt (GUI). remove
+        # here once this is resolved.
+        from simnibs.simulation.numba_fem_utils import postp, postp_mag, spmatmul
+
         # get the E field in all tetrahedra (v: (number_of_nodes, 1))
         ################################################################################################################
         if dadt is None:
