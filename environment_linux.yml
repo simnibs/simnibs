@@ -18,7 +18,6 @@ dependencies:
   - pillow=10.4.0
   - pip=24.2
   - pyopengl=3.1.6
-  - pyqt=5.15.9
   - pytest=8.3.3
   - python-mumps=0.0.2
   - requests=2.32.3
@@ -29,6 +28,7 @@ dependencies:
   - mesa-libgl-cos6-x86_64
   - jupyterlab=4.3.0
   - pip:
+    - pyqt5==5.15
     - fmm3dpy==1.0.0
     - samseg==0.4a0
     - pygpc==0.4.1
