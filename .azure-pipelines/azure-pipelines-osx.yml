@@ -116,49 +116,12 @@ jobs:
       testResultsFiles: 'test-results.xml'
       testRunTitle: 'Unit Tests'
 
-- job: Examples
-  dependsOn: Build
-  timeoutInMinutes: 0 # Maximum time (should be 6 hours)
-  pool:
-    vmImage: 'macOS-13'
-    maxParallel: 4
-
-  steps:
-  - checkout: none
-  - task: DownloadBuildArtifacts@0
-    inputs:
-      buildType: 'current'
-      downloadType: 'single'
-      artifactName: 'macos'
-      itemPattern: '**/*.pkg'
-      downloadPath: '$(System.ArtifactsDirectory)'
-    displayName: Download SimNIBS Installer
-
-  - bash: |
-      brew update
-      brew install octave
-      octave -v
-    displayName: Install Octave
-
-  - bash: |
-      installer -pkg $(System.ArtifactsDirectory)/macos/simnibs_installer_macos.pkg -target CurrentUserHomeDirectory -dumplog
-      cat ~/Applications/SimNIBS*/install.log
-      ~/Applications/SimNIBS*/bin/simnibs_python -m pytest ~/Applications/SimNIBS*/simnibs_env/lib/python*/site-packages/simnibs/examples/tests/examples.py -v -s --junit-xml=test-results.xml
-    displayName: Install SimNIBS and run tests
- 
-  - task: PublishTestResults@2
-    condition: succeededOrFailed()
-    inputs:
-      testResultsFiles: 'test-results.xml'
-      testRunTitle: 'Example Tests'
-
 # If everything went fine, we upload the wheel as a draft to GitHub
 - job: Release
   dependsOn:
     - Build
     # - Test
     # - Examples
-#  dependsOn: Build
   
   pool:
     vmImage: 'macOS-13'

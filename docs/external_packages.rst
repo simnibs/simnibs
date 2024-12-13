@@ -15,6 +15,8 @@ These open-source software packages and workflows build upon SimNIBS and might b
 
 **NHP modeling pipeline** (`website <https://github.com/ngoswami1/nhp-modeling-pipeline>`_, `reference <https://www.sciencedirect.com/science/article/pii/S0165027024001213>`_) uses SimNIBS to calculate electric fields in NHP head models.
 
+**PlanTUS** (`website <https://github.com/mlueckel/PlanTUS>`_) uses SimNIBS charm to create head models for TUS planning.
+
 **TAP (TMS_Targeting_And_Analysis_Pipeline)** (`website <https://github.com/moritzdannhauer/TAP>`_, `reference <https://iopscience.iop.org/article/10.1088/1741-2552/ac63a4/meta>`_) is a pipeline to optimize and verify coil placements in transcranial magnetic stimulation.
 
 **Targeted Functional Network Stimulation (TANS)** (`website <https://github.com/cjl2007/Targeted-Functional-Network-Stimulation>`_, `reference <https://www.cell.com/neuron/fulltext/S0896-6273(22)00744-9>`_) aims to optimize the network-specificity of TMS stimulation.

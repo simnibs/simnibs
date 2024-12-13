@@ -9,15 +9,15 @@ Version 4.5
 
 General-purpose TMS Optimization
 ''''''''''''''''''''''''''''''''
-* TODO
+* `Worbs T, Rumi B, Madsen KH, Thielscher A, Personalized electric field simulations of deformable large TMS coils based on automatic position and shape optimization, bioRxiv <https://doi.org/abc>`_
 
 Leadfield-free TES Optimization
 ''''''''''''''''''''''''''''''''
-* TODO
+* `Weise K, Madsen KH, Worbs T, Knösche TR, Korshøj A, Thielscher A, A Leadfield-Free Optimization Framework for Transcranially Applied Electric Currents, bioRxiv <https://doi.org/abc>`_
 
 Extended Head Model "Ernie Extended"
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-* `Van Hoornweder, S., Cappozzo V., De Herde, L., Puonti, O., Siebner H. R., Meesen, L. J. R., Thielscher, A.,  Head And Shoulders - The Impact Of An Extended Head Model On The Simulation And Optimization Of Transcranial Electric Stimulation, biorxiv <https://doi.org/10.1101/2024.08.29.610251>`_
+* `Van Hoornweder S, Cappozzo V, De Herde L, Puonti O, Siebner HR, Meesen LJR, Thielscher A (2024)  Head And Shoulders - The Impact Of An Extended Head Model On The Simulation And Optimization Of Transcranial Electric Stimulation, Imaging Neuroscience, doi: 10.1162/imag_a_00379 <https://doi.org/10.1162/imag_a_00379>`_
 
 Non-Human Primate Models
 ''''''''''''''''''''''''''''''''
@@ -61,12 +61,11 @@ Magnetic Field Calculations
 
 Electric Field Strength Optimization
 ''''''''''''''''''''''''''''''''''''
-* `Saturnino, G. B., Madsen, K. H., & Thielscher, A. (2020). Optimizing the Electric Field Strength in Multiple Targets for Multichannel Transcranial Electric Stimulation. bioRxiv. <https://doi.org/10.1101/2020.05.27.118422>`_
+* `Saturnino, G. B., Madsen, K. H., & Thielscher, A. (2021). Optimizing the Electric Field Strength in Multiple Targets for Multichannel Transcranial Electric Stimulation. Journal of Neural Engineering, 18(1):10.1088/1741-2552/abca15  <https://doi.org/10.1088/1741-2552/abca15>`_
 
 
 Version 3.1
 -----------
-
 
 TDCS Optimization
 '''''''''''''''''''
@@ -86,7 +85,7 @@ Assessement of accuracy and speed of new solver
 ''''''''''''''''''''''''''''''''''''''''''''''''
 
 * `Saturnino, Guilherme B., Kristoffer H. Madsen, and Axel Thielscher. (2019). "Electric field
-  simulations for transcranial brain stimulation using FEM: an efficient implementation and error analysis." Journal of neural engineering 16.6 066032. <https://doi.org/10.1088/1741-2552/ab41ba>`_
+  simulations for transcranial brain stimulation using FEM: an efficient implementation and error analysis." Journal of Neural Engineering 16.6 066032. <https://doi.org/10.1088/1741-2552/ab41ba>`_
 
 
 Uncertainty Quantification

@@ -123,6 +123,16 @@ Intel\
 Intel MKL Pardiso solver is used for FEM on Windows and Linux
 
 
+Jupyterlab
+=======
+jupyterlab.readthedocs.io/en/latest\
+**License and link to online license text (if existing):**\
+revised BSD license\
+github.com/jupyterlab/jupyterlab/blob/main/LICENSE\
+**Copyright**\
+Project Jupyter
+
+
 Matplotlib
 =======
 matplotlib.org\

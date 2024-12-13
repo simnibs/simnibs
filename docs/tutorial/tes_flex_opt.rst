@@ -4,7 +4,7 @@
 Leadfield-free TES Optimization
 ===============================
 
-.. note:: When using this feature in a publication, please cite 
+.. note:: When using this feature in a publication, please cite `Weise K, Madsen KH, Worbs T, Knösche TR, Korshøj A, Thielscher A, A Leadfield-Free Optimization Framework for Transcranially Applied Electric Currents, bioRxiv <https://doi.org/abc>`_
 
 \
 

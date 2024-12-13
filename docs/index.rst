@@ -142,6 +142,7 @@ It builds upon 3rd party open-source and free code and binaries from :ref:`sever
   * **Version 4.5.0** contains several new TMS coil models and new :ref:`datasets <dataset>`.
   * **Version 4.5.0** introduces a new format for TMS coil models (.tcd) that supports flexible and multi-element coils and simplifies the creation of custom coil models (example scripts are provided).
   * **Version 4.5.0** comes with a tutorial for calculating :ref:`EEG leadfields <eeg_leadfields>` with SimNIBS for use in `FieldTrip <https://www.fieldtriptoolbox.org/>`_ and `MNE-Python <https://mne.tools/stable/index.html>`_ .
+  * **Version 4.5.0** comes now with JupyterLab to make SimNIBS scripting in Python more straightforward.  
   * Version 4.1.0 improved the mesh quality and added the option to use FreeSurfer results for more accurate representation of smaller sulci in the head meshes.
 
 Please see details in the :ref:`changelog <changelog>`.

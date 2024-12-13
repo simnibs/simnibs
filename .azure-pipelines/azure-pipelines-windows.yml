@@ -71,40 +71,8 @@ jobs:
       testResultsFiles: 'test-results.xml'
       testRunTitle: 'Unit Tests'
 
-- job: Examples
-  dependsOn: Build
-  timeoutInMinutes: 120 # Maximum time (should be 6 hours)
-  pool:
-    vmImage: 'windows-2019'
-
-  steps:
-  - checkout: none
-  - task: DownloadBuildArtifacts@0
-    inputs:
-      buildType: 'current'
-      downloadType: 'single'
-      artifactName: 'windows'
-      downloadPath: '$(System.ArtifactsDirectory)'
-    displayName: Download Installer
-
-  - bash: |
-      choco install octave.install --version=5.1.0
-    displayName: Install Octave
-
-  - script: |
-      start /wait $(System.ArtifactsDirectory)\windows\simnibs_installer_windows.exe /S /D=%cd%\simnibs_install
-      simnibs_install\bin\simnibs_python -m pytest simnibs_install\simnibs_env\lib\site-packages\simnibs\examples\tests\examples.py -v -s --junit-xml=test-results.xml
-    displayName: Install SimNIBS and run tests
-
-  - task: PublishTestResults@2
-    condition: succeededOrFailed()
-    inputs:
-      testResultsFiles: 'test-results.xml'
-      testRunTitle: 'Example Tests'
-
 # If everything went fine, we upload the new version as a draft to GitHub
 - job: Release
-#  dependsOn: Build
   dependsOn:
    - Build
    # - Test

@@ -14,6 +14,7 @@ Changelog
   * Tutorial for calculating :ref:`EEG leadfields <eeg_leadfields>` with SimNIBS for use in `FieldTrip <https://www.fieldtriptoolbox.org/>`_ and `MNE-Python <https://mne.tools/stable/index.html>`_ added.
   * Added `MUMPS solver <https://mumps-solver.org/index.php>`_ as option for the FEM calculations on Macs with Apple Silicon
   * Added custom compiled version of `FMM3d <https://github.com/flatironinstitute/FMM3D>`_ so that it runs on Macs with Apple Silicon
+  * Included JupyterLab (start via ``simnibs_jupyter`` on command line)
   * Update to python 3.11 and corresponding updates of most of the included packages.
 
 NOTES & Known issues:
