@@ -20,22 +20,33 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-import time
-from PyQt5 import QtCore, QtGui, QtWidgets
-from OpenGL import GL, GLU, GLUT
-import OpenGL
 import math
 import sys
+import time
 import numpy
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+try:
+    from OpenGL import GLUT
+except NotImplementedError as e:
+    print(f"{e}, setting PYOPENGL_PLATFORM=osmesa")
+    import os
+    os.environ['PYOPENGL_PLATFORM'] = 'osmesa'
+    # clean up opengl imports and try again
+    for module in tuple(filter(lambda m: m.startswith("OpenGL"), sys.modules)):
+        del sys.modules[module]
+    from OpenGL import GLUT
+
+from OpenGL import GL, GLU
+import OpenGL
 
 from simnibs.simulation.tms_coil.tms_coil import TmsCoil
-
 from ..mesh_tools import surface, mesh_io
 from ..utils.csv_reader import read_csv_positions
 
 global YELLOW
 global BLUE
-global RED 
+global RED
 global GREEN
 global BLACK
 global GRAY
@@ -145,7 +156,7 @@ class GLHeadModel(QtWidgets.QOpenGLWidget):
         QtWidgets.QApplication.processEvents()
         self.gm_surf = surface.Surface(mesh_struct, [2,1002])
         self.loadStage.emit(3)
-        
+
         QtWidgets.QApplication.processEvents()
 
         self.skin_surf.mesh_name = mesh_fn
@@ -278,7 +289,7 @@ class GLHeadModel(QtWidgets.QOpenGLWidget):
             GL.glCallList(self.eegPositions)
         except:
             pass
-    
+
         for stimulator in self.stimulator_objects:
             try:
                 GL.glCallList(stimulator)
@@ -411,7 +422,7 @@ class GLHeadModel(QtWidgets.QOpenGLWidget):
             green = numpy.array([0,1,0], dtype='float32')
 
             #Kernel: lowest value: [0,0,255], middle value: [0,255,0], highest value:[0,0,255]
-            #The rest are interpolated 
+            #The rest are interpolated
             #http://stackoverflow.com/questions/20792445/calculate-rgb-value-for-a-range-of-values-to-create-heat-map
             max_v = numpy.max(field)
             min_v = numpy.min(field)
@@ -509,7 +520,7 @@ class GLHeadModel(QtWidgets.QOpenGLWidget):
 
     #draws a simple model of an electrode
     def drawElectrode(self, elec, color = GREEN):
-        
+
         if len(elec.centre)< 3:
             print('invalid center!')
             return None
@@ -541,7 +552,7 @@ class GLHeadModel(QtWidgets.QOpenGLWidget):
         genList = GL.glGenLists(1)
         GL.glNewList(genList, GL.GL_COMPILE)
 
-        
+
         self.qglColor(color)
 
         if elec.shape == 'rect':
@@ -668,7 +679,7 @@ class GLHeadModel(QtWidgets.QOpenGLWidget):
         except:
             print('invalid matrix!')
             return None
-        
+
         if fn_coil != '':
             coil = TmsCoil.from_file(fn_coil)
             coil_mesh = coil.get_mesh(numpy.array(matrix), include_optimization_points=False, include_coil_elements=False)
@@ -705,7 +716,7 @@ class GLHeadModel(QtWidgets.QOpenGLWidget):
 
                 #for vertices in rendered_surf.tr_nodes:
                 GL.glDrawElements(GL.GL_TRIANGLES, len(rendered_surf.tr_nodes) * 3, GL.GL_UNSIGNED_INT, numpy.ravel(rendered_surf.tr_nodes))
-                
+
                 GL.glPopAttrib()
                 GL.glEndList()
                 GL.glDisableClientState(GL.GL_NORMAL_ARRAY)
@@ -844,7 +855,7 @@ class GLHeadModel(QtWidgets.QOpenGLWidget):
         GL.glLoadIdentity()
         width = float(self.width())
         height = float(self.height())
-        frustrumx = 60*width/self.sizeHint().width() 
+        frustrumx = 60*width/self.sizeHint().width()
         frustrumy = 60*height/self.sizeHint().height()
         GL.glFrustum(-frustrumx, frustrumx, frustrumy, -frustrumy, 200, 500)
         GL.glMatrixMode(GL.GL_MODELVIEW)
@@ -1077,7 +1088,7 @@ class HEADMODEL_UI(QtWidgets.QWidget):
             self.progressBar.setFormat("Drawing Surfaces")
         if stage == 4:
             self.progressBar.setVisible(False)
-    
+
 
 if __name__ == '__main__':
      app = QtWidgets.QApplication(sys.argv)

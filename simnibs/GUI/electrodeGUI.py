@@ -3,10 +3,10 @@
 '''
 
     Window for defining electrode proprieties
-    Part of the main SimNIBS GUI 
+    Part of the main SimNIBS GUI
     This program is part of the SimNIBS package.
     Please check on www.simnibs.org how to cite our work in publications.
-    
+
     Copyright (C) 2018 Guilherme B Saturnino
 
     This program is free software: you can redistribute it and/or modify
@@ -501,7 +501,7 @@ class GLElectrode(QtWidgets.QOpenGLWidget):
         self.center_dir = self.drawPointAndDirs()
         GL.glShadeModel(GL.GL_FLAT)
         GL.glEnable(GL.GL_DEPTH_TEST)
-        
+
     def paintGL(self):
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
         GL.glLoadIdentity()
@@ -563,9 +563,9 @@ class GLElectrode(QtWidgets.QOpenGLWidget):
             size_x = 0
         try:
             size_y = electrode_struct.dimensions[1] * scale
-        except: 
+        except:
             size_y = 0
-            
+
         thick1 = 0
         thick2 = 0
         thick_sponge = 0
@@ -640,7 +640,7 @@ class GLElectrode(QtWidgets.QOpenGLWidget):
     def cuboid(self, center_x, center_y,center_z, size_x, size_y, size_z, color, wireframe):
 
         if wireframe :
-            GL.glPolygonMode( GL.GL_FRONT_AND_BACK, GL.GL_LINE ) 
+            GL.glPolygonMode( GL.GL_FRONT_AND_BACK, GL.GL_LINE )
 
         GL.glBegin(GL.GL_QUADS)
         self.qglColor(color)
@@ -674,7 +674,7 @@ class GLElectrode(QtWidgets.QOpenGLWidget):
         GL.glVertex3d(mx,my, pz)
         GL.glVertex3d(mx,my, mz)
         GL.glVertex3d(px,my, mz)
-        
+
         GL.glVertex3d(px,py, pz)
         GL.glVertex3d(px,my, pz)
         GL.glVertex3d(px,my, mz)
@@ -702,7 +702,7 @@ class GLElectrode(QtWidgets.QOpenGLWidget):
 
         #top
         if wireframe :
-            GL.glPolygonMode( GL.GL_FRONT_AND_BACK, GL.GL_LINE ) 
+            GL.glPolygonMode( GL.GL_FRONT_AND_BACK, GL.GL_LINE )
 
         GL.glBegin(GL.GL_POLYGON)
         self.qglColor(color)
@@ -711,7 +711,7 @@ class GLElectrode(QtWidgets.QOpenGLWidget):
              x1 = center_x + x_axis/2 * math.sin(angle1)
              y1 = center_y + y_axis/2 * math.cos(angle1)
              GL.glVertex3d(x1, y1, pz)
- 
+
         GL.glEnd()
         #bottom
         GL.glBegin(GL.GL_POLYGON)
