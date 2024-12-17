@@ -39,6 +39,7 @@ Further notes
 --------------
 
 * If you encounter spurious segmentation results this *could* be due to a suboptimal affine registration between the anatomical image(s) and the atlas. Please see the tutorial :ref:`fix_affine_registration_tutorial`.
+* charm can use the cortical surfaces created by FreeSurfer recon-all to achieve a more accurate representation of smaller sulci in the head meshes (option *--fs-dir*).						
 * Please see the tutorial :ref:`fixheadmodel_tutorial` in case manually fixes to the segmentation are needed.
 
 

@@ -68,7 +68,7 @@ After scanning and having the MRI images in NifTI format, the next step is to cr
 
   \
 
-Please see :ref:`charm_docs` for details and available options.
+Optionally, charm can use the results of FreeSurfer's recon-all for more accurate representations of smaller sulci in the head meshes (*--fs-dir RECONALL_RESULTS_DIR*). Please see :ref:`charm_docs` for details and the command line help for all available options.
 
 4. Check the segmentation. Open the `charm_report.html` document inside the m2m-folder of the subject. The viewer shows the outlines of the reconstructed tissue compartments, enabling a visual check whether the outlines are accurate.
 

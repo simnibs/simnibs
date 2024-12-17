@@ -29,7 +29,7 @@ NOTES & Known issues:
 4.1.0 
 ------
  * Tetrahedral quality of the meshes was increased substantially to improve numerical accuracy of the FEM calculations and remove outliers in the calculated electric fields
- * Option added to use white matter and pial surfaces from FreeSurfer for more accurate representation of smaller sulci in the head meshes
+ * Option *--fs-dir* added to charm to use white matter and pial surfaces from FreeSurfer for more accurate representation of smaller sulci in the head meshes
  * I/O functions for neuronavigation data have been updated to support new Brainsight version 2.5.3
  
 4.0.1
