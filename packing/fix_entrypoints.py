@@ -109,8 +109,10 @@ def fix_all_scripts_win(scripts_folder, python_prefix):
 def fix_all_scripts_posix(scripts_folder, python_prefix):
     scripts_folder = os.path.abspath(scripts_folder)
     python_prefix = os.path.normpath(os.path.abspath(python_prefix))
+    # ensure trailing slash
+    python_prefix = os.path.join(python_prefix, "")
     # This shoud match shebangs invoking python, pytohnX, pythonX.Y and pythonX.Ym
-    shebang_pattern = re.compile(r'^#!.*(/python[\d\.]*m?)$', flags=re.M)
+    shebang_pattern = re.compile(r'^#!.*(python[\d\.]*m?)$', flags=re.M)
     for script in glob.glob(os.path.join(scripts_folder, '*')):
         try:
             with open(script, 'r+') as f:

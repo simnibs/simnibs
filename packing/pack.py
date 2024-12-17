@@ -68,7 +68,6 @@ def build(simnibs_dist_dir, developer_id=None):
     # I use .tar because MacOS erases the execute permission in .zip
     conda_pack.pack(
         prefix=env_prefix,
-        dest_prefix='simnibs_env',
         output=os.path.join(pack_dir, 'simnibs_env.tar'),
         compress_level=0,
         force=True,
@@ -149,7 +148,7 @@ def build(simnibs_dist_dir, developer_id=None):
             orig_folder = os.path.abspath(os.curdir)
             os.chdir(pack_dir)
             subprocess.run([
-                'zip', '-P', 'password', '-r',
+                'zip', '-q', '-P', 'password', '-r',
                 'simnibs_env.zip',
                 'simnibs_env'
             ])
@@ -169,7 +168,7 @@ def build(simnibs_dist_dir, developer_id=None):
                 ],
                 check=True,
             )
-            print('Running productbuid')
+            print('Running productbuild')
             if developer_id is not None:
                 sign = ['--sign', developer_id]
             else:
