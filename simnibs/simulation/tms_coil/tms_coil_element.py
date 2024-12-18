@@ -962,10 +962,6 @@ class SampledGridPointElements(TmsCoilElements):
         casing: Optional[TmsCoilModel] = None,
         deformations: Optional[list[TmsCoilDeformation]] = None,
     ):
-        # TODO: import here as numba interacts badly with pyqt (GUI). move to
-        # start of file once this is resolved.
-        from simnibs.simulation.numba_fem_utils import map_coord_lin_trans
-
         super().__init__(stimulator, name, casing, deformations)
         self.data = data
         self.affine = np.array(affine, dtype=np.float64)
@@ -1003,6 +999,10 @@ class SampledGridPointElements(TmsCoilElements):
         npt.NDArray[np.float_] (N x 3)
             The A-field at every target positions in Tesla*meter
         """
+        # TODO: import here as numba interacts badly with pyqt (GUI). move to
+        # start of file once this is resolved.
+        from simnibs.simulation.numba_fem_utils import map_coord_lin_trans
+
         combined_affine = coil_affine
         if apply_deformation:
             combined_affine = self.get_combined_transformation(combined_affine)
