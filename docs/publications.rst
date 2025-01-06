@@ -9,11 +9,11 @@ Version 4.5
 
 General-purpose TMS Optimization
 ''''''''''''''''''''''''''''''''
-* `Worbs T, Rumi B, Madsen KH, Thielscher A, Personalized electric field simulations of deformable large TMS coils based on automatic position and shape optimization, bioRxiv <https://doi.org/abc>`_
+* `Worbs T, Rumi B, Madsen KH, Thielscher A, Personalized electric field simulations of deformable large TMS coils based on automatic position and shape optimization, bioRxiv 2024.12.27.629331 <https://www.biorxiv.org/content/10.1101/2024.12.27.629331v1>`_
 
 Leadfield-free TES Optimization
 ''''''''''''''''''''''''''''''''
-* `Weise K, Madsen KH, Worbs T, Knösche TR, Korshøj A, Thielscher A, A Leadfield-Free Optimization Framework for Transcranially Applied Electric Currents, bioRxiv <https://doi.org/abc>`_
+* `Weise K, Madsen KH, Worbs T, Knösche TR, Korshøj A, Thielscher A, A Leadfield-Free Optimization Framework for Transcranially Applied Electric Currents, bioRxiv 10.1101/2024.12.18.629095 <https://www.biorxiv.org/content/10.1101/2024.12.18.629095v1>`_
 
 Extended Head Model "Ernie Extended"
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
