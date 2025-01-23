@@ -39,7 +39,7 @@ Group Dataset
    :scale: 25 %
    :align: right
 
-The dataset of 5 head models is a subgroup of a cohort available at `OpenfMRI <https://openneuro.org/datasets/ds000171>`_. `Click here to download <https://osf.io/twqk9/download>`_.
+The dataset of 5 head models is a subgroup of a cohort available at `OpenfMRI <https://openneuro.org/datasets/ds000171>`_. `Click here to download <https://osf.io/5ysve/download>`_.
 
 
 Non-human primates

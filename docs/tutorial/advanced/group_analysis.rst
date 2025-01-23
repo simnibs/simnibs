@@ -14,7 +14,7 @@ Example Dataset
 ----------------
 
 
-`Click here to download the example dataset for group analysis <https://osf.io/twqk9/download>`_.
+`Click here to download the example dataset for group analysis <https://osf.io/4ycvp/download>`_.
 
 This example dataset is composed of a subgroup of a cohort available at `OpenfMRI <https://openneuro.org/datasets/ds000171>`_. The data was processed using FreeSurfer for cortical reconstruction, followed by SimNIBS :ref:`charm_docs`. For more information, please see the `OSF repository <https://osf.io/ah5eu/>`_ and `Saturnino et al., 2018 <https://doi.org/10.1101/500314>`_.
 
