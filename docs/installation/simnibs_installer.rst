@@ -64,7 +64,7 @@ MacOS
 
 4. Installation might take 5-10 minutes, depending on your computer and internet connection. Please be patient.
 
-.. note:: SimNIBS only supports MacOS versions ≥ 10.13 (High Sierra) running on Apple Silicon. 
+.. note:: SimNIBS only supports Apple Silicon (Support for Intel-based Macs has been deprecated starting from version 4.5)
 
 
 Testing the Installation
