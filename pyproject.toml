@@ -39,7 +39,7 @@ dependencies =[
   ]
 
 [project.urls]  # Optional
-"Homepage" = "simnibs.org"
+"Homepage" = "http://simnibs.org"
 "Bug Reports" = "https://github.com/simnibs/simnibs/issues"
 "Source" = "https://github.com/simnibs/simnibs/"
 
@@ -53,7 +53,7 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["."]
-exclude = ["packing"]
+exclude = ["packing*", "docs*"]
 
 # [tool.setuptools_scm]
 
