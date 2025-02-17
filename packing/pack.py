@@ -148,7 +148,7 @@ def build(simnibs_dist_dir, developer_id=None):
             orig_folder = os.path.abspath(os.curdir)
             os.chdir(pack_dir)
             subprocess.run([
-                'zip', '-q', '-P', 'password', '-r',
+                'zip', '-y', '-q', '-P', 'password', '-r',
                 'simnibs_env.zip',
                 'simnibs_env'
             ])
