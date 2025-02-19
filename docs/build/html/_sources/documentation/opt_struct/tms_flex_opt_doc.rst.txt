@@ -34,3 +34,4 @@ Attributes
 
 References
 -----------
+`Worbs T, Rumi B, Madsen KH, Thielscher A, Personalized electric field simulations of deformable large TMS coils based on automatic position and shape optimization, bioRxiv 2024.12.27.629331 <https://www.biorxiv.org/content/10.1101/2024.12.27.629331v1>`_

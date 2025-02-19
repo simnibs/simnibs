@@ -3,17 +3,19 @@
 <html lang="en" data-content_root="../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>TMS Optimization based on Grid Search or the Auxiliary Dipole Method (ADM) &#8212; SimNIBS 0) documentation</title>
+    <title>TMS Optimization based on Grid Search or the Auxiliary Dipole Method (ADM) &#8212; SimNIBS 4.5.0a0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
-    <script src="../_static/documentation_options.js?v=e6165c10"></script>
-    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/documentation_options.js?v=effb7103"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="General-purpose TMS Optimization" href="tms_flex_opt.html" />
+    <link rel="prev" title="TMS Optimization" href="overview_tms_opt.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -31,6 +33,14 @@
                 &nbsp;
   <nav id="rellinks">
     <ul>
+        <li>
+          &larr;
+          <a href="overview_tms_opt.html" title="Previous document">TMS Optimization</a>
+        </li>
+        <li>
+          <a href="tms_flex_opt.html" title="Next document">General-purpose TMS Optimization</a>
+          &rarr;
+        </li>
     </ul>
   </nav>
               </div>
@@ -74,7 +84,12 @@ determined using the <em>nifti</em> volumes produced by <a class="reference inte
 solver uses approximately three times more memory than the standard solver.</p>
 <section id="python">
 <h3>Python<a class="headerlink" href="#python" title="Link to this heading">¶</a></h3>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    TMS optimization using grid search</span>
+<span class="sd">    </span>
+<span class="sd">    Copyright (c) 2020 SimNIBS developers. Licensed under the GPL v3.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">opt_struct</span>
 
 <span class="c1"># Initialize structure</span>
@@ -98,8 +113,9 @@ solver uses approximately three times more memory than the standard solver.</p>
 </section>
 <section id="matlab">
 <h3>MATLAB<a class="headerlink" href="#matlab" title="Link to this heading">¶</a></h3>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example script to run a TMS optimization</span>
-<span class="c">% Guilherme Saturnino, 2019</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example script to run a TMS optimization using grid search</span>
+<span class="c">%</span>
+<span class="c">% Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.</span>
 
 <span class="n">tms_opt</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TMSoptimize&#39;</span><span class="p">);</span>
 <span class="c">% Subject folder</span>
@@ -130,7 +146,10 @@ magnitude at the target.</p>
 refine the search by precisely specifying the search region, search angles and resolution.</p>
 <section id="id1">
 <h3>Python<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Refining the TMS Optimization &#39;&#39;&#39;</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&#39;&#39;&#39; Refining the TMS optimization (via grid search)</span>
+
+<span class="sd">Copyright (c) 2020 SimNIBS developers. Licensed under the GPL v3.</span>
+<span class="sd">&#39;&#39;&#39;</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">opt_struct</span>
 
@@ -170,7 +189,9 @@ refine the search by precisely specifying the search region, search angles and r
 </section>
 <section id="id2">
 <h3>MATLAB<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Refining the TMS Optimization</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Refining the TMS optimization (via grid search)</span>
+<span class="c">%</span>
+<span class="c">% Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.</span>
 
 <span class="c">% Initialize structure</span>
 <span class="n">tms_opt</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TMSoptimize&#39;</span><span class="p">);</span>
@@ -215,7 +236,13 @@ refine the search by precisely specifying the search region, search angles and r
 <p></p>
 <section id="id3">
 <h3>Python<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    TMS optimization using ADM</span>
+<span class="sd">    </span>
+<span class="sd">    Copyright (c) 2020 SimNIBS developers. Licensed under the GPL v3.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">opt_struct</span><span class="p">,</span> <span class="n">mni2subject_coords</span>
 
 <span class="c1"># Initialize structure</span>
@@ -238,7 +265,11 @@ refine the search by precisely specifying the search region, search angles and r
 </section>
 <section id="id4">
 <h3>MATLAB<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">tms_opt</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TMSoptimize&#39;</span><span class="p">);</span>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Example script to run a TMS optimization using ADM</span>
+<span class="c">%</span>
+<span class="c">% Copyright (c) 2019 SimNIBS developers. Licensed under the GPL v3.</span>
+
+<span class="n">tms_opt</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">opt_struct</span><span class="p">(</span><span class="s">&#39;TMSoptimize&#39;</span><span class="p">);</span>
 <span class="c">% Subject folder</span>
 <span class="n">tms_opt</span><span class="p">.</span><span class="n">subpath</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;m2m_ernie&#39;</span><span class="p">;</span>
 <span class="c">% Select output folder</span>
@@ -278,6 +309,14 @@ functionality, and Luis Gomez for contributing the code for the ADM optimization
                 &nbsp;
   <nav id="rellinks">
     <ul>
+        <li>
+          &larr;
+          <a href="overview_tms_opt.html" title="Previous document">TMS Optimization</a>
+        </li>
+        <li>
+          <a href="tms_flex_opt.html" title="Next document">General-purpose TMS Optimization</a>
+          &rarr;
+        </li>
     </ul>
   </nav>
               </div>
@@ -301,10 +340,21 @@ functionality, and Luis Gomez for contributing the code for the ADM optimization
 
 
 <h3>Navigation</h3>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../installation/installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../dataset.html">Datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="tutorial.html">Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="gui.html">Setting up and Running Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualization.html">Visualizing Results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="head_meshing.html">Creating Head Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripting.html">Scripting Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis.html">Analyzing Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview_tes_opt.html">TES Optimization</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="overview_tms_opt.html">TMS Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advanced/advanced.html">Advanced Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="win_prompt.html">Accessing the Command Prompt on Windows</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="../documentation/documentation.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../gallery.html">Gallery</a></li>
@@ -312,16 +362,23 @@ functionality, and Luis Gomez for contributing the code for the ADM optimization
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contact.html">Contact</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../external_packages.html">See also</a></li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="tutorial.html">Tutorial</a><ul>
+  <li><a href="overview_tms_opt.html">TMS Optimization</a><ul>
+      <li>Previous: <a href="overview_tms_opt.html" title="previous chapter">TMS Optimization</a></li>
+      <li>Next: <a href="tms_flex_opt.html" title="next chapter">General-purpose TMS Optimization</a></li>
+  </ul></li>
+  </ul></li>
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
@@ -329,7 +386,7 @@ functionality, and Luis Gomez for contributing the code for the ADM optimization
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
 
 
@@ -347,7 +404,7 @@ functionality, and Luis Gomez for contributing the code for the ADM optimization
       &#169;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
       |

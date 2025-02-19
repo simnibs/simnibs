@@ -1,6 +1,5 @@
 .. _overview_tms_opt:
 
-
 TMS Optimization
 ================
 
@@ -28,3 +27,9 @@ General-purpose TMS Optimization
 * :ref:`tms_flex_opt`
 
 This approach also works for the bent and flexible coils, and systematically avoids intersections of the coil with the head. It can be used to maximize the electric field strength in a target area, or also just to best fit a flexible TMS coil on the head model at a predefined position.
+
+.. toctree::
+   :hidden:
+
+   tms_optimization
+   tms_flex_opt

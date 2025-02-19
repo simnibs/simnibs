@@ -23,7 +23,8 @@ A description of the TMS coil definition file format (.tcd) can be found in :ref
 
 Reference
 ''''''''''
-TODO
+
+`Worbs T, Rumi B, Madsen KH, Thielscher A, Personalized electric field simulations of deformable large TMS coils based on automatic position and shape optimization, bioRxiv <https://doi.org/abc>`_
 
 Previous Coil Files
 -------------------

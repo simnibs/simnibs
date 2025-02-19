@@ -21,20 +21,30 @@ Ernie Extended
    :scale: 25 %
    :align: right
    
-Ernie Extended is an MRI- and CT-derived head model for simulations of extracephalic transcranial electrical stimulation (tES). `Click here  to download <https://osf.io/6qv2z>`_
+Ernie Extended is an MRI- and CT-derived head model for simulations of extracephalic transcranial electrical stimulation (tES). `Click here  to download <https://osf.io/6qv2z/download>`_
 
 .. note::
 
   When using this dataset in a publication, please cite
 
-  Van Hoornweder, S., Cappozzo V., De Herde, L., Puonti, O., Siebner H. R., Meesen, L. J. R., Thielscher, A.,  Head And Shoulders: The Impact Of An Extended Head Model On Transcranial Electric Stimulation Simulation And Optimization
+  Van Hoornweder, S., Cappozzo V., De Herde, L., Puonti, O., Siebner H. R., Meesen, L. J. R., Thielscher, A. (2024)  Head And Shoulders - The Impact Of An Extended Head Model On The Simulation And Optimization Of Transcranial Electric Stimulation, Imaging Neuroscience, doi: 10.1162/imag_a_00379
+
 
   The dataset is shared under the CC BY-NC 4.0 license
   
 
+Group Dataset
+--------------------
+.. image:: images/groupdataset.png
+   :scale: 25 %
+   :align: right
+
+The dataset of 5 head models is a subgroup of a cohort available at `OpenfMRI <https://openneuro.org/datasets/ds000171>`_. `Click here to download <https://osf.io/5ysve/download>`_.
+
+
 Non-human primates
 -------------------------
-Head models of two non-human primates (Macaca fascicularis, female, 5 kg and Macaca mulatta, male, 10 kg). `Click here  to download <https://osf.io/zhyj8>`_
+Head models of two non-human primates (Macaca fascicularis, female, 5 kg and Macaca mulatta, male, 10 kg). `Click here  to download <https://osf.io/zhyj8/download>`_
 
 .. note::
 

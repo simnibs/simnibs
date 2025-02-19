@@ -33,7 +33,7 @@ Attributes
 
 References
 -----------
-
+`Weise K, Madsen KH, Worbs T, Knösche TR, Korshøj A, Thielscher A, A Leadfield-Free Optimization Framework for Transcranially Applied Electric Currents, bioRxiv 10.1101/2024.12.18.629095 <https://www.biorxiv.org/content/10.1101/2024.12.18.629095v1>`_
 
 
 

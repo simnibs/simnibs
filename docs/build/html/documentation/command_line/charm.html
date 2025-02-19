@@ -3,13 +3,13 @@
 <html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>charm &#8212; SimNIBS 0) documentation</title>
+    <title>charm &#8212; SimNIBS 4.5.0a0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=12dfc556" />
-    <script src="../../_static/documentation_options.js?v=e6165c10"></script>
-    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/documentation_options.js?v=effb7103"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -86,6 +86,7 @@
 <h2>Further notes<a class="headerlink" href="#further-notes" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>If you encounter spurious segmentation results this <em>could</em> be due to a suboptimal affine registration between the anatomical image(s) and the atlas. Please see the tutorial <a class="reference internal" href="../../tutorial/advanced/fix_affine_registration.html#fix-affine-registration-tutorial"><span class="std std-ref">Fixing the Affine Registration</span></a>.</p></li>
+<li><p>charm can use the cortical surfaces created by FreeSurfer recon-all to achieve a more accurate representation of smaller sulci in the head meshes (option <em>–fs-dir</em>).</p></li>
 <li><p>Please see the tutorial <a class="reference internal" href="../../tutorial/advanced/fix_headmodel.html#fixheadmodel-tutorial"><span class="std std-ref">How to manually edit a head model</span></a> in case manually fixes to the segmentation are needed.</p></li>
 </ul>
 </section>
@@ -156,6 +157,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../contact.html">Contact</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../external_packages.html">See also</a></li>
 </ul>
 
 <div class="relations">
@@ -171,7 +173,7 @@
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
@@ -179,7 +181,7 @@
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
 
 
@@ -197,7 +199,7 @@
       &#169;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
       |

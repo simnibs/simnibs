@@ -8,13 +8,15 @@ SimNIBS supports group analysis of electric fields in both *FsAverage* and *MNI*
 
 In this example, we will simulate the average electric field for a simple tDCS montage across five subjects using the *FsAverage* space.
 
+Please note that a `further tutorial based on JupyterLab notebooks is available on OSF <https://osf.io/ah5eu/>`_
+
 Example Dataset
 ----------------
 
 
-`Click here to download the example dataset for group analysis <https://osf.io/gxumc/download>`_.
+`Click here to download the example dataset for group analysis <https://osf.io/4ycvp/download>`_.
 
-This example dataset is composed of a subgroup of a cohort available at `OpenfMRI <https://openneuro.org/datasets/ds000171>`_. The data was processed in SimNIBS 4 using :ref:`charm_docs`. For more information, please see the `OSF repository <https://osf.io/ah5eu/>`_ and `Saturnino et al., 2018 <https://doi.org/10.1101/500314>`_.
+This example dataset is composed of a subgroup of a cohort available at `OpenfMRI <https://openneuro.org/datasets/ds000171>`_. The data was processed using FreeSurfer for cortical reconstruction, followed by SimNIBS :ref:`charm_docs`. For more information, please see the `OSF repository <https://osf.io/ah5eu/>`_ and `Saturnino et al., 2018 <https://doi.org/10.1101/500314>`_.
 
 
 In this example, we have five subjects, named :file:`sub01`, :file:`sub09`,

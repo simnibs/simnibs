@@ -3,19 +3,19 @@
 <html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Calculation of EEG Leadfields &#8212; SimNIBS 0) documentation</title>
+    <title>Calculation of EEG Leadfields &#8212; SimNIBS 4.5.0a0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=12dfc556" />
-    <script src="../../_static/documentation_options.js?v=e6165c10"></script>
-    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/documentation_options.js?v=effb7103"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Accessing the Command Prompt on Windows" href="../win_prompt.html" />
-    <link rel="prev" title="How to manually edit a head model" href="fix_headmodel.html" />
+    <link rel="prev" title="Fixing the Affine Registration" href="fix_affine_registration.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
@@ -35,7 +35,7 @@
     <ul>
         <li>
           &larr;
-          <a href="fix_headmodel.html" title="Previous document">How to manually edit a head model</a>
+          <a href="fix_affine_registration.html" title="Previous document">Fixing the Affine Registration</a>
         </li>
         <li>
           <a href="../win_prompt.html" title="Next document">Accessing the Command Prompt on Windows</a>
@@ -54,7 +54,394 @@
 <p class="admonition-title">Note</p>
 <p>When using this feature in a publication, please cite <a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2023.120259">Nielsen JD, Puonti O, Xue R, Thielscher A, Madsen KH (2023) Evaluating the influence of anatomical accuracy and electrode positions on EEG forward solutions. Neuroimage, 277:120259.</a></p>
 </div>
-<p><strong>TODO</strong></p>
+<p>Currently, we support exporting leadfields for FieldTrip (MATLAB) and MNE-Python (python).</p>
+<p>The general procedure for creating leadfields for electroencephalography (EEG) from a headmodel generated with SimNIBS includes the following steps</p>
+<ol class="arabic simple">
+<li><p>Run CHARM on the subject to create the anatomical model of the head. This creates the directory <cite>m2m_[subid]</cite>. Please see <a class="reference internal" href="../head_meshing.html#head-modeling-tutorial"><span class="std std-ref">Creating Head Models</span></a> for a more thorough description of this step.</p></li>
+<li><p>Prepare EEG montage (electrode locations). In order to compute the leadfield, we need to place the EEG electrodes on our head model. This step transforms the electrode location information from FieldTrip or MNE-Python to SimNIBS and as such requires that you have electrode locations defined for your subject. This could be from digitizing the electrodes during an experiment or from warping a template to fit the subject. Therefore, we will use our software of choice (FieldTrip or MNE-Python) to compute a transformation that registers the EEG electrodes to subject MRI space and use <code class="docutils literal notranslate"><span class="pre">prepare_eeg_montage</span></code> to save these in a format that SimNIBS understands.</p></li>
+<li><p>Prepare the TDCS leadfield. This step combines the data from step 1 and 2 to compute a TDCS leadfield. <code class="docutils literal notranslate"><span class="pre">prepare_tdcs_leadfield</span></code> is provided as a convenience function to run a TDCS leadfield simulation which forms the basis for the EEG forward solution computed by SimNIBS. This will compute the electric field and interpolate it to the central gray matter surface. By default, electrodes are modeled as points (projected onto the skin surface). Alternatively, electrodes can be modelled as circular with diameter of 10 mm and a thickness of 4 mm and meshed onto the head model. Default conductivities will be used. For more control, use the python function <code class="docutils literal notranslate"><span class="pre">simnibs.eeg.forward.compute_tdcs_leadfield</span></code> or define the simulation from scratch using <code class="docutils literal notranslate"><span class="pre">simnibs.simulation.sim_struct.TDCSLEADFIELD</span></code>.</p></li>
+<li><p>Finally, we use <code class="docutils literal notranslate"><span class="pre">prepare_eeg_forward</span></code> to prepare the TDCS leadfield for EEG inverse calculations. This will also write the source space definition and (optionally) a “morpher” (i.e., a sparse matrix) mapping from subject space to fsaverage space.</p></li>
+</ol>
+<section id="fieldtrip">
+<h2>FieldTrip<a class="headerlink" href="#fieldtrip" title="Link to this heading">¶</a></h2>
+<p>We will use the data from <a class="reference external" href="https://www.fieldtriptoolbox.org/workshop/natmeg2014/dipolefitting">this</a> FieldTrip tutorial. Download the <a class="reference external" href="https://download.fieldtriptoolbox.org/workshop/natmeg2014/dicom.zip">mri data</a> and the <a class="reference external" href="https://download.fieldtriptoolbox.org/workshop/natmeg2014/oddball1_mc_downsampled.fif">EEG data</a> to the same directory. Extract the DICOM data. In MATLAB, we will assume that you are in this directory when executing the commands. Let us start by converting the MR image to NIfTI.</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">ft_defaults</span><span class="p">;</span>
+
+<span class="c">% convert dicom to nifti</span>
+<span class="n">mri</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ft_read_mri</span><span class="p">(</span><span class="nb">fullfile</span><span class="p">(</span><span class="s">&#39;dicom&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;00000113.dcm&#39;</span><span class="p">));</span>
+<span class="n">ft_write_mri</span><span class="p">(</span><span class="s">&#39;mri.nii.gz&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">mri</span><span class="p">.</span><span class="n">anatomy</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;transform&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">mri</span><span class="p">.</span><span class="n">transform</span><span class="w"> </span><span class="p">,</span><span class="w"> </span><span class="s">&#39;dataformat&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;nifti&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Then run CHARM to obtain the head model (mesh).</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">charm sub mri.nii.gz</span>
+</pre></div>
+</div>
+<p>This will create <code class="docutils literal notranslate"><span class="pre">m2m_sub</span></code>.</p>
+<div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>As you can see, mri.nii.gz is not ideal for making an accurate headmodel, however, it is OK for demonstration purposes.</p>
+</div>
+<p>Next, align electrodes with the MR image.</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;oddball1_mc_downsampled.fif&#39;</span><span class="p">;</span>
+
+<span class="n">elec</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ft_read_sens</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;senstype&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;eeg&#39;</span><span class="p">);</span>
+<span class="n">elec</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ft_convert_units</span><span class="p">(</span><span class="n">elec</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;mm&#39;</span><span class="p">);</span>
+
+<span class="c">% The dataset contains fiducials, however, I was not able to compute a</span>
+<span class="c">% good electrode-MRI registration using these</span>
+
+<span class="c">% shape   = ft_read_headshape(dataset, &#39;unit&#39;, &#39;cm&#39;);</span>
+<span class="c">% shape = ft_convert_units(shape, &#39;mm&#39;);</span>
+
+<span class="c">% Therefore, we will use the below transformation which I estimated</span>
+<span class="c">% interactively using `ft_electroderealign to align the electrodes</span>
+<span class="c">% and the MR image</span>
+<span class="n">head_to_mri_trans</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">[</span><span class="mf">1.0000</span><span class="w">    </span><span class="mi">0</span><span class="w">         </span><span class="mi">0</span><span class="w">         </span><span class="mi">0</span><span class="p">];</span>
+<span class="w">    </span><span class="p">[</span><span class="mi">0</span><span class="w">    </span><span class="mf">1.0000</span><span class="w">         </span><span class="mi">0</span><span class="w">   </span><span class="mf">30.0000</span><span class="p">];</span>
+<span class="w">    </span><span class="p">[</span><span class="mi">0</span><span class="w">         </span><span class="mi">0</span><span class="w">    </span><span class="mf">1.0000</span><span class="w">         </span><span class="mi">0</span><span class="p">];</span>
+<span class="w">    </span><span class="p">[</span><span class="mi">0</span><span class="w">         </span><span class="mi">0</span><span class="w">         </span><span class="mi">0</span><span class="w">    </span><span class="mf">1.0000</span><span class="p">]</span>
+<span class="p">];</span>
+
+<span class="n">elec_mri</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ft_transform_geometry</span><span class="p">(</span><span class="n">head_to_mri_trans</span><span class="p">,</span><span class="w"> </span><span class="n">elec</span><span class="p">);</span>
+
+<span class="c">% Let us check the alignment</span>
+
+<span class="nb">mesh</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ft_read_headshape</span><span class="p">(</span><span class="s">&#39;m2m_sub/sub.msh&#39;</span><span class="p">);</span>
+
+<span class="nb">figure</span><span class="p">;</span>
+<span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span>
+<span class="n">ft_plot_mesh</span><span class="p">(</span><span class="nb">mesh</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;surfaceonly&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;yes&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;vertexcolor&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;none&#39;</span><span class="p">,</span><span class="w"> </span><span class="k">...</span>
+<span class="w">    </span><span class="s">&#39;edgecolor&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;none&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;facecolor&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;skin&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;facealpha&#39;</span><span class="p">,</span><span class="w"> </span><span class="mf">0.8</span><span class="p">);</span>
+<span class="nb">camlight</span><span class="p">;</span>
+<span class="n">ft_plot_sens</span><span class="p">(</span><span class="n">elec</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;style&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;r&#39;</span><span class="p">);</span>
+<span class="n">ft_plot_sens</span><span class="p">(</span><span class="n">elec_mri</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;elecshape&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;sphere&#39;</span><span class="p">);</span>
+<span class="nb">view</span><span class="p">([</span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="p">]);</span>
+
+<span class="c">% Finally, save the transformed electrode positions</span>
+<span class="n">elec</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">elec_mri</span><span class="p">;</span>
+<span class="nb">save</span><span class="p">(</span><span class="s">&#39;elec.mat&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;elec&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<figure class="align-default" id="id5">
+<img alt="../../_images/eeg_mri_alignment.jpg" src="../../_images/eeg_mri_alignment.jpg" />
+<figcaption>
+<p><span class="caption-text">Coregistration result. Red is before transformation; blue is after.</span><a class="headerlink" href="#id5" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>Convert this to the format that SimNIBS uses for electrode positions</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">prepare_eeg_montage fieldtrip eeg_montage.csv elec.mat</span>
+</pre></div>
+</div>
+<p>This will create <cite>eeg_montage.csv</cite> which should contain the positions of the electrodes <em>in subject MRI space</em>. Now, compute the TDCS leadfield (subsample each hemisphere to 40,000 vertices).</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">prepare_tdcs_leadfield sub eeg_montage.csv -o fem_sub -s 40000</span>
+</pre></div>
+</div>
+<p>Finally, prepare it for EEG.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">prepare_eeg_forward fieldtrip sub fem_sub/sub_leadfield_eeg_montage.hdf5 --fsaverage 40</span>
+</pre></div>
+</div>
+<p>We should now have the following files in the <cite>fem_sub</cite> directory</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">sub_leadfield_eeg_montage-40000-fwd.mat</span>
+<span class="go">sub_leadfield_eeg_montage-40000-morph.mat</span>
+<span class="go">sub_leadfield_eeg_montage-40000-src.mat</span>
+</pre></div>
+</div>
+<p>which can be used for source analysis with FieldTrip.</p>
+<p>First, we process the EEG data as it is done <a class="reference external" href="https://www.fieldtriptoolbox.org/workshop/natmeg2014/dipolefitting/#process-the-eeg-data">here</a>. (Note, that you need to download and put <a class="reference external" href="https://download.fieldtriptoolbox.org/workshop/natmeg2014/trialfun_oddball_stimlocked.m">this</a> file in your MATLAB path.) <cite>ft_rejectvisual</cite> will open a window where you can select bad trials based on variance.</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% Read EEG data, segment, and preprocess</span>
+<span class="n">cfg</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[];</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">dataset</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">dataset</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">trialdef</span><span class="p">.</span><span class="n">prestim</span><span class="w">        </span><span class="p">=</span><span class="w"> </span><span class="mf">0.2</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">trialdef</span><span class="p">.</span><span class="n">poststim</span><span class="w">       </span><span class="p">=</span><span class="w"> </span><span class="mf">0.4</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">trialdef</span><span class="p">.</span><span class="n">rsp_triggers</span><span class="w">   </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">256</span><span class="w"> </span><span class="mi">4096</span><span class="p">];</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">trialdef</span><span class="p">.</span><span class="n">stim_triggers</span><span class="w">  </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="w"> </span><span class="mi">2</span><span class="p">];</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">trialfun</span><span class="w">                </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;trialfun_oddball_stimlocked&#39;</span><span class="p">;</span>
+
+<span class="n">cfg</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ft_definetrial</span><span class="p">(</span><span class="n">cfg</span><span class="p">);</span>
+
+<span class="n">cfg</span><span class="p">.</span><span class="n">continuous</span><span class="w">    </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;yes&#39;</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">hpfilter</span><span class="w">      </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;no&#39;</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">detrend</span><span class="w">       </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;no&#39;</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">demean</span><span class="w">        </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;yes&#39;</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">baselinewindow</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="o">-</span><span class="n">inf</span><span class="w"> </span><span class="mi">0</span><span class="p">];</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">dftfilter</span><span class="w">     </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;yes&#39;</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">dftfreq</span><span class="w">       </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mi">50</span><span class="w"> </span><span class="mi">100</span><span class="p">];</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">lpfilter</span><span class="w">      </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;yes&#39;</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">lpfreq</span><span class="w">        </span><span class="p">=</span><span class="w"> </span><span class="mi">120</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">channel</span><span class="w">       </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;EEG&#39;</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">precision</span><span class="w">     </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;single&#39;</span><span class="p">;</span>
+
+<span class="n">data_eeg</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ft_preprocessing</span><span class="p">(</span><span class="n">cfg</span><span class="p">);</span>
+
+<span class="c">% Remove bad trials</span>
+
+<span class="n">cfg</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[];</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">method</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;summary&#39;</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">keepchannel</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;no&#39;</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">preproc</span><span class="p">.</span><span class="n">reref</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;yes&#39;</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">preproc</span><span class="p">.</span><span class="n">refchannel</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;all&#39;</span><span class="p">;</span>
+<span class="n">data_eeg_clean</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ft_rejectvisual</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span><span class="w"> </span><span class="n">data_eeg</span><span class="p">);</span>
+
+<span class="c">% Apply an average reference</span>
+
+<span class="n">cfg</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[];</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">reref</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;yes&#39;</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">refchannel</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;all&#39;</span><span class="p">;</span>
+<span class="n">data_eeg_reref</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ft_preprocessing</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span><span class="w"> </span><span class="n">data_eeg_clean</span><span class="p">);</span>
+
+<span class="c">% Compute evoked response</span>
+
+<span class="c">% Evoked response incl. source covariance matrix</span>
+<span class="n">cfg</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[];</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">covariance</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;yes&#39;</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">covariancewindow</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="mf">0.08</span><span class="p">,</span><span class="w"> </span><span class="mf">0.11</span><span class="p">];</span>
+<span class="n">timelock_eeg_all</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ft_timelockanalysis</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span><span class="w"> </span><span class="n">data_eeg_reref</span><span class="p">);</span>
+
+<span class="c">% cfg.trials = find(data_eeg_reref.trialinfo==1);</span>
+<span class="c">% timelock_eeg_std = ft_timelockanalysis(cfg, data_eeg_reref);</span>
+<span class="c">% cfg.trials = find(data_eeg_reref.trialinfo==2);</span>
+<span class="c">% timelock_eeg_dev = ft_timelockanalysis(cfg, data_eeg_reref);</span>
+
+<span class="c">% Compute noise covariance matrix</span>
+<span class="n">cfg</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[];</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">covariance</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;yes&#39;</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">covariancewindow</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="o">-</span><span class="mf">0.2</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">];</span>
+<span class="n">timelock_eeg_noise</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ft_timelockanalysis</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span><span class="w"> </span><span class="n">data_eeg_reref</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Contrary to the FieldTrip tutorial, we will not be fitting (two symmetric) dipoles as we cannot use the symmetry constraint with a leadfield from SimNIBS - and fitting a single dipole to this data probably does not make sense as the auditory stimulation is binaural. Instead, we will compute a minimum norm (distributed) source estimate.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>There are a few limitations on dipole estimates in FieldTrip when using a (precomputed) leadfield from SimNIBS. For example, the symmetry constraint and the nonlinear parameter search cannot be used as FieldTrip is not able to sample the leadfield at arbitrary locations (although, technically, this <cite>is</cite> possible, it is not currently supported).</p>
+</div>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="nb">load</span><span class="w"> </span><span class="n">fem_sub</span><span class="o">/</span><span class="n">sub_leadfield_eeg_montage_subsampling</span><span class="o">-</span><span class="mi">40000</span><span class="o">-</span><span class="n">fwd</span><span class="p">.</span><span class="n">mat</span>
+<span class="nb">load</span><span class="w"> </span><span class="n">fem_sub</span><span class="o">/</span><span class="n">sub_leadfield_eeg_montage_subsampling</span><span class="o">-</span><span class="mi">40000</span><span class="o">-</span><span class="n">src</span><span class="p">.</span><span class="n">mat</span>
+
+<span class="n">fwd</span><span class="p">.</span><span class="n">tri</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">src</span><span class="p">.</span><span class="n">tri</span><span class="p">;</span>
+
+<span class="n">cfg</span><span class="w">               </span><span class="p">=</span><span class="w"> </span><span class="p">[];</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">method</span><span class="w">        </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;mne&#39;</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">sourcemodel</span><span class="w">   </span><span class="p">=</span><span class="w"> </span><span class="n">fwd</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">mne</span><span class="p">.</span><span class="n">prewhiten</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;yes&#39;</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">mne</span><span class="p">.</span><span class="n">lambda</span><span class="w">    </span><span class="p">=</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">mne</span><span class="p">.</span><span class="n">scalesourcecov</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;yes&#39;</span><span class="p">;</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">mne</span><span class="p">.</span><span class="n">noisecov</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">timelock_eeg_noise</span><span class="p">.</span><span class="n">cov</span><span class="p">;</span>
+<span class="n">source</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ft_sourceanalysis</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span><span class="w"> </span><span class="n">timelock_eeg_all</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Plot the estimated source power at 0.1 s after the presentation of the stimulus.</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">% the 76th time point correspondings to 0.1 s post simulus</span>
+<span class="n">m</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">source</span><span class="p">.</span><span class="n">avg</span><span class="p">.</span><span class="n">pow</span><span class="p">(:,</span><span class="w"> </span><span class="mi">76</span><span class="p">);</span>
+
+<span class="nb">figure</span><span class="p">;</span>
+<span class="n">ft_plot_mesh</span><span class="p">(</span><span class="n">source</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;vertexcolor&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">m</span><span class="p">);</span>
+<span class="nb">view</span><span class="p">([</span><span class="mi">0</span><span class="w"> </span><span class="mi">90</span><span class="p">]);</span>
+<span class="n">h</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">light</span><span class="p">;</span>
+<span class="nb">set</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;position&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mf">0.2</span><span class="p">]);</span>
+<span class="n">lighting</span><span class="w"> </span><span class="s">gouraud</span><span class="p">;</span>
+<span class="n">material</span><span class="w"> </span><span class="s">dull</span><span class="p">;</span>
+</pre></div>
+</div>
+<figure class="align-default" id="id6">
+<img alt="../../_images/eeg_mne_estimate.jpg" src="../../_images/eeg_mne_estimate.jpg" />
+<figcaption>
+<p><span class="caption-text">Minimum norm source estimate.</span><a class="headerlink" href="#id6" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>This is not perfect but it seems to align reasonably well with the symmetric dipole estimate from <a class="reference external" href="https://www.fieldtriptoolbox.org/workshop/natmeg2014/dipolefitting/#compare-the-eeg-and-meg-dipole-fits">this</a> section of the original FieldTrip tutorial.</p>
+</section>
+<section id="mne-python">
+<h2>MNE-Python<a class="headerlink" href="#mne-python" title="Link to this heading">¶</a></h2>
+<div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>Currently, exporting forward solutions to MNE-Python is only compatible with MNE-Python &lt;= 1.5.</p>
+</div>
+<p>First, make sure MNE-Python is installed in the same environment as SimNIBS. If you used the installer, you can call <code class="docutils literal notranslate"><span class="pre">simnibs_python</span></code></p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">simnibs_python -m pip install mne==1.5 h5io scikit-learn pyvistaqt</span>
+</pre></div>
+</div>
+<p>otherwise, ensure you are using the appropriate python interpreter and simply use <code class="docutils literal notranslate"><span class="pre">python</span></code> instead of <code class="docutils literal notranslate"><span class="pre">simnibs_python</span></code> (if you are using <code class="docutils literal notranslate"><span class="pre">conda</span></code> you can of course also install MNE-Python that way!). A miminal check that everything is working is <code class="docutils literal notranslate"><span class="pre">simnibs_python</span> <span class="pre">-c</span> <span class="pre">&quot;import</span> <span class="pre">mne,</span> <span class="pre">simnibs;</span> <span class="pre">print('OK')&quot;</span></code>.</p>
+<p>Next, download MNE-Python’s example data. We will use the data of the subject called <cite>sample</cite>. We start by converting the MRI <cite>T1.mgz</cite> to NIfTI (please set the correct path to the MNE example data).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span> <span class="nn">nibabel</span> <span class="k">as</span> <span class="nn">nib</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">mne</span>
+<span class="kn">from</span> <span class="nn">mne.coreg</span> <span class="kn">import</span> <span class="n">Coregistration</span>
+<span class="kn">from</span> <span class="nn">mne.io</span> <span class="kn">import</span> <span class="n">read_info</span>
+
+<span class="n">mne_data_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/path/to/mne_data&quot;</span><span class="p">)</span>
+
+<span class="c1"># this should download the data if not already present</span>
+<span class="n">data_path</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">sample</span><span class="o">.</span><span class="n">data_path</span><span class="p">(</span><span class="n">mne_data_path</span><span class="p">)</span>
+<span class="n">subjects_dir</span> <span class="o">=</span> <span class="n">data_path</span> <span class="o">/</span> <span class="s2">&quot;subjects&quot;</span>
+<span class="n">subject</span> <span class="o">=</span> <span class="s2">&quot;sample&quot;</span>
+
+<span class="n">img</span> <span class="o">=</span> <span class="n">nib</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">subjects_dir</span> <span class="o">/</span> <span class="n">subject</span> <span class="o">/</span> <span class="s2">&quot;mri&quot;</span> <span class="o">/</span> <span class="s2">&quot;T1.mgz&quot;</span><span class="p">)</span>
+<span class="n">nii</span> <span class="o">=</span> <span class="n">nib</span><span class="o">.</span><span class="n">Nifti1Image</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">get_fdata</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">get_data_dtype</span><span class="p">()),</span> <span class="n">img</span><span class="o">.</span><span class="n">affine</span><span class="p">)</span>
+<span class="c1"># sets qform code to 2 which is fine</span>
+<span class="n">nii</span><span class="o">.</span><span class="n">set_qform</span><span class="p">(</span><span class="n">nii</span><span class="o">.</span><span class="n">affine</span><span class="p">)</span>
+<span class="n">nii</span><span class="o">.</span><span class="n">set_sform</span><span class="p">(</span><span class="n">nii</span><span class="o">.</span><span class="n">affine</span><span class="p">)</span>
+<span class="n">nii</span><span class="o">.</span><span class="n">to_filename</span><span class="p">(</span><span class="s2">&quot;T1.nii.gz&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Then run CHARM. We use the <code class="docutils literal notranslate"><span class="pre">--fs-dir</span></code> option which grabs the cortical surfaces from a FreeSurfer run rather than estimate them as part of CHARM.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">charm sample T1.nii.gz --forceqform --fs-dir /path/to/MNE-sample-data/subjects/sample</span>
+</pre></div>
+</div>
+<p>Perform coregistration using MNE-Python.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># This code is modified from the following MNE-Python tutorial on coregistration</span>
+<span class="c1"># https://mne.tools/1.5/auto_tutorials/forward/25_automated_coreg.html</span>
+
+<span class="n">data_path</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">sample</span><span class="o">.</span><span class="n">data_path</span><span class="p">(</span><span class="n">mne_data_path</span><span class="p">)</span>
+<span class="c1"># data_path and all paths built from it are pathlib.Path objects</span>
+<span class="n">subjects_dir</span> <span class="o">=</span> <span class="n">data_path</span> <span class="o">/</span> <span class="s2">&quot;subjects&quot;</span>
+<span class="n">subject</span> <span class="o">=</span> <span class="s2">&quot;sample&quot;</span>
+
+<span class="n">fname_raw</span> <span class="o">=</span> <span class="n">data_path</span> <span class="o">/</span> <span class="s2">&quot;MEG&quot;</span> <span class="o">/</span> <span class="n">subject</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">subject</span><span class="si">}</span><span class="s2">_audvis_raw.fif&quot;</span>
+<span class="n">info</span> <span class="o">=</span> <span class="n">read_info</span><span class="p">(</span><span class="n">fname_raw</span><span class="p">)</span>
+
+<span class="n">eeg_indices</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">pick_types</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">meg</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">eeg</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">info</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">pick_info</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">eeg_indices</span><span class="p">)</span>
+
+<span class="n">fiducials</span> <span class="o">=</span> <span class="s2">&quot;estimated&quot;</span>  <span class="c1"># get fiducials from fsaverage</span>
+<span class="n">coreg</span> <span class="o">=</span> <span class="n">Coregistration</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="n">subjects_dir</span><span class="p">,</span> <span class="n">fiducials</span><span class="o">=</span><span class="n">fiducials</span><span class="p">)</span>
+<span class="n">coreg</span><span class="o">.</span><span class="n">fit_fiducials</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">coreg</span><span class="o">.</span><span class="n">omit_head_shape_points</span><span class="p">(</span><span class="n">distance</span><span class="o">=</span><span class="mf">5.0</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">)</span>  <span class="c1"># distance is in meters</span>
+<span class="n">coreg</span><span class="o">.</span><span class="n">fit_icp</span><span class="p">(</span><span class="n">n_iterations</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">nasion_weight</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">dists</span> <span class="o">=</span> <span class="n">coreg</span><span class="o">.</span><span class="n">compute_dig_mri_distances</span><span class="p">()</span> <span class="o">*</span> <span class="mf">1e3</span>  <span class="c1"># in mm</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;Distance between HSP and MRI (mean/min/max):</span><span class="se">\n</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dists</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> mm &quot;</span>
+    <span class="sa">f</span><span class="s2">&quot;/ </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">dists</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> mm / </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">dists</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> mm&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># save the updated info object, i.e., containing only EEG electrodes</span>
+<span class="n">mne</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">write_info</span><span class="p">(</span><span class="s2">&quot;info.fif&quot;</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span>
+
+<span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">mri_ras_t</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">_freesurfer</span><span class="o">.</span><span class="n">_read_mri_info</span><span class="p">(</span><span class="n">subjects_dir</span> <span class="o">/</span> <span class="n">subject</span> <span class="o">/</span> <span class="s2">&quot;mri&quot;</span> <span class="o">/</span> <span class="s2">&quot;T1.mgz&quot;</span><span class="p">)</span>
+<span class="n">trans</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">combine_transforms</span><span class="p">(</span><span class="n">coreg</span><span class="o">.</span><span class="n">trans</span><span class="p">,</span> <span class="n">mri_ras_t</span><span class="p">,</span> <span class="n">coreg</span><span class="o">.</span><span class="n">trans</span><span class="p">[</span><span class="s2">&quot;from&quot;</span><span class="p">],</span> <span class="n">mri_ras_t</span><span class="p">[</span><span class="s2">&quot;to&quot;</span><span class="p">])</span>
+
+<span class="c1"># The transformation is actually head &lt;-&gt; RAS but MNE-Python expects</span>
+<span class="c1"># head &lt;-&gt; MRI (FreeSurfer surface RAS)</span>
+<span class="n">trans</span><span class="p">[</span><span class="s2">&quot;to&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">coreg</span><span class="o">.</span><span class="n">trans</span><span class="p">[</span><span class="s2">&quot;to&quot;</span><span class="p">]</span>
+
+<span class="n">mne</span><span class="o">.</span><span class="n">write_trans</span><span class="p">(</span><span class="s1">&#39;head_ras-trans.fif&#39;</span><span class="p">,</span> <span class="n">trans</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Check the coregistration</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">plot_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+    <span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="p">,</span>
+    <span class="n">subjects_dir</span><span class="o">=</span><span class="n">subjects_dir</span><span class="p">,</span>
+    <span class="n">surfaces</span><span class="o">=</span><span class="s2">&quot;head-dense&quot;</span><span class="p">,</span>
+    <span class="n">dig</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">eeg</span><span class="o">=</span><span class="s2">&quot;original&quot;</span><span class="p">,</span>
+    <span class="n">meg</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">show_axes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">coord_frame</span><span class="o">=</span><span class="s2">&quot;head&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">view_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">azimuth</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span> <span class="n">elevation</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span> <span class="n">distance</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">focalpoint</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">viz</span><span class="o">.</span><span class="n">plot_alignment</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">trans</span><span class="o">=</span><span class="n">coreg</span><span class="o">.</span><span class="n">trans</span><span class="p">,</span> <span class="o">**</span><span class="n">plot_kwargs</span><span class="p">)</span>
+<span class="n">mne</span><span class="o">.</span><span class="n">viz</span><span class="o">.</span><span class="n">set_3d_view</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="o">**</span><span class="n">view_kwargs</span><span class="p">)</span>
+</pre></div>
+</div>
+<figure class="align-default" id="id7">
+<img alt="../../_images/eeg_mri_alignment.png" src="../../_images/eeg_mri_alignment.png" />
+<figcaption>
+<p><span class="caption-text">Coregistration result. Please note that what is visualized here is actually the electrodes transformed to FreeSurfer’s surface RAS space.</span><a class="headerlink" href="#id7" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>Convert the electrode location information to a format that SimNIBS understands (remember to insert correct paths).</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">prepare_eeg_montage mne eeg_montage.csv info.fif head_ras-trans.fif</span>
+</pre></div>
+</div>
+<p>This will create <cite>eeg_montage.csv</cite> which should contain the positions of the electrodes <em>in subject MRI space</em>.</p>
+<p>Now, compute the TDCS leadfield.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">prepare_tdcs_leadfield sample eeg_montage.csv -o fem_sample</span>
+</pre></div>
+</div>
+<p>Finally, prepare it for EEG.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">prepare_eeg_forward mne sample fem_sample/sample_leadfield_eeg_montage.hdf5 info.fif head_ras-trans.fif --fsaverage 160</span>
+</pre></div>
+</div>
+<p>We should now have the following files in the <cite>fem_sample</cite> directory</p>
+<div class="literal-block-wrapper docutils container" id="id8">
+<div class="code-block-caption"><span class="caption-text">MNE-Python</span><a class="headerlink" href="#id8" title="Link to this code">¶</a></div>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">sample_leadfield_eeg_montage-fwd.fif</span>
+<span class="go">sample_leadfield_eeg_montage-morph.h5</span>
+<span class="go">sample_leadfield_eeg_montage-src.fif</span>
+</pre></div>
+</div>
+</div>
+<p>for MNE-Python.</p>
+<section id="source-analysis">
+<h3>Source Analysis<a class="headerlink" href="#source-analysis" title="Link to this heading">¶</a></h3>
+<p>Now, use the forward model that we just created to do source location with MNE-Python. The following is adapted from <a class="reference external" href="https://mne.tools/1.5/auto_tutorials/inverse/70_eeg_mri_coords.html">this</a> tutorial to use EEG data and the forward model from SimNIBS.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fname_raw</span> <span class="o">=</span> <span class="n">data_path</span> <span class="o">/</span> <span class="s2">&quot;MEG&quot;</span> <span class="o">/</span> <span class="s2">&quot;sample&quot;</span> <span class="o">/</span> <span class="s2">&quot;sample_audvis_raw.fif&quot;</span>
+
+<span class="n">raw</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_raw_fif</span><span class="p">(</span><span class="n">fname_raw</span><span class="p">)</span>
+<span class="n">raw</span><span class="o">.</span><span class="n">pick_types</span><span class="p">(</span><span class="n">meg</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">eeg</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stim</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="p">())</span><span class="o">.</span><span class="n">load_data</span><span class="p">()</span>
+<span class="n">raw</span><span class="o">.</span><span class="n">set_eeg_reference</span><span class="p">(</span><span class="n">projection</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">events</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">find_events</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+<span class="n">epochs</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">Epochs</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="n">events</span><span class="p">)</span>
+<span class="n">cov</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">compute_covariance</span><span class="p">(</span><span class="n">epochs</span><span class="p">,</span> <span class="n">tmax</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+<span class="n">evoked</span> <span class="o">=</span> <span class="n">epochs</span><span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">average</span><span class="p">()</span>  <span class="c1"># trigger 1 in auditory/left</span>
+<span class="n">evoked</span><span class="o">.</span><span class="n">plot_joint</span><span class="p">()</span>
+</pre></div>
+</div>
+<figure class="align-default" id="id9">
+<img alt="../../_images/evoked_joint.png" src="../../_images/evoked_joint.png" />
+<figcaption>
+<p><span class="caption-text">Evoked response with topo-plots.</span><a class="headerlink" href="#id9" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>Read forward solution, make inverse operator, and apply it.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Read forward solution created with SimNIBS</span>
+<span class="n">fname_fwd</span> <span class="o">=</span> <span class="s2">&quot;fem_sample/sample_leadfield_eeg_montage-fwd.fif&quot;</span>
+<span class="n">fwd</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">read_forward_solution</span><span class="p">(</span><span class="n">fname_fwd</span><span class="p">)</span>
+
+<span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;dSPM&quot;</span>
+
+<span class="n">inv</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">minimum_norm</span><span class="o">.</span><span class="n">make_inverse_operator</span><span class="p">(</span><span class="n">evoked</span><span class="o">.</span><span class="n">info</span><span class="p">,</span> <span class="n">fwd</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">stc</span><span class="p">,</span> <span class="n">residual</span> <span class="o">=</span> <span class="n">mne</span><span class="o">.</span><span class="n">minimum_norm</span><span class="o">.</span><span class="n">apply_inverse</span><span class="p">(</span><span class="n">evoked</span><span class="p">,</span> <span class="n">inv</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span> <span class="n">return_residual</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="mf">1e3</span> <span class="o">*</span> <span class="n">stc</span><span class="o">.</span><span class="n">times</span><span class="p">,</span> <span class="n">stc</span><span class="o">.</span><span class="n">data</span><span class="p">[::</span><span class="mi">100</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;time (ms)&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> value&quot;</span> <span class="o">%</span> <span class="n">method</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="n">residual</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<figure class="align-default" id="id10">
+<img alt="../../_images/source_time.png" src="../../_images/source_time.png" />
+<figcaption>
+<p><span class="caption-text">Time course of source estimates.</span><a class="headerlink" href="#id10" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id11">
+<img alt="../../_images/evoked_residual.png" src="../../_images/evoked_residual.png" />
+<figcaption>
+<p><span class="caption-text">Residual of evoked response.</span><a class="headerlink" href="#id11" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>Plot the source time course and location. Note that this plot only works because we used <code class="docutils literal notranslate"><span class="pre">--fs-dir</span></code> with CHARM! Otherwise, the FreeSurfer and CHARM surfaces would differ and this function uses the FreeSurfer surfaces for plotting.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">brain</span> <span class="o">=</span> <span class="n">stc</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">subjects_dir</span><span class="o">=</span><span class="n">subjects_dir</span><span class="p">,</span> <span class="n">initial_time</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+</pre></div>
+</div>
+<figure class="align-default" id="id12">
+<img alt="../../_images/source_location.png" src="../../_images/source_location.png" />
+<figcaption>
+<p><span class="caption-text">Source activation plottet on brain.</span><a class="headerlink" href="#id12" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+</section>
+</section>
 <section id="references">
 <h2>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
 <p><a class="reference external" href="https://doi.org/10.1016/j.neuroimage.2023.120259">Nielsen JD, Puonti O, Xue R, Thielscher A, Madsen KH (2023) Evaluating the influence of anatomical accuracy and electrode positions on EEG forward solutions. Neuroimage, 277:120259.</a></p>
@@ -69,7 +456,7 @@
     <ul>
         <li>
           &larr;
-          <a href="fix_headmodel.html" title="Previous document">How to manually edit a head model</a>
+          <a href="fix_affine_registration.html" title="Previous document">Fixing the Affine Registration</a>
         </li>
         <li>
           <a href="../win_prompt.html" title="Next document">Accessing the Command Prompt on Windows</a>
@@ -120,6 +507,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../contact.html">Contact</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../external_packages.html">See also</a></li>
 </ul>
 
 <div class="relations">
@@ -128,14 +516,14 @@
   <li><a href="../../index.html">Documentation overview</a><ul>
   <li><a href="../tutorial.html">Tutorial</a><ul>
   <li><a href="advanced.html">Advanced Features</a><ul>
-      <li>Previous: <a href="fix_headmodel.html" title="previous chapter">How to manually edit a head model</a></li>
+      <li>Previous: <a href="fix_affine_registration.html" title="previous chapter">Fixing the Affine Registration</a></li>
       <li>Next: <a href="../win_prompt.html" title="next chapter">Accessing the Command Prompt on Windows</a></li>
   </ul></li>
   </ul></li>
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../../search.html" method="get">
@@ -143,7 +531,7 @@
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
 
 
@@ -161,7 +549,7 @@
       &#169;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
       |

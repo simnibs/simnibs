@@ -3,17 +3,19 @@
 <html lang="en" data-content_root="../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Leadfield-free TES Optimization &#8212; SimNIBS 0) documentation</title>
+    <title>Leadfield-free TES Optimization &#8212; SimNIBS 4.5.0a0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
-    <script src="../_static/documentation_options.js?v=e6165c10"></script>
-    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/documentation_options.js?v=effb7103"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="TMS Optimization" href="overview_tms_opt.html" />
+    <link rel="prev" title="Leadfield-based TDCS Network Optimization" href="tdcs_distributed_opt.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -31,6 +33,14 @@
                 &nbsp;
   <nav id="rellinks">
     <ul>
+        <li>
+          &larr;
+          <a href="tdcs_distributed_opt.html" title="Previous document">Leadfield-based TDCS Network Optimization</a>
+        </li>
+        <li>
+          <a href="overview_tms_opt.html" title="Next document">TMS Optimization</a>
+          &rarr;
+        </li>
     </ul>
   </nav>
               </div>
@@ -42,7 +52,7 @@
 <span id="tes-flex-opt"></span><h1>Leadfield-free TES Optimization<a class="headerlink" href="#leadfield-free-tes-optimization" title="Link to this heading">¶</a></h1>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>When using this feature in a publication, please cite</p>
+<p>When using this feature in a publication, please cite <a class="reference external" href="https://www.biorxiv.org/content/10.1101/2024.12.18.629095v1">Weise K, Madsen KH, Worbs T, Knösche TR, Korshøj A, Thielscher A, A Leadfield-Free Optimization Framework for Transcranially Applied Electric Currents, bioRxiv 10.1101/2024.12.18.629095</a></p>
 </div>
 <p></p>
 <section id="introduction">
@@ -69,7 +79,7 @@
 <span class="sd">Example to run TESoptimize with a standard TES montage to optimize the </span>
 <span class="sd">field intensity in the ROI</span>
 
-<span class="sd">© SimNIBS developers 2024 under the GPL v3 license</span>
+<span class="sd">Copyright (c) 2024 SimNIBS developers. Licensed under the GPL v3.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">opt_struct</span>
 
@@ -115,7 +125,7 @@
 <span class="c">% Example to run TESoptimize with a standard TES montage to optimize the </span>
 <span class="c">% field intensity in the ROI</span>
 <span class="c">%</span>
-<span class="c">% (C) SimNIBS developers 2024 under the GPL v3 license</span>
+<span class="c">% Copyright (c) 2024 SimNIBS developers. Licensed under the GPL v3.</span>
 <span class="c">%</span>
 
 <span class="c">% Initialize structure</span>
@@ -163,14 +173,15 @@
 </section>
 <section id="example-2-optimizing-the-focality-of-ti-stimulation">
 <h2>Example 2: Optimizing the focality of TI stimulation<a class="headerlink" href="#example-2-optimizing-the-focality-of-ti-stimulation" title="Link to this heading">¶</a></h2>
-<p>This example optimizes the intensity - focality tradeoff of TIS, focused on the left hand knob</p>
+<p>This example optimizes the intensity - focality tradeoff of TIS, focused on the left hand knob.
+This requires the defintion of two regions: The first will be used as target ROI, the second will be the avoidance area (or “non-ROI). In addition, two thresholds are defined - the optimization goal is to ensure that the QoI (here: <em>maxTI</em>) is lower than the first threshold in the avoidance region, while it exceeds the second threshold in the ROI.</p>
 <ul>
 <li><p><em>Python</em></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Example to run TESoptimize for Temporal Interference (TI) to optimize the </span>
 <span class="sd">focality in the ROI vs non-ROI</span>
 
-<span class="sd">© SimNIBS developers 2024 under the GPL v3 license</span>
+<span class="sd">Copyright (c) 2024 SimNIBS developers. Licensed under the GPL v3.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">simnibs</span> <span class="kn">import</span> <span class="n">opt_struct</span>
 
@@ -236,7 +247,7 @@
 <span class="c">% Example to run TESoptimize for Temporal Interference (TI) to optimize the </span>
 <span class="c">% focality in the ROI vs non-ROI</span>
 <span class="c">%</span>
-<span class="c">% (C) SimNIBS developers 2024 under the GPL v3 license</span>
+<span class="c">% Copyright (c) 2024 SimNIBS developers. Licensed under the GPL v3.</span>
 <span class="c">%</span>
 
 <span class="c">% Initialize structure</span>
@@ -311,6 +322,12 @@
 <li><p>The optimization uses the MKL Pardiso direct solver for accelerating the simulations. The SimNIBS standard FEM solver can be chosen optionally to reduce memory consumption, but will also substantially slow down the optimization.</p></li>
 <li><p>32GB main memory are recommended, even thougth some optimizations will run with 16GB main memory.</p></li>
 <li><p>Optimization is performed using the differential evolution algorithm, which is stochastic in nature. As such, solutions will differ between repeated optimization runs, even though the achieved final cost will be very close to each other.</p></li>
+<li><p>For TTF, we recommend setting <em>constrain_electrode_locations</em> to True, which will restrict the locations for each of the four electrode arrays to frontal, left and right parietal, and occipital. This speeds up the search by reducing the likelihood for overlapping configurations. The restriction is applied to the centers of the arrays, so that half of an array can still move into the neighboring skin areas, keeping sufficient flexibility for the optimization.</p></li>
+</ul>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../_images/tes_flex_opt_skinregions.png"><img alt="../_images/tes_flex_opt_skinregions.png" src="../_images/tes_flex_opt_skinregions.png" style="width: 288.0px; height: 166.4px;" /></a>
+</figure>
+<ul class="simple">
 <li><p>Please see <a class="reference internal" href="../documentation/opt_struct/tes_flex_opt_doc.html#tes-flex-opt-doc"><span class="std std-ref">TesFlexOptimization</span></a> for a description of the option settings, <a class="reference internal" href="../documentation/opt_struct/regionofinterest_doc.html#regionofinterest-doc"><span class="std std-ref">RegionOfInterest</span></a> for a description of the region-of-interest parameters, and <a class="reference internal" href="../documentation/opt_struct/electrode_layouts.html#electrode-layouts"><span class="std std-ref">Electrode and array layouts for TesFlexOptimization</span></a> for a description of the electrode array layout parameters.</p></li>
 </ul>
 </section>
@@ -322,6 +339,14 @@
                 &nbsp;
   <nav id="rellinks">
     <ul>
+        <li>
+          &larr;
+          <a href="tdcs_distributed_opt.html" title="Previous document">Leadfield-based TDCS Network Optimization</a>
+        </li>
+        <li>
+          <a href="overview_tms_opt.html" title="Next document">TMS Optimization</a>
+          &rarr;
+        </li>
     </ul>
   </nav>
               </div>
@@ -345,10 +370,21 @@
 
 
 <h3>Navigation</h3>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../installation/installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../dataset.html">Datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="tutorial.html">Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="gui.html">Setting up and Running Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualization.html">Visualizing Results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="head_meshing.html">Creating Head Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripting.html">Scripting Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis.html">Analyzing Simulations</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="overview_tes_opt.html">TES Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview_tms_opt.html">TMS Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advanced/advanced.html">Advanced Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="win_prompt.html">Accessing the Command Prompt on Windows</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="../documentation/documentation.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../gallery.html">Gallery</a></li>
@@ -356,16 +392,23 @@
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contact.html">Contact</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../external_packages.html">See also</a></li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="tutorial.html">Tutorial</a><ul>
+  <li><a href="overview_tes_opt.html">TES Optimization</a><ul>
+      <li>Previous: <a href="tdcs_distributed_opt.html" title="previous chapter">Leadfield-based TDCS Network Optimization</a></li>
+      <li>Next: <a href="overview_tms_opt.html" title="next chapter">TMS Optimization</a></li>
+  </ul></li>
+  </ul></li>
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
@@ -373,7 +416,7 @@
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
 
 
@@ -391,7 +434,7 @@
       &#169;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
       |

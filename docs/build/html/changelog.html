@@ -3,13 +3,13 @@
 <html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Changelog &#8212; SimNIBS 0) documentation</title>
+    <title>Changelog &#8212; SimNIBS 4.5.0a0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
-    <script src="_static/documentation_options.js?v=e6165c10"></script>
-    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/documentation_options.js?v=effb7103"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="icon" href="_static/favicon.ico"/>
     <link rel="index" title="Index" href="genindex.html" />
@@ -61,17 +61,31 @@
 <li><p>New class to support the convenient definition of regions-of-interest.</p></li>
 <li><p>New dataset Ernie Extended.</p></li>
 <li><p>New non-human primate dataset.</p></li>
+<li><p>Tutorial for calculating <a class="reference internal" href="tutorial/advanced/eeg_leadfields.html#eeg-leadfields"><span class="std std-ref">EEG leadfields</span></a> with SimNIBS for use in <a class="reference external" href="https://www.fieldtriptoolbox.org/">FieldTrip</a> and <a class="reference external" href="https://mne.tools/stable/index.html">MNE-Python</a> added.</p></li>
+<li><p>Added <a class="reference external" href="https://mumps-solver.org/index.php">MUMPS solver</a> as option for the FEM calculations on Macs with Apple Silicon</p></li>
+<li><p>Added custom compiled version of <a class="reference external" href="https://github.com/flatironinstitute/FMM3D">FMM3d</a> so that it runs on Macs with Apple Silicon</p></li>
+<li><p>Included JupyterLab (start via <code class="docutils literal notranslate"><span class="pre">simnibs_jupyter</span></code> on command line)</p></li>
 <li><p>Update to python 3.11 and corresponding updates of most of the included packages.</p></li>
 </ul>
 </div></blockquote>
-<p>NOTES &amp; Known issues: see 4.0.0</p>
+<dl class="simple">
+<dt>NOTES &amp; Known issues:</dt><dd><ul class="simple">
+<li><p>The PARDISO solver does not work on Apple Silicon (use MUMPS instead).</p></li>
+<li><p>Support of SimNIBS on MacOS on Intel is discontinued.</p></li>
+<li><p>Installation fails on paths with non-standard characters, such as backslash, chinese characters, … (workaround: provide another path)</p></li>
+<li><p>simnibs_gui does not start on some linux systems, e.g. with wayland (workaround: ld preloading of libstdc++.so.6 seems to help; example: export LD_PRELOAD=/usr/lib/libstdc++.so.6 - path needs to be adjusted according to library path on local system)</p></li>
+<li><p>Setting the number of cpus in run_simnibs will be only taken into account in the new tms_flex_opt and tes_flex_opt optimizations, but not the previous TMS optimization methods.</p></li>
+<li><p>Setting custom conductivities and defining custom tissue types in the new tms_flex_opt and tes_flex_opt does not work yet.</p></li>
+</ul>
+</dd>
+</dl>
 </section>
 <section id="id3">
 <h2>4.1.0<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li><p>Tetrahedral quality of the meshes was increased substantially to improve numerical accuracy of the FEM calculations and remove outliers in the calculated electric fields</p></li>
-<li><p>Option added to use white matter and pial surfaces from FreeSurfer for more accurate representation of smaller sulci in the head meshes</p></li>
+<li><p>Option <em>–fs-dir</em> added to charm to use white matter and pial surfaces from FreeSurfer for more accurate representation of smaller sulci in the head meshes</p></li>
 <li><p>I/O functions for neuronavigation data have been updated to support new Brainsight version 2.5.3</p></li>
 </ul>
 </div></blockquote>
@@ -406,6 +420,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="contact.html">Contact</a></li>
+<li class="toctree-l1"><a class="reference internal" href="external_packages.html">See also</a></li>
 </ul>
 
 <div class="relations">
@@ -417,7 +432,7 @@
   </ul></li>
 </ul>
 </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
@@ -425,7 +440,7 @@
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
 
 
@@ -443,7 +458,7 @@
       &#169;2020, SimNIBS Developers.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
       |
