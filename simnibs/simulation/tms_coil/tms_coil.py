@@ -1030,7 +1030,7 @@ class TmsCoil(TcdElement):
             Raised if validate is true and the dictionary is not valid to the tcd coil json schema
         """
         if validate:
-            with open(file_finder.templates.tcd_json_schema, "r") as fid:
+            with open(file_finder.templates.tcd_json_schema, "r", encoding="utf-8") as fid:
                 tcd_schema = json.loads(fid.read())
 
             try:

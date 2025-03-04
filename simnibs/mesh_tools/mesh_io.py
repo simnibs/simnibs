@@ -5580,7 +5580,7 @@ def _read_msh_2(fn, m, skip_data=False):
                     elm_number[ii] = int(line[0])
                     data.value[ii, :] = [float(jj) for jj in line[1:]]
 
-            if f.readline().startswith(b'$EndElementData'):
+            if not f.readline().startswith(b'$EndElementData'):
                 raise IOError(fn + " expected $EndElementData after reading " +
                               str(nr) + " lines in $ElementData")
 
