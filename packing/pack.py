@@ -48,34 +48,22 @@ def build(simnibs_dist_dir, developer_id=None):
         simnibs_root_dir, f'environment_{os_name}.yml'
     )
 
-    if os_name == 'linux':
-        subprocess.run(
-            ['/bin/bash', '-c', f'conda env create -p {env_prefix} -f {env} --yes'],
-            check=True,
-        )
-    else:
-        subprocess.run(
-            f'conda env create -p {env_prefix} -f {env} --yes',
-            check=True,
-            shell=True
-        )
+    subprocess.run(
+        f'conda env create -p {env_prefix} -f {env} --yes',
+        check=True,
+        shell=True
+    )
+
     if sys.platform == 'win32':
         env_pip = os.path.join(env_prefix, 'Scripts', 'pip.exe')
     else:
         env_pip = os.path.join(env_prefix, 'bin', 'pip')
 
-    # Install SimNIBS
-    if os_name == 'linux':
-        subprocess.run(
-            ['/bin/bash', '-c', f'{env_pip} install simnibs=={version} --no-deps --no-index --find-links={simnibs_dist_dir}'],
-            check=True,
-        )
-    else:
-        subprocess.run(
-            f'{env_pip} install simnibs=={version} --no-deps --no-index --find-links={simnibs_dist_dir}',
-            check=True,
-            shell=True
-        )
+    subprocess.run(
+        f'{env_pip} install simnibs=={version} --no-deps --no-index --find-links={simnibs_dist_dir}',
+        check=True,
+        shell=True
+    )
 
     # Pack
     # I use .tar because MacOS erases the execute permission in .zip
@@ -92,17 +80,11 @@ def build(simnibs_dist_dir, developer_id=None):
     )
     os.remove(os.path.join(pack_dir, 'simnibs_env.tar'))
     # Remove temporary env
-    if os_name == 'linux':
-        subprocess.run(
-            ['/bin/bash', '-c', f'conda env remove -y -p {env_prefix}'],
-            check=True,
-        )
-    else:
-        subprocess.run(
-            f'conda env remove -y -p {env_prefix}',
-            check=True,
-            shell=True
-        )
+    subprocess.run(
+        f'conda env remove -y -p {env_prefix}',
+        check=True,
+        shell=True
+    )
 
 
     # Copy documentation
