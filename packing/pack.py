@@ -55,12 +55,12 @@ def build(simnibs_dist_dir, developer_id=None):
     )
 
     if sys.platform == 'win32':
-        env_pip = os.path.join(env_prefix, 'Scripts', 'pip.exe')
+        env_py = os.path.join(env_prefix, 'Scripts', 'python.exe')
     else:
-        env_pip = os.path.join(env_prefix, 'bin', 'pip')
+        env_py = os.path.join(env_prefix, 'bin', 'python')
 
     subprocess.run(
-        f'{env_pip} install simnibs=={version} --no-deps --no-index --find-links={simnibs_dist_dir}',
+        f'{env_py} -m pip install simnibs=={version} --no-deps --no-index --find-links={simnibs_dist_dir}',
         check=True,
         shell=True
     )
