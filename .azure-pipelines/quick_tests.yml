@@ -44,41 +44,6 @@ jobs:
         summaryFileLocation: 'coverage.xml'
 
 
-- job: MacOS
-  pool:
-    vmImage: 'macOS-13'
-
-  steps:
-  - checkout: 'self'
-    fetchDepth: '0'
-    fetchTags: 'true'
-
-  - bash: |
-      echo "##vso[task.prependpath]$CONDA/bin"
-      sudo chown -R $USER $CONDA
-    displayName: Add conda to PATH
-
-  - bash: |
-      conda env create -f environment_macOS.yml
-    displayName: Create Conda environment
-
-  - bash: |
-      source activate simnibs_env
-      python -m pip install -e .
-    displayName: Install SimNIBS
-
-  - bash: |
-      source activate simnibs_env
-      pytest simnibs --junit-xml=test-results.xml
-    displayName: Run Unit Tests
-
-
-  - task: PublishTestResults@2
-    condition: succeededOrFailed()
-    inputs:
-      testResultsFiles: 'test-results.xml'
-      testRunTitle: 'MacOS'
-
 - job: Windows
   pool:
     vmImage: 'windows-2019'

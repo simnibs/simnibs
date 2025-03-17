@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 import multiprocessing.pool
 
@@ -494,6 +495,10 @@ class Ellipsoid():
         """
         n_points = start.shape[0]
 
+        if sys.platform == 'win32' and n_cpu != 1:
+            n_cpu = 1
+            warnings.warn("Restricting geodesic destination calculations on Windows to one CPU core.", RuntimeWarning)
+                    
         if n_cpu is None:
             n_cpu = multiprocessing.cpu_count()
         n_cpu = min(n_cpu, n_points)
