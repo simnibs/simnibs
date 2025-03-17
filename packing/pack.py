@@ -55,7 +55,7 @@ def build(simnibs_dist_dir, developer_id=None):
     )
 
     if sys.platform == 'win32':
-        env_py = os.path.join(env_prefix, 'Scripts', 'python.exe')
+        env_py = os.path.join(env_prefix, 'python.exe')
     else:
         env_py = os.path.join(env_prefix, 'bin', 'python')
 
