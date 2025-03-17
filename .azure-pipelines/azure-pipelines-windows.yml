@@ -62,7 +62,7 @@ jobs:
 
   - script: |
       start /wait $(System.ArtifactsDirectory)\windows\simnibs_installer_windows.exe /S /D=%cd%\simnibs_install
-      simnibs_install\bin\simnibs_python -m pytest simnibs_install\simnibs_env\lib\site-packages\simnibs\ --junit-xml=test-results.xml
+      simnibs_install\bin\simnibs_python -m pytest simnibs_install\simnibs_env\Lib\site-packages\simnibs\ --junit-xml=test-results.xml
     displayName: Install SimNIBS and run unit tests
 
   - task: PublishTestResults@2
