@@ -335,6 +335,69 @@ class TestWriteNifti:
         np.testing.assert_allclose(nii.affine[:3,:3],10*np.identity(3))
         np.testing.assert_allclose(nii.affine[:4,3],(-100,-100,-100,1))
 
+    def test_from_ccd_to_nifti_undividable_ranges(self, tmp_path: Path, testcoil_ccd, testcoil_nii_gz):
+        coil = TmsCoil.from_file(testcoil_ccd)
+        coil.write_nifti(str(tmp_path / "test.nii.gz"),
+                         limits=np.array([[-100, 100], [-100, 100], [-100, 100]]), 
+                         resolution=np.array([3, 3, 3]))
+        nii = nib.load(str(tmp_path / "test.nii.gz"))
+
+        np.testing.assert_allclose(nii.affine[:3,:3],3*np.identity(3))
+        np.testing.assert_allclose(nii.affine[:4,3],(-100,-100,-100,1))
+        print(nii.affine)
+
+        nifti_coil = coil.from_nifti(str(tmp_path / "test.nii.gz"))
+        np.testing.assert_array_equal(nifti_coil.limits, np.array([[-100, 101], [-100, 101], [-100, 101]]))
+        np.testing.assert_array_equal(nifti_coil.resolution, np.array([3, 3, 3]))
+
+
+        test_positions = np.array([
+            [0, 0, 3.2],
+            [3, 0, 3.2],
+            [0, 3, 3.2],
+            [3, 3, 3.2],
+            [0, 0, 6.2],
+            [3, 0, 6.2],
+            [0, 3, 6.2],
+            [3, 3, 6.2],
+        ], dtype=np.float64)
+
+        np.testing.assert_allclose(np.linalg.norm(coil.get_a_field(test_positions, np.eye(4)), axis=1),
+                                    np.linalg.norm(nifti_coil.get_a_field(test_positions, np.eye(4)), axis=1),
+                                    rtol=0.04)
+
+    def test_from_ccd_to_nifti_dividable_ranges(self, tmp_path: Path, testcoil_ccd, testcoil_nii_gz):
+        coil = TmsCoil.from_file(testcoil_ccd)
+        coil.write_nifti(str(tmp_path / "test.nii.gz"),
+                         limits=np.array([[-100, 100], [-100, 100], [-100, 100]]), 
+                         resolution=np.array([2, 2, 2]))
+        nii = nib.load(str(tmp_path / "test.nii.gz"))
+
+        np.testing.assert_allclose(nii.affine[:3,:3],2*np.identity(3))
+        np.testing.assert_allclose(nii.affine[:4,3],(-100,-100,-100,1))
+        print(nii.affine)
+
+        nifti_coil = coil.from_nifti(str(tmp_path / "test.nii.gz"))
+        np.testing.assert_array_equal(nifti_coil.limits, np.array([[-100, 100], [-100, 100], [-100, 100]]))
+        np.testing.assert_array_equal(nifti_coil.resolution, np.array([2, 2, 2]))
+
+
+        test_positions = np.array([
+            [0, 0, 3.2],
+            [3, 0, 3.2],
+            [0, 3, 3.2],
+            [3, 3, 3.2],
+            [0, 0, 6.2],
+            [3, 0, 6.2],
+            [0, 3, 6.2],
+            [3, 3, 6.2],
+        ], dtype=np.float64)
+
+        np.testing.assert_allclose(np.linalg.norm(coil.get_a_field(test_positions, np.eye(4)), axis=1),
+                                   np.linalg.norm(nifti_coil.get_a_field(test_positions, np.eye(4)), axis=1),
+                                   rtol=0.04)
+
+
     def test_from_ccd_to_b_field_nifti(self, tmp_path: Path, testcoil_ccd, testcoil_nii_gz_B):
         coil = TmsCoil.from_file(testcoil_ccd)
         coil.write_nifti(str(tmp_path / "test.nii.gz"), b_field=True)

@@ -294,7 +294,7 @@ class TmsCoil(TcdElement):
         npt.NDArray[np.float_] (N x 3)
             The A field at every point in Tesla
         """
-        b_field = np.zeros_like(points)
+        b_field = np.zeros_like(points, dtype=np.float64)
         for coil_element in self.elements:
             b_field += coil_element.get_b_field(points, coil_affine, eps)
 
@@ -1243,7 +1243,7 @@ class TmsCoil(TcdElement):
             raise ValueError("resolution needs to be set")
 
         stimulators_to_elements = self.get_elements_grouped_by_stimulators()
-        sample_positions, dims = self.get_sample_positions(limits, resolution)
+        sample_positions, dims, new_limits = self.get_sample_positions(limits, resolution)
 
         data_per_stimulator = []
         for stimulator in stimulators_to_elements.keys():
@@ -1269,9 +1269,9 @@ class TmsCoil(TcdElement):
 
         affine = np.array(
             [
-                [resolution[0], 0, 0, limits[0][0]],
-                [0, resolution[1], 0, limits[1][0]],
-                [0, 0, resolution[2], limits[2][0]],
+                [resolution[0], 0, 0, new_limits[0][0]],
+                [0, resolution[1], 0, new_limits[1][0]],
+                [0, 0, resolution[2], new_limits[2][0]],
                 [0, 0, 0, 1],
             ]
         )
@@ -1281,20 +1281,21 @@ class TmsCoil(TcdElement):
         self,
         limits: Optional[npt.NDArray[np.float_]] = None,
         resolution: Optional[npt.NDArray[np.float_]] = None,
-    ) -> tuple[npt.NDArray[np.float_], list[int]]:
+    ) -> tuple[npt.NDArray[np.float_], list[int], npt.NDArray[np.float_]]:
         """Returns the sampled positions and the dimensions calculated using the limits and resolution of this TMS coil or the parameter if supplied
 
         Parameters
         ----------
         limits : Optional[npt.NDArray[np.float_]], optional
             Overrides the limits set in the coil object, by default None
-        resolution : Optional[npt.NDArray[np.float_]], optional
+        resolution : Optional[npt.NDArray[np.float_], npt.NDArray[np.float_]], optional
             Overrides the resolution set in the coil object, by default None
 
         Returns
         -------
         tuple[npt.NDArray[np.float_], list[int]]
             The sampled positions and the dimensions calculated using the limits and resolution of this TMS coil or the parameter if supplied
+            Also returns the limits which are updated if the limits are not dividable by the resolution. 
 
         Raises
         ------
@@ -1310,15 +1311,21 @@ class TmsCoil(TcdElement):
         if resolution is None:
             raise ValueError("resolution needs to be set")
         
-        dims = [
-            int((max_ - min_) // res) + 1 for [min_, max_], res in zip(limits, resolution)
-        ]
-
         dx = np.spacing(1e4)
-        x = np.linspace(limits[0][0], limits[0][1] + dx, dims[0])
-        y = np.linspace(limits[1][0], limits[1][1] + dx, dims[1])
-        z = np.linspace(limits[2][0], limits[2][1] + dx, dims[2])
-        return np.array(np.meshgrid(x, y, z, indexing="ij")).reshape((3, -1)).T, dims
+
+        x = np.arange(limits[0][0], limits[0][1] + resolution[0] - dx, resolution[0])
+        y = np.arange(limits[1][0], limits[1][1] + resolution[1] - dx, resolution[1])
+        z = np.arange(limits[2][0], limits[2][1] + resolution[2] - dx, resolution[2])
+
+        dims = [len(x), len(y), len(z)]
+
+        new_limits = np.array([
+            [x[0], x[-1]],
+            [y[0], y[-1]],
+            [z[0], z[-1]]
+        ])
+
+        return np.array(np.meshgrid(x, y, z, indexing="ij")).reshape((3, -1)).T.astype(np.float64), dims, new_limits
 
     def as_sampled(
         self,
@@ -1366,7 +1373,7 @@ class TmsCoil(TcdElement):
             ]
         )
 
-        sample_positions, dims = self.get_sample_positions(limits, resolution)
+        sample_positions, dims, new_limits = self.get_sample_positions(limits, resolution)
 
         sampled_coil_elements = []
         for coil_element in self.elements:
@@ -1397,7 +1404,7 @@ class TmsCoil(TcdElement):
                 self.name,
                 self.brand,
                 self.version,
-                limits,
+                new_limits,
                 resolution,
                 self.casing,
                 self.self_intersection_test,
@@ -1447,7 +1454,7 @@ class TmsCoil(TcdElement):
             ]
         )
 
-        sample_positions, dims = self.get_sample_positions(limits, resolution)
+        sample_positions, dims, new_limits = self.get_sample_positions(limits, resolution)
         stimulator_to_elements = self.get_elements_grouped_by_stimulators()
 
         sampled_coil_elements = []
@@ -1478,7 +1485,7 @@ class TmsCoil(TcdElement):
                 self.name,
                 self.brand,
                 self.version,
-                limits,
+                new_limits,
                 resolution,
                 self.casing,
                 self.self_intersection_test,
