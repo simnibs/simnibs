@@ -859,7 +859,7 @@ def _load_freesurfer_pial_surface(fs_sub):
     # seem to work currently, hence this workaround
     try:
         m = load_freesurfer_surfaces(fs_sub, "pial", coord="ras")
-    except OSError: # invalid argument
+    except (OSError, ValueError): # invalid argument
         try:
             m = load_freesurfer_surfaces(fs_sub, "pial.T2", coord="ras")
         except FileNotFoundError: # -T2pial was not used
