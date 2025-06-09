@@ -856,7 +856,8 @@ def _load_freesurfer_pial_surface(fs_sub):
     # The pial surfaces (?h.pial) are symlinks to either ?h.pial.T1 or
     # ?h.pial.T2 depending on whether the `-T2pial` flag was used when
     # invoking recon-all. Symlinks created in WSL on Windows do not
-    # seem to work currently, hence this OSError and Value Error workaround
+    # seem to work currently, so this workaround handles both OSError
+    # and ValueError.
     try:
         m = load_freesurfer_surfaces(fs_sub, "pial", coord="ras")
     except (OSError, ValueError): # invalid argument
