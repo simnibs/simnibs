@@ -3,6 +3,8 @@ import os
 import re
 import sys
 import shutil
+import fileinput
+from pathlib import Path
 from setuptools.command.build_ext import build_ext
 from distutils.dep_util import newer_group
 import numpy as np
@@ -42,6 +44,24 @@ is_conda = 'CONDA_PREFIX' in os.environ
 # No conda, no setup
 if not is_conda:
     raise Exception("Cannot run setup without conda")
+
+# Patch CGAL 5.6.1 headers to fix Clang 19+ compilation (remove obsolete this->base() calls)
+# This is needed until 5.6.2 is available through conda forge (if ever) or until it is possible to
+# rewrite _mesh_volumes.cpp (?, and potentially more) to match the newer CGAL >6. overloads
+def _patch_cgal_iterator():
+    """Replace obsolete this->base() with boost::get_pointer(*this)."""
+    hdr = Path(os.environ['CONDA_PREFIX']) / "include" / "CGAL" / "boost" / "graph" / "iterator.h"
+    if not hdr.exists():
+        return          # nothing to patch (non-Conda build)
+    txt = hdr.read_text()
+    if "this->base()" not in txt:   # already fixed or CGAL ≥6
+        return
+    bak = hdr.with_suffix(".bak3")
+    shutil.copy2(hdr, bak)
+    with fileinput.FileInput(hdr, inplace=True, backup=".bak_tmp") as f:
+        for line in f:
+            print(re.sub(r"\bthis->base\(\)", "boost::get_pointer(*this)", line), end="")
+
 
 #### Setup compilation arguments
 
@@ -214,6 +234,7 @@ class build_ext_(build_ext):
         Build the extension, download some dependencies and remove stuff from other OS
     '''
     def run(self):
+        _patch_cgal_iterator()  # apply CGAL iterator.h workaround if needed
         from Cython.Build import cythonize
         ## Cythonize
         self.extension = cythonize(self.extensions)
