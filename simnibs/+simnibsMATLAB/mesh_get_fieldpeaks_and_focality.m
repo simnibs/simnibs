@@ -21,7 +21,7 @@ function varargout = mesh_get_fieldpeaks_and_focality(m, varargin)
 %              (standard: 'tet', except element_data is empty)
 %   percentiles: used to determine the peak values, given as row vector;
 %                for negative data, 100 minus the given values is used
-%               (standard: [95 99 99.9] percentiles) 
+%               (standard: [95 99 99.9] percentiles)
 %   focality_cutoffs: cutoffs in % of 99.9 percentile; the volume or area
 %                     in which this cutoff is exceeded is reported as index
 %                     of focality (standard:[50 75 100]);
@@ -34,7 +34,7 @@ function varargout = mesh_get_fieldpeaks_and_focality(m, varargin)
 %   field_name: name of the data field
 %   region_idx: indices of the used regions
 %   datatype: 'node', 'tri' or 'tet'
-%   sizeunits: units used for the focality results; either 'square mm' 
+%   sizeunits: units used for the focality results; either 'square mm'
 %              for surface data or 'cubic mm' for volume data
 %   valueunits: units of the extracted data; either V/m, A/m� or empty
 %               (the latter for unknown data)
@@ -43,11 +43,11 @@ function varargout = mesh_get_fieldpeaks_and_focality(m, varargin)
 %        in case you want to use it
 %   percentiles: list of used percentiles, and
 %   perc_values: corresponding values
-%   focality_cutoffs: cutoffs in % of 99.9 percentile for determining the 
+%   focality_cutoffs: cutoffs in % of 99.9 percentile for determining the
 %                     focality, and
 %   focality_values: corresponding values
 %   XYZ_max: position of the maximum
-%   XYZ_perc: mean positions of the elements or nodes contributing to the 
+%   XYZ_perc: mean positions of the elements or nodes contributing to the
 %             listed perc_values
 %   XYZstd_perc: standard deviation of the elements or nodes contributing
 %                to the listed perc_values
@@ -62,13 +62,13 @@ function varargout = mesh_get_fieldpeaks_and_focality(m, varargin)
 %   XYZ_perc_neg: mean positions of the elements or nodes contributing
 %                 to the listed perc_neg_values
 %   XYZstd_perc_neg: standard deviation of the elements or nodes
-%                    contributing to the listed perc_neg_values    
+%                    contributing to the listed perc_neg_values
 %
 % Examples:
 %  s=mesh_get_fieldpeaks_and_focality(m); % plot summary for GM, return results structure
 %  mesh_get_fieldpeaks_and_focality(m,'region_idx',1); plot summary for WM (.msh files)
 %  s=mesh_get_fieldpeaks_and_focality(m'printsummary',false); % do not plot summary
-%         
+%
 % A. Thielscher 07-Sep-2018
 
 % standard settings and behavior
@@ -90,7 +90,7 @@ end
 
 % parse input
 if nargin<1; error('mesh is needed as input'); end
-s=parse_input(s,varargin{:});
+s=simnibsMATLAB.parse_input(s,varargin{:});
 
 % get index of data field in case it was given as field name
 s.field_idx = get_field_idx(m,s.field_idx,s.datatype);
@@ -99,17 +99,17 @@ s.field_idx = get_field_idx(m,s.field_idx,s.datatype);
 disp(['Using region number ' num2str(s.region_idx)]);
 s.sizeunits='cubic mm';
 if strcmpi(s.datatype,'tet')
-    m=mesh_extract_regions(m,'elemtype','tet','region_idx',s.region_idx);
+    m=simnibsMATLAB.mesh_extract_regions(m,'elemtype','tet','region_idx',s.region_idx);
 elseif strcmpi(s.datatype,'tri')
-    m=mesh_extract_regions(m,'elemtype','tri','region_idx',s.region_idx);
+    m=simnibsMATLAB.mesh_extract_regions(m,'elemtype','tri','region_idx',s.region_idx);
     s.sizeunits='square mm';
 else
-    m=mesh_extract_regions(m,'elemtype','both','region_idx',s.region_idx);
+    m=simnibsMATLAB.mesh_extract_regions(m,'elemtype','both','region_idx',s.region_idx);
     if isempty(m.tetrahedra); s.sizeunits='square mm'; end
 end
 
 % get data, field name, scaleLimits, element sizes and positions
-[data, name, scaleLimits, elemsizes, elempos] = get_data_and_scaleLimits(m,s.field_idx,s.datatype,[]);
+[data, name, scaleLimits, elemsizes, elempos] = simnibsMATLAB.get_data_and_scaleLimits(m,s.field_idx,s.datatype,[]);
 
 if min(size(data))>1; error('Scalar data required'); end
 idx=~isnan(data); % NaNs occured for .angle data; make sure to get rid of them
@@ -140,33 +140,33 @@ for i=1:length(s.percentiles)
     idx=find(elemsizesNormed>s.percentiles(i)/100,1,'first');
     if isempty(idx); idx=length(data); end
     s.perc_values(i)=data(idx);
-    
+
     % mean and SD of positions (equations weighted for element size)
     meanVal=sum(bsxfun(@times,elempos(idx:end,:),elemsizes(idx:end)),1)./...
             repmat(sum(elemsizes(idx:end)),1,3);
-    
+
     N_nonzero=sum(elemsizes(idx:end,:)>0);
     scaleFac=(N_nonzero-1)/N_nonzero*sum(elemsizes(idx:end,:));
     for j=1:3
         s.XYZstd_perc(i,j)=sqrt( sum(elemsizes(idx:end).*( elempos(idx:end,j)-meanVal(j) ).^2,1)/scaleFac );
     end
-    s.XYZ_perc(i,:)=meanVal;    
+    s.XYZ_perc(i,:)=meanVal;
 end
 
 if scaleLimits(1)<0
     s.min=min(data);
     s.XYZ_min=elempos(data==s.min,:);
-    
+
     perc_neg=100-s.percentiles;
     for i=1:length(perc_neg)
         idx=find(elemsizesNormed<perc_neg(i)/100,1,'last');
         if isempty(idx); idx=1; end
         s.perc_neg_values(i)=data(idx);
-                
+
         % mean and SD of positions (equations weighted for element size)
         meanVal=sum(bsxfun(@times,elempos(1:idx,:),elemsizes(1:idx)),1)./...
                 repmat(sum(elemsizes(1:idx)),1,3);
-    
+
         N_nonzero=sum(elemsizes(1:idx,:)>0);
         scaleFac=(N_nonzero-1)/N_nonzero*sum(elemsizes(1:idx,:));
         for j=1:3
@@ -179,7 +179,7 @@ end
 
 % extract focality
 idx=find(elemsizesNormed>99.9/100,1,'first');
-if isempty(idx); idx=length(data); end 
+if isempty(idx); idx=length(data); end
 peakvalue=data(idx);
 for i=1:length(s.focality_cutoffs)
     idx=find(data>=s.focality_cutoffs(i)/100*peakvalue,1,'first');
@@ -192,12 +192,12 @@ end
 
 if scaleLimits(1)<0
     idx=find(elemsizesNormed<0.1/100,1,'last');
-    if isempty(idx); idx=1; end 
+    if isempty(idx); idx=1; end
     peakvalue=data(idx);
     for i=1:length(s.focality_cutoffs)
         idx=find(data<=s.focality_cutoffs(i)/100*peakvalue,1,'last');
         s.focality_neg_values(i)=elemsizes(idx);
-    end    
+    end
 end
 
 
