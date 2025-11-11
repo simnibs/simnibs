@@ -2,8 +2,8 @@ function [results, varargout] = mesh_get_surf_max_and_percentiles(m,data_index,v
 %
 % results = mesh_get_surf_max_and_percentiles(m,data_index {, percentiles })
 % [results results_annot] = mesh_get_surf_max_and_percentiles(m,data_index, percentiles, annot_index, struct_names)
-% 
-% get maximum and some percentiles of field data that was 
+%
+% get maximum and some percentiles of field data that was
 % read in by mesh_load_fsresults.m
 %
 % m: mesh with data
@@ -12,7 +12,7 @@ function [results, varargout] = mesh_get_surf_max_and_percentiles(m,data_index,v
 %              (standard: [50 75 90 95 99 99.5])
 % annot_index: index of node_data containing annotation labels
 % struct_names: list of the names of the anatomical structures
-% 
+%
 % A. Thielscher, 06-Nov-2017
 
 %    This program is part of the SimNIBS package.
@@ -45,16 +45,16 @@ end
 annot_index=[];
 if nargin>3&&~isempty(varargin{2})
     annot_index=varargin{2};
-    
+
     if nargin<4||isempty(varargin{3}); error('struct_names has to be given as input when annotation labels are used'); end
     struct_names=varargin{3};
-    
+
     disp(['using annotations from ' m.node_data{annot_index}.name ' (index ' num2str(annot_index) ')']);
 end
 
 % get node areas (for each node, this is the average of the areas of the
 % surrounding triangles)
-triareas=mesh_get_triangle_sizes(m);
+triareas=simnibsMATLAB.mesh_get_triangle_sizes(m);
 nodeareas=zeros(size(m.nodes,1),1);
 for i=1:size(m.triangles,1)
     nodeareas(m.triangles(i,1))=nodeareas(m.triangles(i,1))+triareas(i)/3;
@@ -75,16 +75,16 @@ results(1).percentiles=percentiles;
 % get results for lh and rh separately
 if any(m.triangle_regions==2) % when lh and rh are stored in the mesh, then rh has region number 2
     % get index of first rh node
-    idx_startrh=m.triangles(m.triangle_regions==2,:); 
+    idx_startrh=m.triangles(m.triangle_regions==2,:);
     idx_startrh=min(idx_startrh(:));
-    
+
     % results for lh
     results(2).name='lh';
     results(2).fieldname=m.node_data{data_index}.name;
     results(2).percentiles=percentiles;
     [results(2).max, results(2).min, results(2).perc_values, results(2).perc_area] = ...
             get_max_and_perc(nodedata(1:idx_startrh-1), nodeareas(1:idx_startrh-1), percentiles);
-    
+
     % results for rh
     results(3).name='rh';
     results(3).fieldname=m.node_data{data_index}.name;
@@ -100,15 +100,15 @@ if ~isempty(annot_index)
     for i=1:length(struct_names)
         res_annot(i).name=struct_names{i};
         res_annot(i).fieldname=m.node_data{data_index}.name;
-        res_annot(i).percentiles=percentiles; 
-        
+        res_annot(i).percentiles=percentiles;
+
         idx=m.node_data{annot_index}.data==i;
         if any(idx)
             [res_annot(i).max, res_annot(i).min, res_annot(i).perc_values, res_annot(i).perc_area] = ...
                 get_max_and_perc(nodedata(idx), nodeareas(idx), percentiles);
         end
     end
-    
+
     varargout{1} = res_annot;
 end
 
