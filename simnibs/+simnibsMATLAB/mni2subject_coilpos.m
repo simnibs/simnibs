@@ -23,10 +23,10 @@ function matsimnibs = mni2subject_coilpos(center_MNI, ydir_MNI, zdir_MNI, ...
 %   ydir_MNI: unit vector (size 1x3) indicating the y-direction
 %   zdir_MNI: unit vector (size 1x3) indicating the z-direction
 %   subdir: path to subject directory, example: 'm2m_ernie/'
-%   coil_skin_distance (optional): skin-coil distance in [mm]. 
+%   coil_skin_distance (optional): skin-coil distance in [mm].
 %                                  (standard: 0)
-%   transformation_type (optional): type of transfomation to use, can be 
-%                                   'nonl' (non-linear), '12dof' or '6dof' 
+%   transformation_type (optional): type of transfomation to use, can be
+%                                   'nonl' (non-linear), '12dof' or '6dof'
 %                                   (6 and 12 degrees of freedom);
 %                                   (standard: 'nonl')
 %
@@ -48,7 +48,7 @@ assert(all(size(ydir_MNI) == [1, 3]) | all(size(ydir_MNI) == [3, 1]), ...
 assert(all(size(zdir_MNI) == [1, 3]) | all(size(zdir_MNI) == [3, 1]), ...
        'zdir_MNI must be a 1x3 vector');
 assert(exist(subdir, 'dir') == 7, ['Could not find directory ' subdir])
-assert(isscalar(coil_skin_distance), 'coil_skin_distance must be a scalar') 
+assert(isscalar(coil_skin_distance), 'coil_skin_distance must be a scalar')
 if ~any(strcmp(transformation_type, {'nonl', '12dof', '6dof'}))
     error('transformation_type must be nonl, 12dof, or 6dof')
 end
@@ -70,7 +70,7 @@ fn_geo = [fn_out,'.geo'];
 fn_out = [fn_out,'.csv'];
 
 % Run mni2subject_coords
-[status,result] = system([simnibs_cli_call('mni2subject_coords')...
+[status,result] = system([simnibsMATLAB.simnibs_cli_call('mni2subject_coords')...
                          ' -m "' subdir '" -s ' fn_in ' -o ' fn_out ...
                          ' -t ' transformation_type]);
 % Check if call was successful
