@@ -1,10 +1,10 @@
 function [data, name, scaleLimits, varargout] = get_data_and_scaleLimits(m,field_idx,datatype,scaleLimits)
 % returns the data, the field name and fills in the scaleLimits (if they
 % are empty); optionally, also the element sizes are returned
-% 
+%
 % USAGE:
-%  [data, name, scaleLimits] = get_data_and_scaleLimits(m,field_idx,datatype,scaleLimits)
-%  [data, name, scaleLimits, elemsizes] = get_data_and_scaleLimits(m,field_idx,datatype,scaleLimits)
+%  [data, name, scaleLimits] = simnibsMATLAB.get_data_and_scaleLimits(m,field_idx,datatype,scaleLimits)
+%  [data, name, scaleLimits, elemsizes] = simnibsMATLAB.get_data_and_scaleLimits(m,field_idx,datatype,scaleLimits)
 %
 % The scale limits are determined as follows:
 % [0 absmax] for positive-only data;
@@ -33,10 +33,10 @@ end
 if isempty(scaleLimits)||(nargout>3)
     if strcmpi(datatype,'tet')
         % tet volumes
-        elemsizes=mesh_get_tetrahedron_sizes(m);
+        elemsizes=simnibsMATLAB.mesh_get_tetrahedron_sizes(m);
     elseif strcmpi(datatype,'tri')
         % triangle areas
-        elemsizes=mesh_get_triangle_sizes(m);
+        elemsizes=simnibsMATLAB.mesh_get_triangle_sizes(m);
     else % node data
         if ~isempty(m.triangles)&&~isempty(m.tetrahedra)
             disp('Both tets and triangles found: Ambiguity to assign sizes to nodes')
@@ -44,7 +44,7 @@ if isempty(scaleLimits)||(nargout>3)
         end
         if isempty(m.triangles)
             % use tet volumes to get node sizes
-            elemsizes=mesh_get_tetrahedron_sizes(m);
+            elemsizes=simnibsMATLAB.mesh_get_tetrahedron_sizes(m);
             elemsizes=elemsizes/4;
             nodesizes=zeros(size(m.nodes,1),1);
             for i=1:size(m.tetrahedra,1)
@@ -53,7 +53,7 @@ if isempty(scaleLimits)||(nargout>3)
             elemsizes=nodesizes;
         else
             % use tri areas to get node sizes
-            elemsizes=mesh_get_triangle_sizes(m);          
+            elemsizes=simnibsMATLAB.mesh_get_triangle_sizes(m);
             elemsizes=elemsizes/3;
             nodesizes=zeros(size(m.nodes,1),1);
             for i=1:size(m.triangles,1)
@@ -70,9 +70,9 @@ if nargout>3; varargout{1}=elemsizes; end
 % get element postions if needed
 if nargout>4
     if strcmpi(datatype,'tet')
-        varargout{2}=mesh_get_tetrahedron_centers(m);
+        varargout{2}=simnibsMATLAB.mesh_get_tetrahedron_centers(m);
     elseif strcmpi(datatype,'tri')
-        varargout{2}=mesh_get_triangle_centers(m);
+        varargout{2}=simnibsMATLAB.mesh_get_triangle_centers(m);
     else
         varargout{2}=m.nodes;
     end
@@ -86,11 +86,11 @@ if isempty(scaleLimits)
     else
         dataHlp=data;
     end
-    
+
     idx=~isnan(dataHlp);
     dataHlp=dataHlp(idx);
     elemsizesHlp=elemsizes(idx);
-    
+
     [dataHlp,idx] = sort(dataHlp);
     elemsizesHlp=elemsizesHlp(idx);
     elemsizesHlp=cumsum(elemsizesHlp);
