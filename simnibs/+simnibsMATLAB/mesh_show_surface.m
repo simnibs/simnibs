@@ -37,7 +37,7 @@ function varargout = mesh_show_surface(m, varargin)
 %  mesh_show_surface(m); % plots magnE on the gray matter surface
 %  mesh_show_surface(m,'field_idx','magnJ','region_numbers',1001); % plots magnJ on white matter
 %  mesh_show_surface(m,'showElec',false); % doesn't show the electrodes
-%         
+%
 % A. Thielscher 09-Sep-2018
 
 % standard settings and behavior
@@ -64,23 +64,23 @@ end
 
 % parse input
 if nargin<1; error('mesh is needed as input'); end
-s=parse_input(s,varargin{:});
+s=simnibsMATLAB.parse_input(s,varargin{:});
 
 % get index of data field in case it was given as field name
-if ~s.showSurface; s.field_idx = get_field_idx(m,s.field_idx,s.datatype); end
+if ~s.showSurface; s.field_idx = simnibsMATLAB.get_field_idx(m,s.field_idx,s.datatype); end
 
 % extract region
 disp(['Using region number(s) ' num2str(s.region_idx)]);
 morg=m; % copy needed for showElec
-m=mesh_extract_regions(m,'elemtype','tri','region_idx',s.region_idx);
+m=simnibsMATLAB.mesh_extract_regions(m,'elemtype','tri','region_idx',s.region_idx);
 
 % get data, name and lower and upper limits
 if ~s.showSurface
-    [data, name, s.scaleLimits] = get_data_and_scaleLimits(m,s.field_idx,s.datatype,s.scaleLimits);
+    [data, name, s.scaleLimits] = simnibsMATLAB.get_data_and_scaleLimits(m,s.field_idx,s.datatype,s.scaleLimits);
     % scaling is from 0 to 99.9 percentile (magnE, magnJ)
     % or from .1 to 99.9 percentile (normal components)
     % scaling will be only updated when empty
-    
+
     if isempty(s.colormap)
         if s.scaleLimits(1)>=0; s.colormap='jet';
         else
@@ -110,7 +110,7 @@ if s.showSurface
     axis off
 else
     if min(size(data))>1; error('Scalar data required'); end
-    
+
     if strcmpi(s.datatype,'node')
         hp=patch('Faces',m.triangles,'Vertices',m.nodes,'FaceVertexCData',data,...
                  'FaceColor','interp','EdgeColor','none','CDataMapping','scaled','FaceAlpha',s.facealpha);
@@ -124,8 +124,8 @@ else
     h=colorbar;
     h=get(h,'label');
     set(gca,'CLim',s.scaleLimits);
-    
-    title(name,'Interpreter','none');        
+
+    title(name,'Interpreter','none');
     if strcmpi(name,'magnE')
         set(h,'String','electric field strength in [V/m]');
     elseif strcmpi(name,'magnJ')
@@ -134,7 +134,7 @@ else
         set(h,'String','normal component of electric field in [V/m]');
     elseif strcmpi(name,'J.normal')
         set(h,'String','normal component of current density in [A/m²]');
-    end    
+    end
 end
 
 material(hp,'dull');

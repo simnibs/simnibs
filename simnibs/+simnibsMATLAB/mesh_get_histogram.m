@@ -30,14 +30,14 @@ function varargout = mesh_get_histogram(m, varargin)
 %   Output:
 %   BinCenters: bin positions on the x axis
 %   BinData: the histogram data
-%   (BinData and BinCenters are optional; the histogram will be plotted 
+%   (BinData and BinCenters are optional; the histogram will be plotted
 %    in a figure when they are not defined)
 %
 % Examples:
 %  mesh_get_histogram(m); % plot histogram for magnE for gray matter
-%  [BinCenters BinData] =  mesh_get_histogram(m,'magnJ',1); % return histogram data 
+%  [BinCenters BinData] =  mesh_get_histogram(m,'magnJ',1); % return histogram data
 %                                                           % for magnJ in white matter
-%         
+%
 % A. Thielscher 07-Sep-2018
 
 % standard settings and behavior
@@ -60,23 +60,23 @@ end
 
 % parse input
 if nargin<1; error('mesh is needed as input'); end
-s=parse_input(s,varargin{:});
+s=simnibsMATLAB.parse_input(s,varargin{:});
 
 % get index of data field in case it was given as field name
-s.field_idx = get_field_idx(m,s.field_idx,s.datatype);
+s.field_idx = simnibsMATLAB.get_field_idx(m,s.field_idx,s.datatype);
 
 % extract regions
 disp(['Using region number ' num2str(s.region_idx)]);
 if strcmpi(s.datatype,'tet')
-    m=mesh_extract_regions(m,'elemtype','tet','region_idx',s.region_idx);
+    m=simnibsMATLAB.mesh_extract_regions(m,'elemtype','tet','region_idx',s.region_idx);
 elseif strcmpi(s.datatype,'tri')
-    m=mesh_extract_regions(m,'elemtype','tri','region_idx',s.region_idx);
+    m=simnibsMATLAB.mesh_extract_regions(m,'elemtype','tri','region_idx',s.region_idx);
 else
-    m=mesh_extract_regions(m,'elemtype','both','region_idx',s.region_idx);
+    m=simnibsMATLAB.mesh_extract_regions(m,'elemtype','both','region_idx',s.region_idx);
 end
 
 % get data, field name, scaleLimits (when they are empty) and element sizes
-[data, name, s.scaleLimits, elemsizes] = get_data_and_scaleLimits(m,s.field_idx,s.datatype,s.scaleLimits);
+[data, name, s.scaleLimits, elemsizes] = simnibsMATLAB.get_data_and_scaleLimits(m,s.field_idx,s.datatype,s.scaleLimits);
 % scaling is from 0 to 99.9 percentile (magnE, magnJ)
 % or from .1 to 99.9 percentile (normal components)
 % scaling will be only updated when empty
@@ -104,19 +104,19 @@ if nargout
 else
     if isempty(s.haxis); figure;
     else; subplot(s.haxis); end
-    
+
     bar(BinCenters,BinData,1,'edgecolor','none');
     title(['pdf of ' name]);
-    
+
     % y axis labeling
     if s.relscale; ylabel('frequency of occurence');
-    elseif strcmpi(s.datatype,'tet'); ylabel('volume in [mm³]'); 
-    elseif strcmpi(s.datatype,'tri'); ylabel('area in [mm²]'); 
+    elseif strcmpi(s.datatype,'tet'); ylabel('volume in [mm³]');
+    elseif strcmpi(s.datatype,'tri'); ylabel('area in [mm²]');
     elseif strcmpi(s.datatype,'node')
         if isempty(m.triangles); ylabel('volume in [mm³]');
         else;  ylabel('area in [mm²]'); end
     end
-    
+
     % x axis labeling
     if strcmpi(name,'magnE')
         xlabel('electric field strength in [V/m]');
@@ -128,6 +128,3 @@ else
         xlabel('normal component of current density in [A/m²]');
     end
 end
-    
-    
-   

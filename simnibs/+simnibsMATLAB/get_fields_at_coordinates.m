@@ -23,18 +23,18 @@ end
 if ischar(mesh)
     assert(exist(mesh, 'file') == 2, ['Could not find mesh file ' mesh])
     fn_mesh = mesh;
-    is_temp = false; 
+    is_temp = false;
 else
     is_temp = true;
     fn_mesh = [tempname '.msh'];
-    mesh_save_gmsh4(mesh, fn_mesh)
+    simnibsMATLAB.mesh_save_gmsh4(mesh, fn_mesh)
 end
 
 fn_in = [tempname,'.csv'];
 csvwrite(fn_in, coords);
 
 % Run mni2subject_coords
-[status,result] = system([simnibs_cli_call('get_fields_at_coordinates')...
+[status,result] = system([simnibsMATLAB.simnibs_cli_call('get_fields_at_coordinates')...
                          ' -m ' fn_mesh ' -s ' fn_in, ' --out_fill ' out_fill]);
 if status ~= 0
     if is_temp

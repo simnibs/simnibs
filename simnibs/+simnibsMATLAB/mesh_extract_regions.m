@@ -3,15 +3,15 @@ function [m]=mesh_extract_regions(m, varargin)
 % deletes unused nodes, elment_data entries and updates the node numbers
 %
 % USAGE:
-%   m=mesh_extract_regions(m, [,'OptionName',OptionValue,...]) 
+%   m=mesh_extract_regions(m, [,'OptionName',OptionValue,...])
 %
 %   m: input mesh
-%  
+%
 %   Options are set using the option name followed by the value.
 %   elemtype: determines the element type to extract
 %             ('tri', 'tet' or 'both'; standard: 'both')
 %   region_idx: extracts the elements with the given region numbers
-%   keepAllNodes: when set to true, do not remove unused nodes and 
+%   keepAllNodes: when set to true, do not remove unused nodes and
 %                 do not update node numbers (standard: false)
 %   node_idx: indices of the nodes to keep (standard: keep all)
 %   tri_idx: indices of the triangles to keep
@@ -22,7 +22,7 @@ function [m]=mesh_extract_regions(m, varargin)
 %  m=mesh_extract_regions(m, 'elemtype','tet'); % delete all triangles
 %  m=mesh_extract_regions(m, 'region_idx', [5 1005]);
 %             % keep tetrahedra and triangles with region numbers 5 or 1005
-%         
+%
 % A. Thielscher 11-Apr-2018, based on prior code from M. Windhoff
 % A.Thielscher: updated 03-Oct-2018, added 'node_idx', 'tri_idx' and
 %               'tet_idx' options
@@ -57,7 +57,7 @@ s.tet_idx=[];
 if nargin<1
     error('at least one argument is needed');
 end
-s=parse_input(s,varargin{:});
+s=simnibsMATLAB.parse_input(s,varargin{:});
 
 keepTri=false;
 keepTet=false;
@@ -85,7 +85,7 @@ if keepTri && size(m.triangles,1) > 0
              idx_kept_tri = idx_kept_tri | m.triangle_regions==s.region_idx(i);
         end
     end
-    
+
     if ~isempty(s.tri_idx)
         if islogical(s.tri_idx)&&length(s.tri_idx)~=size(m.triangles,1)
             error('logical index must have same length as number of triangles')
@@ -107,7 +107,7 @@ if keepTet && size(m.tetrahedra,1) > 0
              idx_kept_tet = idx_kept_tet | m.tetrahedron_regions==s.region_idx(i);
         end
     end
-    
+
     if ~isempty(s.tet_idx)
         if islogical(s.tet_idx)&&length(s.tet_idx)~=size(m.tetrahedra,1)
             error('logical index must have same length as number of tets')
@@ -128,7 +128,7 @@ if s.keepAllNodes
 else
     idx_kept_nodes(unique(m.triangles(idx_kept_tri,:)))=true;
     idx_kept_nodes(unique(m.tetrahedra(idx_kept_tet,:)))=true;
-    
+
     if ~isempty(s.node_idx)
         if islogical(s.node_idx)&&length(s.node_idx)~=size(m.nodes,1)
             error('logical index must have same length as number of nodes')
@@ -139,7 +139,7 @@ else
             s.node_idx=idx_hlp;
         end
         idx_kept_nodes = idx_kept_nodes&s.node_idx;
-        
+
         % delete affected triangles and tets
         idx_kept_tri=idx_kept_tri&(sum(idx_kept_nodes(m.triangles),2)==3);
         idx_kept_tet=idx_kept_tet&(sum(idx_kept_nodes(m.tetrahedra),2)==4);
@@ -168,7 +168,7 @@ for i=1:length(m.element_data)
     if ~isempty(m.element_data{i}.tridata)
         m.element_data{i}.tridata=m.element_data{i}.tridata(idx_kept_tri,:);
     end
-    
+
     if ~isempty(m.element_data{i}.tetdata)
         m.element_data{i}.tetdata=m.element_data{i}.tetdata(idx_kept_tet,:);
     end
