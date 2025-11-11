@@ -7,7 +7,7 @@ function areas = mesh_get_node_areas(m)
 
   % Guilherme Saturnino 2019
 
-tr_areas = mesh_get_triangle_sizes(m);
+tr_areas = simnibsMATLAB.mesh_get_triangle_sizes(m);
 tr_flat = reshape(m.triangles', length(m.triangles)*3, 1);
 areas = accumarray(...
     tr_flat, repelem(tr_areas, 3), ...
