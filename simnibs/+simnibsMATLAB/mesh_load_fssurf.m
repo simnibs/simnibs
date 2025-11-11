@@ -22,8 +22,8 @@ function [m, varargout]=mesh_load_fssurf(fnameIn, varargin)
 %           [m names]=mesh_load_fssurf('fsaverage','label','a2009s')
 %
 %           'a2009s': Destrieux atlas (FreeSurfer v4.5, aparc.a2009s)
-%           Cite: Destrieux, C. Fischl, B. Dale, A., Halgren, E. A sulcal 
-%           depth-based anatomical parcellation of the cerebral cortex. 
+%           Cite: Destrieux, C. Fischl, B. Dale, A., Halgren, E. A sulcal
+%           depth-based anatomical parcellation of the cerebral cortex.
 %           Human Brain Mapping (HBM) Congress 2009, Poster #541
 %
 %           'DK40': Desikan-Killiany atlas (FreeSurfer, aparc.a2005s)
@@ -31,19 +31,19 @@ function [m, varargout]=mesh_load_fssurf(fnameIn, varargin)
 %           Blacker D, Buckner RL, Dale AM, Maguire RP, Hyman BT, Albert MS,
 %           Killiany RJ. An automated labeling system for subdividing the
 %           human cerebral cortex on MRI scans into gyral based regions of
-%           interest. Neuroimage. 2006 Jul 1;31(3):968-80. 
+%           interest. Neuroimage. 2006 Jul 1;31(3):968-80.
 %
 %           'HCP_MMP1': Human Connectome Project (HCP) Multi-Modal Parcellation
-%           Cite: Glasser MF, Coalson TS, Robinson EC, et al. A multi-modal 
+%           Cite: Glasser MF, Coalson TS, Robinson EC, et al. A multi-modal
 %           parcellation of human cerebral cortex. Nature. 2016;536(7615):171-178.
-% 
+%
 %   Output:
 %   m: mesh structure
 %
 %  Notes: This functions wraps read_surf.m from FreeSurfer and gifti from spm12
 %  to read FS and CAT12 surfaces and store them in a mesh structure
 %  automatically adds 1 to face indices of FS surfaces, so that they start with 1
-% 
+%
 % A. Thielscher, 06-Nov-2017; updated 21-Sep-2018
 
 %    This program is part of the SimNIBS package.
@@ -70,7 +70,7 @@ s.label = '';
 
 % parse input
 if nargin<1; error('file or path name needed as input'); end
-s=parse_input(s,varargin{:});
+s=simnibsMATLAB.parse_input(s,varargin{:});
 
 % determine what to load
 path_to_avg_surf = fullfile(SIMNIBSDIR, 'resources', 'templates', 'fsaverage_surf');
@@ -85,7 +85,7 @@ if strcmpi(fnameIn,'fsaverage')
     % look up fsaverage template in cat12 folder
     if load_lh; lh={ fullfile(path_to_avg_surf,'lh.central.freesurfer.gii') }; end
     if load_rh; rh={ fullfile(path_to_avg_surf,'rh.central.freesurfer.gii') }; end
-    
+
 elseif exist(fnameIn,'dir')
     % load subject-specific surfaces
     if exist(fullfile(fnameIn,'charm_log.html'),'file')
@@ -94,7 +94,7 @@ elseif exist(fnameIn,'dir')
     else
         error(['No .._log.html found in ' fnameIn '. Unclear whether it was created by charm']);
     end
-    
+
 elseif exist(fnameIn,'file')
     % load given surface
     lh={ fnameIn };
@@ -121,12 +121,12 @@ if ~isempty(lh)
 end
 if length(lh)>1
    [nodes, ~] = load_surface(lh{2});
-   m.nodes=(m.nodes+nodes)/2; 
+   m.nodes=(m.nodes+nodes)/2;
 end
-    
-if ~isempty(rh) 
+
+if ~isempty(rh)
     idx_firstrh=size(m.nodes,1)+1;
-    
+
     [nodes, triangles] = load_surface(rh{1});
     m.nodes = [m.nodes; nodes];
     m.triangles= [m.triangles; triangles+idx_firstrh-1];
@@ -134,7 +134,7 @@ if ~isempty(rh)
 end
 if length(rh)>1
    [nodes, ~] = load_surface(rh{2});
-   m.nodes(idx_firstrh:end,:)=(m.nodes(idx_firstrh:end,:)+nodes)/2; 
+   m.nodes(idx_firstrh:end,:)=(m.nodes(idx_firstrh:end,:)+nodes)/2;
 end
 
 m.nodes=double(m.nodes);
@@ -150,8 +150,8 @@ if ~isempty(s.label)
     else
         error(['unknown label file: ' s.label]);
     end
-    
-    [m, varargout{1}]=mesh_load_fsannot(m,fname_label);
+
+    [m, varargout{1}]=simnibsMATLAB.mesh_load_fsannot(m,fname_label);
 end
 
 end
@@ -159,7 +159,7 @@ end
 function [nodes, triangles] = load_surface(fname)
     [~,~,extHlp] = fileparts(fname);
     if strcmpi(extHlp,'.gii') % load gifti
-        s=gifti(fname);
+        s=simnibsMATLAB.gifti(fname);
         nodes=s.vertices;
         triangles=s.faces;
     else
@@ -175,7 +175,7 @@ function [vertex_coords, faces, magic] = read_surf(fname)
 % reads a the vertex coordinates and face lists from a surface file
 % note that reading the faces from a quad file can take a very long
 % time due to the goofy format that they are stored in. If the faces
-% output variable is not specified, they will not be read so it 
+% output variable is not specified, they will not be read so it
 % should execute pretty quickly.
 %
 
@@ -226,7 +226,7 @@ magic = fread3(fid) ;
 if((magic == QUAD_FILE_MAGIC_NUMBER) | (magic == NEW_QUAD_FILE_MAGIC_NUMBER))
   vnum = fread3(fid) ;
   fnum = fread3(fid) ;
-  vertex_coords = fread(fid, vnum*3, 'int16') ./ 100 ; 
+  vertex_coords = fread(fid, vnum*3, 'int16') ./ 100 ;
   if (nargout > 1)
     for i=1:fnum
       for n=1:4
@@ -239,7 +239,7 @@ elseif (magic == TRIANGLE_FILE_MAGIC_NUMBER)
   fgets(fid) ;
   vnum = fread(fid, 1, 'int32') ;
   fnum = fread(fid, 1, 'int32') ;
-  vertex_coords = fread(fid, vnum*3, 'float32') ; 
+  vertex_coords = fread(fid, vnum*3, 'float32') ;
   if (nargout > 1)
     faces = fread(fid, fnum*3, 'int32') ;
     faces = reshape(faces, 3, fnum)' ;
