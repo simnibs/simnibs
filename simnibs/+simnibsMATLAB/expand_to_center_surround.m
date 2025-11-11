@@ -37,14 +37,14 @@ s.pos_dir_1stsurround=[];
 s.N=[];
 s.multichannel=[];
 s.phis_surround=[];
-s=parse_input(s,varargin{:});
+s=simnibsMATLAB.parse_input(s,varargin{:});
 
 fn_in  = [tempname,'.mat'];
 fn_out = [tempname,'.mat'];
 save(fn_in,'-struct','tdcslist', '-v7')
 
 % Run expand_to_center_surround
-cmdstr = [simnibs_cli_call('expand_to_center_surround') ...
+cmdstr = [simnibsMATLAB.simnibs_cli_call('expand_to_center_surround') ...
            ' -S ' fn_in ' -p ' subpath ' -F ' fn_out ];
 fn = fieldnames(s);
 for k=1:numel(fn)
@@ -76,4 +76,3 @@ end
 S_out = load(fn_out);
 delete(fn_in);
 delete(fn_out);
-
