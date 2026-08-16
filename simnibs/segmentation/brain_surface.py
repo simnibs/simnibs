@@ -181,8 +181,8 @@ def spherical_registration_cat(
     try:
         logger.info(f"Generating sphere ({hemi})")
         s = time.perf_counter()
-        cmd = f"{cat_surf2sphere} {sph_map_white} {sphere} 10"
-        spawn_process(cmd.split())
+        cmd = [cat_surf2sphere, str(sph_map_white), str(sphere), "10"]
+        spawn_process(cmd)
         time_elapsed = time.strftime("%H:%M:%S", time.gmtime(time.perf_counter() - s))
         logger.info(f"Generating sphere ({hemi}) : {time_elapsed}")
     except Exception as e:
@@ -202,8 +202,23 @@ def spherical_registration_cat(
     # Register to fsaverage ({hemi}.sphere.reg)
     logger.info(f"Registering sphere ({hemi})")
     s = time.perf_counter()
-    cmd = f"{cat_warpsurf} -steps 2 -avg -i {white} -is {sphere} -t {fsavg_white} -ts {fsavg_sphere} -ws {sphere_reg}"
-    spawn_process(cmd.split())
+    cmd = [
+        cat_warpsurf,
+        "-steps",
+        "2",
+        "-avg",
+        "-i",
+        str(white),
+        "-is",
+        str(sphere),
+        "-t",
+        str(fsavg_white),
+        "-ts",
+        str(fsavg_sphere),
+        "-ws",
+        str(sphere_reg),
+    ]
+    spawn_process(cmd)
     time_elapsed = time.strftime("%H:%M:%S", time.gmtime(time.perf_counter() - s))
     logger.info(f"Registering sphere ({hemi}) : {time_elapsed}")
 
